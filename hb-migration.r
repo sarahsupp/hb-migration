@@ -11,28 +11,40 @@ library(ggmap)
 wd = "/Volumes/Elements/eBird/ebd_data/"
 setwd(wd)
 
-# read in eBird data
-bchu = read.table('ebd_bkchum_200401_201312_relNov-2013.txt',
-                  header=TRUE, sep="\t", fill=TRUE)
-ruhu = read.table('ebd_rufhum_200401_201312_relNov-2013.txt', 
-                  header=TRUE, sep="\t", fill=TRUE, nrows=10)
+# make a North America base map
+noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = "bw")
 
-files = list.files(pattern = "*.txt")
+# read in eBird datafiles = list.files(pattern = "*.txt")
+files = files[c(2,3,8,9)]
 
 for (f in 1:length(files)){
   humdat = read.table(files[f], header=TRUE, sep="\t", fill=TRUE)
+    humdat$LONGITUDE = as.numeric(as.character(humdat$LONGITUDE))
+    humdat$LATITUDE = as.numeric(as.character(humdat$LATITUDE))
 
   species = humdat$COMMON.NAME[1]
+  years = c(2004:2013)
   
   date = DateConvert(humdat$OBSERVATION.DATE)
   humdat = cbind(humdat, date)
   
   #delete nonsensical data - where something else was recorded in date column
-  humdat = humdat[which(humdat$year %in% 2004:2013),]
+  humdat = humdat[which(humdat$year %in% years),]
   
   #show how many records there are for the species across the years
   PlotRecords(humdat$year, species)
-
+  
+  for (y in 1:length(years)){
+    yrdat = humdat[which(humdat$year == years[y]),]
+    
+    #plot frequency of sightings per month
+    PlotRecords(yrdat$month, species)
+    
+    #plot where species was sighted within each year
+    sitemap = ggmap(noam) + geom_point(aes(LONGITUDE, LATITUDE, col=as.factor(month)), 
+                                         data=yrdat) + ggtitle(species)
+  }
+  rm(list=ls()[!ls() %in% c("f", "files", "noam")])   # clears the memory of everything except the file list and base map
 }
 
 
