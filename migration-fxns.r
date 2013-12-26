@@ -20,9 +20,12 @@ DateConvert = function(date){
 
 PlotRecords = function(yeardata, species) {
   #plots the number of records across the years
+  
   t = as.data.frame(table(yeardata))
   names(t) = c('year', 'count')
  
-  ggplot(data = t, aes(year, count)) + geom_bar(fill="cadetblue2") + theme_bw() + 
+  barplot = ggplot(data = t, aes(year, count)) + geom_bar(fill="cadetblue2") + theme_bw() + 
     ggtitle(species)
+  
+  print(barplot)
 }
