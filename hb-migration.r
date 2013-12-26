@@ -38,8 +38,9 @@ for (f in 1:length(files)){
   #delete nonsensical data - where something else was recorded in date column
   humdat = humdat[which(humdat$year %in% years),]
   
-  #show how many records there are for the species across the years
-  PlotRecords(humdat$year, species)
+  #show how many records there are for the species across the years, write to txt file
+  yeartable = PlotRecords(humdat$year, species)
+  write.table(yeartable, file = paste("/Volumes/Elements/eBird/ebd_counts/",species,".txt",sep=""), row.names=FALSE)
   
   for (y in 1:length(years)){
     yrdat = humdat[which(humdat$year == years[y]),]

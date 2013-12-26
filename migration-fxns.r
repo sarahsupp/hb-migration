@@ -28,4 +28,6 @@ PlotRecords = function(yeardata, species) {
     ggtitle(species)
   
   print(barplot)
+  
+  return(t)
 }
