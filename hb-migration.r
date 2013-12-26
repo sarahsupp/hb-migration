@@ -14,10 +14,17 @@ setwd(wd)
 # make a North America base map
 noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = "bw")
 
-# read in eBird datafiles = list.files(pattern = "*.txt")
-files = files[c(2,3,8,9)]
+# read in eBird data
+files = list.files(pattern = "*.txt")
+files = files[3]
 
 for (f in 1:length(files)){
+  
+  require(ggmap)
+  require(ggplot2)
+  require(plyr)
+  require(reshape2)
+  
   humdat = read.table(files[f], header=TRUE, sep="\t", fill=TRUE)
     humdat$LONGITUDE = as.numeric(as.character(humdat$LONGITUDE))
     humdat$LATITUDE = as.numeric(as.character(humdat$LATITUDE))
@@ -35,7 +42,7 @@ for (f in 1:length(files)){
   PlotRecords(humdat$year, species)
   
   for (y in 1:length(years)){
-    yrdat = humdat[which(humdat$year == years[y]),]
+    yrdat = humdat[which(humdat$year == years[y]),c()]
     
     #plot frequency of sightings per month
     PlotRecords(yrdat$month, species)
