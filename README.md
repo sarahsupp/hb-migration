@@ -1,7 +1,7 @@
 hb-migration
 ============
 
-This repository is to collect the code for a project to describe and predict the migration of North American hummingbird species for 2004-2013. Species include: black-chinned, rufous, ruby-throated, and calliope hummingbird. Contains code for cleaning eBird data, analyzing species migration paths and timing, and predicting response to climate change. Collaborators on this project include S. R. Supp, C. H. Graham, F. A. La Sorte, and T. Cormier.
+This repository is to collect the code for a project to describe and predict the migration of North American hummingbird species for 2004-2013 and into the future. Species include: anna's, allen's, black-chinned, broad-billed, broad-tailed, calliope, costa's, rufous, and ruby-throated hummingbird. Contains code for cleaning eBird data, analyzing species migration paths and timing, and predicting response to climate change. Collaborators on this project include S. R. Supp, C. H. Graham, F. A. La Sorte, and T. Cormier.
 Code was written by S. R. Supp.
 
 The code and data in this repository allow for the analyses and figures to be fully replicated using eBird data and remote sensing products.
