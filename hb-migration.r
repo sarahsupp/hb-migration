@@ -51,7 +51,7 @@ for (f in 1:length(files)){
     #plot where species was sighted within each year
     sitemap = ggmap(noam) + geom_point(aes(LONGITUDE, LATITUDE, col=as.factor(month)), 
                                          data=yrdat) + ggtitle(paste(species, years[y], sep = " "))
-    print(sitemap)
+    ggsave(sitemap, file=paste(species, years[y], ".pdf", sep=""))
     
     rm(list=ls()[ls() %in% c("sitemap", "yrdat")])   # clears the memory of the map and year-level data
   }
