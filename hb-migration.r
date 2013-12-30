@@ -13,7 +13,7 @@ noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = 
 
 # read in eBird data
 files = list.files(pattern = "*.txt")
-files = files[3]
+files = files[2]
 
 for (f in 1:length(files)){
   
@@ -29,7 +29,7 @@ for (f in 1:length(files)){
     humdat$LONGITUDE = as.numeric(as.character(humdat$LONGITUDE))
     humdat$LATITUDE = as.numeric(as.character(humdat$LATITUDE))
 
-  species = humdat$COMMON.NAME[1]
+  species = humdat$SCIENTIFIC.NAME[1]
   years = c(2004:2013)
   
   date = DateConvert(humdat$OBSERVATION.DATE)
