@@ -11,15 +11,15 @@ The project and code in this repository are still under development.
 **Requirements:**
 R 3.x, R packages `knitr`, `ggplot2`, `ggmap`, `reshape`, `vegan`, and files containing functions specific to this code.
 
-The analyses can be replicated by changing the working directory at the top of the file .R to the location on your computer where you have stored the .R, .txt, and .csv files. Questions about the code should be directed to SRS (sarah@weecology.org).
+The analyses can be replicated by changing the working directory at the top of the file .R to the location on your computer where you have stored the .R, .txt, and .csv files, and by modifying the pathnames for output to where you would like to store the results. Questions about the code should be directed to SRS (sarah@weecology.org).
 
 
 **Data use:**
-Data is currently privately housed, but may be requested for the purposes of replication. If you wish to use the data for additional research, you should contact the Graham lab (catherine.graham@stonybrook.edu).
+Data is currently privately housed, but may be requested for the purposes of replication. If you wish to use the data for additional research, you should contact the Graham lab (catherine.graham@stonybrook.edu) and Cornell Lab of Ornithology to request eBird data (http://ebird.org/ebird/data/download).
 
 
 **Included Files:**
 `hb-migration.r` script -- cleans up the trait and community datasets, runs descriptive analyses, and outputs figures.
-
+`migration-fxns.r` script -- stores functions for subsetting, analyzing, and plotting the data.
 
 **License:** This code is available under a BSD 2-Clause License.
