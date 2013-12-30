@@ -13,7 +13,7 @@ noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = 
 
 # read in eBird data
 files = list.files(pattern = "*.txt")
-files = files[6]
+files = files[3]
 
 for (f in 1:length(files)){
   
@@ -38,9 +38,13 @@ for (f in 1:length(files)){
   #delete nonsensical data - where something else was recorded in date column
   humdat = humdat[which(humdat$year %in% years),]
   
+  #start a new directory
+  dirpath = paste("/Volumes/Elements/eBird/ebd_counts/", species, sep="")
+    dir.create(dirpath, showWarnings = TRUE, recursive = FALSE)
+  
   #show how many records there are for the species across the years, write to txt file
   yeartable = PlotRecords(humdat$year, species)
-  write.table(yeartable, file = paste("/Volumes/Elements/eBird/ebd_counts/",species,".txt",sep=""), row.names=FALSE)
+  write.table(yeartable, file = paste(dirpath, "/", species,".txt",sep=""), row.names=FALSE)
   
   for (y in 1:length(years)){
     yrdat = humdat[which(humdat$year == years[y]),]
@@ -51,7 +55,7 @@ for (f in 1:length(files)){
     #plot where species was sighted within each year
     sitemap = ggmap(noam) + geom_point(aes(LONGITUDE, LATITUDE, col=as.factor(month)), 
                                          data=yrdat) + ggtitle(paste(species, years[y], sep = " "))
-    ggsave(sitemap, file=paste(species, years[y], ".pdf", sep=""))
+    ggsave(sitemap, file=paste(dirpath, "/", species, years[y], ".pdf", sep=""))
     
     rm(list=ls()[ls() %in% c("sitemap", "yrdat")])   # clears the memory of the map and year-level data
   }
