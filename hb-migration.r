@@ -13,8 +13,10 @@ noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = 
 
 # read in eBird data
 files = list.files(pattern = "*.txt")
-files = files[2]
+files = files[6]
 
+#for each eBird file, print the number sightings per year and per month.
+#plot the locations of sightings on a map, color coded by month
 for (f in 1:length(files)){
   
   require(ggmap)
@@ -23,7 +25,14 @@ for (f in 1:length(files)){
   require(reshape2)
   source("/Users/sarah/Documents/GitHub/hb-migration/migration-fxns.r")
   
-  humdat = read.table(files[f], header=TRUE, sep="\t", fill=TRUE)
+  humdat = read.table(files[f], header=TRUE, sep="\t", fill=TRUE, quote="\"'")
+
+  #keep only the columns that we need
+  keepcols = c("COMMON.NAME", "SCIENTIFIC.NAME", "OBSERVATION.COUNT", "AGE.SEX", "COUNTRY",
+               "COUNTRY_CODE", "STATE_PROVINCE", "COUNTY", "LATITUDE", "LONGITUDE",
+               "OBSERVATION.DATE", "TIME.OBSERVATIONS.STARTED", "PROTOCOL.TYPE", "PROJECT.CODE",
+               "DURATION.MINUTES", "EFFORT.DISTANCE.KM", "EFFORT.AREA.HA", "NUMBER.OBSERVERS")
+  humdat = humdat[,which(names(humdat) %in% keepcols)]
   
     #make sure latitude and longitude are numeric so they can be plotted
     humdat$LONGITUDE = as.numeric(as.character(humdat$LONGITUDE))
@@ -52,12 +61,20 @@ for (f in 1:length(files)){
     #plot frequency of sightings per month
     PlotRecords(yrdat$month, species)
     
+    #get daily mean location and sd
+    meandat = MeanDailyLoc(yrdat, species)
+    
     #plot where species was sighted within each year
     sitemap = ggmap(noam) + geom_point(aes(LONGITUDE, LATITUDE, col=as.factor(month)), 
                                          data=yrdat) + ggtitle(paste(species, years[y], sep = " "))
     ggsave(sitemap, file=paste(dirpath, "/", species, years[y], ".pdf", sep=""))
     
-    rm(list=ls()[ls() %in% c("sitemap", "yrdat")])   # clears the memory of the map and year-level data
+    #plot species mean location on each julian day with the year
+    meanmap = ggmap(noam) + geom_point(aes(meanlon, meanlat, col=as.factor(month)),
+                                       data=meandat) + ggtitle(paste(species, years[y], "daily mean loc", sep = " "))
+    ggsave(meanmap, file=paste(dirpath, "/", species, years[y],"meanlocs.pdf", sep=""))
+    
+    rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat")])   # clears the memory of the map and year-level data
   }
   rm(list=ls()[!ls() %in% c("f", "files", "noam")])   # clears the memory of everything except the file list, iterator, and base map
 }
