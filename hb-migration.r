@@ -61,8 +61,11 @@ for (f in 1:length(files)){
     #plot frequency of sightings per month
     PlotRecords(yrdat$month, species)
     
-    #get daily mean location and sd
+    #get daily mean location and sd      #TODO: julian day starts at 0 - is this normal? an error?
     meandat = MeanDailyLoc(yrdat, species)
+    
+    #get Great Circle distances traveled each day
+    dist = DailyTravel(meandat)
     
     #plot where species was sighted within each year
     sitemap = ggmap(noam) + geom_point(aes(LONGITUDE, LATITUDE, col=as.factor(month)), 

@@ -84,6 +84,11 @@ DailyTravel = function(meanlocs){
       dst = c(dst, dist)
     }
   }
+  distdat = cbind(meanlocs,dst)
+  
+  print (ggplot(distdat, aes(jday, dst)) + geom_line(size=1) + theme_bw() + xlab("Julian Day") + 
+    ylab("Distance Traveled (km)") + ggtitle(meanlocs[1,1]))
+  
     return (dst)
 }
   
