@@ -87,7 +87,13 @@ DailyTravel = function(meanlocs){
   distdat = cbind(meanlocs,dst)
   
   print (ggplot(distdat, aes(jday, dst)) + geom_line(size=1) + theme_bw() + xlab("Julian Day") + 
-    ylab("Distance Traveled (km)") + ggtitle(meanlocs[1,1]))
+    ylab("Distance Traveled (km)") + ggtitle(distdat[1,1]))
+  
+  #TODO: get a better fit line here
+  #TODO: use La Sorte method to fit gamm and determine threshold for beginning 
+  # of spring and end of fall migration for each species and year; Fig A4 in 2013 article
+  print (ggplot(distdat, aes(jday, count)) + geom_point() + theme_bw() + xlab("Julian Day") + 
+           ylab("Number of observances") + ggtitle(distdat[1,1]) + stat_smooth(col="indianred"))
   
     return (dst)
 }
