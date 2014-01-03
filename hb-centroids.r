@@ -58,16 +58,20 @@ setwd("pathname/analysis")
 ns.cntr = read.table("NatureServe_centroids2.txt", sep="\t", header=TRUE, as.is=TRUE)
 
 ## migration distance
-sp2 <- sort(unique(ns.cntr$scientific2))
-dst <- NULL
+sp2 = sort(unique(ns.cntr$scientific2))
+dst = NULL
+
+#use geodist to calculate Great Circle distance between points
 for(i in 1:length(sp2)){
   ns.cntr2 <- ns.cntr[ns.cntr$scientific2 %in% sp2[i],]
-  dst <- c(dst, geodist(ns.cntr2[1,"lon"], ns.cntr2[1,"lat"], ns.cntr2[2,"lon"], ns.cntr2[2,"lat"]))
+  dst = c(dst, geodist(ns.cntr2[1,"lon"], ns.cntr2[1,"lat"], ns.cntr2[2,"lon"], ns.cntr2[2,"lat"]))
 }
-mig.dst.all <- data.frame(scientific2 = sp2, distance = dst, stringsAsFactors = FALSE)
-mig.dst.all <- na.omit(mig.dst.all)
-mig.dst.all <- mig.dst.all[mig.dst.all$distance>0,]    ## migration distance >0
-sp <- sort(unique(mig.dst.all$scientific2))
+
+#TODO: should we include all jdates, e.g., jdate with no obs are simply NA?
+mig.dst.all = data.frame(scientific2 = sp2, distance = dst, stringsAsFactors = FALSE)
+mig.dst.all = na.omit(mig.dst.all)
+mig.dst.all = mig.dst.all[mig.dst.all$distance > 0, ]    ## migration distance >0
+sp = sort(unique(mig.dst.all$scientific2))
 
 
 
