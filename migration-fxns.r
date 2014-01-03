@@ -69,3 +69,21 @@ MeanDailyLoc = function(yeardata, species) {
   }
   return(df)
 }
+
+DailyTravel = function(meanlocs){
+  #use geodist to calculate Great Circle distance between daily location centers
+  require(spaa)
+  dst=c(NA)
+  
+  for(i in 1:nrow(meanlocs)){
+    if (i < nrow(meanlocs)){
+      dist = geodist(meanlocs[i,7], meanlocs[i,5], meanlocs[i+1,7], meanlocs[i+1,5])
+      if (is.nan(dist) == TRUE) {
+        dist = 0  #appaarently geodist doesn't calculate zero change in location, records as NaN
+      }
+      dst = c(dst, dist)
+    }
+  }
+    return (dst)
+}
+  
