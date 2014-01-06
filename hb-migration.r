@@ -25,7 +25,7 @@ for (f in 1:length(files)){
   require(reshape2)
   source("/Users/sarah/Documents/GitHub/hb-migration/migration-fxns.r")
   
-  humdat = read.table(files[f], header=TRUE, sep="\t", fill=TRUE, quote="\"'") #check.names=FALSE
+  humdat = read.table(files[f], header=TRUE, sep="\t", quote="", fill=TRUE, as.is=TRUE, comment.char="") #quote="/"'"
 
   #keep only the columns that we need
   keepcols = c("COMMON.NAME", "SCIENTIFIC.NAME", "OBSERVATION.COUNT", "AGE.SEX", "COUNTRY",
