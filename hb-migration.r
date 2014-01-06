@@ -1,5 +1,5 @@
 #Code for eBird migration project
-# (c) 2013 Sarah Supp 
+# (c) 2013 -2014 Sarah Supp 
 
 library(ggmap)
 
@@ -25,7 +25,7 @@ for (f in 1:length(files)){
   require(reshape2)
   source("/Users/sarah/Documents/GitHub/hb-migration/migration-fxns.r")
   
-  humdat = read.table(files[f], header=TRUE, sep="\t", fill=TRUE, quote="\"'")
+  humdat = read.table(files[f], header=TRUE, sep="\t", fill=TRUE, quote="\"'") #check.names=FALSE
 
   #keep only the columns that we need
   keepcols = c("COMMON.NAME", "SCIENTIFIC.NAME", "OBSERVATION.COUNT", "AGE.SEX", "COUNTRY",
