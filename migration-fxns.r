@@ -27,7 +27,8 @@ JulianDay = function(daymoyr){
   require(chron)
   for (row in 1:nrow(daymoyr)){
     line = daymoyr[row,]
-    daymoyr$julian[row] = julian(line$month, line$day, line$year, origin. = c(month=1, day=1, year=line$year))
+    #Julian date ranges 1:365
+    daymoyr$julian[row] = julian(line$month, line$day, line$year, origin. = c(month=1, day=1, year=line$year)) + 1
   }
   return(daymoyr)
 }
@@ -98,3 +99,15 @@ DailyTravel = function(meanlocs){
     return (dst)
 }
   
+
+DailyCentroid = function(daydat, hexgrid){
+  #idenifies the centroid of location for each daily record for the species
+  # place each lon-lat (row) into one of the hexes
+  # replace the specific lat-long with the central coordinates for that hex
+  # calculate a weighted mean location for the day
+  # record: number of rows, number of hexes, weighted mean lon and lat
+  numobs = nrow(datday)
+  numcells = length(unique(hexID))
+  centroiddat = c(numobs, numcells, centr_lon, centr_lat)
+  return (centroiddat)
+}
