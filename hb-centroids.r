@@ -47,10 +47,9 @@ posix.dates = strptime( x=paste(2009,"-",jdate.ttt.seq, sep=""),"%Y-%j")
 date.string = paste(months(posix.dates, abbreviate=T), posix.dates$mday,sep="_")
 
 ## import global equal area hex grid
-setwd("pathname/coverages/equal-area-hex-grid")
-hex.grd = readShapePoly("terr_4h6.shp")
-hex.lon.lat = data.frame(POLYFID = hex.grd$POLYFID, LON = hex.grd$LONGITU
-                         DE, LAT = hex.grd$LATITUDE)
+setwd("/Volumes/Elements/eBird/terr_4h6")
+hex.grd = readShapePoly("nw_vector_grid.shp")
+hex.lon.lat = data.frame(POLYFID = hex.grd$POLYFID, LON = hex.grd$LONGITUDE, LAT = hex.grd$LATITUDE)
 hex.lon.lat2 = unique(hex.lon.lat)
 
 ## Nature Serve centroids - a datafile with centroids already calculated? Is it just mean Lat and Long?

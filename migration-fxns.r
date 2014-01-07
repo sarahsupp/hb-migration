@@ -113,8 +113,7 @@ DailyCentroid = function(daydat, hexgrid){
 }
 
 YearlyCentroid = function(yrdat, hexgrid) {
-  #creates a new dataframe with the daily centroid location
-  
+  #creates a new dataframe with centroid lon-lat for each julian day in a year
   year = yrdat$year[1]
   numdays = as.numeric(as.POSIXlt(paste(year, "-12-31", sep = "")) - as.POSIXlt(paste(year, "-01-01", sep="")) + 1)
   jdate = seq(1:numdays)
