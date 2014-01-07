@@ -16,6 +16,14 @@ hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/nw_vector_grid.shp")
   # crop to just North America, where the migratory species occur
   hexgrid = hexgrid[which(hexgrid$LAT > 10 & hexgrid$LON < -50),]
 
+  #hex grid map
+  plot(hex.grd, xlim=c(-170,-50), ylim=c(10,80), col="lightblue", lwd=0.25, border="gray10")
+  axis(side=1)
+  axis(side=2, las=1)
+  box()
+  mtext("Longitude", side=1, cex=1.4, line=2.5)
+  mtext("Latitude", side=2, cex=1.4, line=2.5)
+
 # read in eBird data
 files = list.files(pattern = "*.txt")
 files = files[6] #c(1,3,4,5,7,9)
