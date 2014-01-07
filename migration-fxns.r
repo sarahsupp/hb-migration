@@ -111,3 +111,30 @@ DailyCentroid = function(daydat, hexgrid){
   centroiddat = c(numobs, numcells, centr_lon, centr_lat)
   return (centroiddat)
 }
+
+YearlyCentroid = function(yrdat, hexgrid) {
+  #creates a new dataframe with the daily centroid location
+  
+  year = yrdat$year[1]
+  numdays = as.numeric(as.POSIXlt(paste(year, "-12-31", sep = "")) - as.POSIXlt(paste(year, "-01-01", sep="")) + 1)
+  jdate = seq(1:numdays)
+  cntr_lon = NULL
+  cntr_lat = NULL
+  
+  for (j in seq_along(jdate)){
+    tmp = yrdat[which(yrdat$julian == j),]
+    #if the daily data exists record weighted mean lon-lat
+    if (nrow(tmp) > 0) {
+      locs = DailyCentroid(tmp, hexgrid)
+      cntr_lon = c(cntr_lon, )
+      cntr_lat = c(cntr_lat, )
+    }
+    #if no observations for the date, record NA
+    else {
+      cntr_lon = c(cntr_lon, NA)
+      cntr_lat = c(cntr_lat, NA)
+    }
+  }
+  centroids = cbind(jdate, cntr_lon, cntr_lat)
+  return (centroids)
+}
