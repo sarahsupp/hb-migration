@@ -15,7 +15,7 @@ DateConvert = function(date){
     as.numeric(substring(x, 9, 10))
   })
   
-  newdate = as.data.frame(cbind(year,month,day))
+  newdate = as.data.frame(cbind(year,month,day), row.names=NULL)
   names(newdate) = c("year", "month", "day")
 
   newdate = JulianDay(newdate)

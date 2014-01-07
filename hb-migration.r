@@ -13,7 +13,7 @@ noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = 
 
 # read in eBird data
 files = list.files(pattern = "*.txt")
-files = files[6]
+files = files[3] #c(1,3,4,5,7,9)
 
 #for each eBird file, print the number sightings per year and per month.
 #plot the locations of sightings on a map, color coded by month
@@ -42,10 +42,10 @@ for (f in 1:length(files)){
   years = c(2004:2013)
   
   date = DateConvert(humdat$OBSERVATION.DATE)
-  humdat = cbind(humdat, date)
+  humdat = cbind(humdat, date)  #TODO: check why I get a row.names warning here - seems to work fine otherwise
   
   #delete nonsensical data - where something else was recorded in date column
-  humdat = humdat[which(humdat$year %in% years),]
+  #humdat = humdat[which(humdat$year %in% years),] #shouldn't need this check anymore, now that data reads correctly
   
   #start a new directory
   dirpath = paste("/Volumes/Elements/eBird/ebd_counts/", species, sep="")
