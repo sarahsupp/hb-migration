@@ -11,6 +11,11 @@ setwd(wd)
 # make a North America base map
 noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = "bw")
 
+# read in the north ameica equal area hex grid map (F.A.L.)
+hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/nw_vector_grid.shp")
+  # crop to just North America, where the migratory species occur
+  hexgrid = hexgrid[which(hexgrid$LAT > 10 & hexgrid$LON < -50),]
+
 # read in eBird data
 files = list.files(pattern = "*.txt")
 files = files[6] #c(1,3,4,5,7,9)
@@ -33,20 +38,13 @@ for (f in 1:length(files)){
                "OBSERVATION.DATE", "TIME.OBSERVATIONS.STARTED", "PROTOCOL.TYPE", "PROJECT.CODE",
                "DURATION.MINUTES", "EFFORT.DISTANCE.KM", "EFFORT.AREA.HA", "NUMBER.OBSERVERS")
   humdat = humdat[,which(names(humdat) %in% keepcols)]
-  
-    #make sure latitude and longitude are numeric so they can be plotted
-    humdat$LONGITUDE = as.numeric(as.character(humdat$LONGITUDE))
-    humdat$LATITUDE = as.numeric(as.character(humdat$LATITUDE))
 
   species = humdat$SCIENTIFIC.NAME[1]
   years = c(2004:2013)
   
   date = DateConvert(humdat$OBSERVATION.DATE)
   humdat = cbind(humdat, date)
-  
-  #delete nonsensical data - where something else was recorded in date column
-  #humdat = humdat[which(humdat$year %in% years),] #shouldn't need this check anymore, now that data reads correctly
-  
+    
   #start a new directory
   dirpath = paste("/Volumes/Elements/eBird/ebd_counts/", species, sep="")
     dir.create(dirpath, showWarnings = TRUE, recursive = FALSE)
@@ -61,8 +59,9 @@ for (f in 1:length(files)){
     #plot frequency of sightings per month
     PlotRecords(yrdat$month, species)
     
-    #get daily mean location and sd      #TODO: julian day starts at 0 - is this normal? an error?
+    #get daily mean location and sd 
     meandat = MeanDailyLoc(yrdat, species)
+    cntrdat = YearlyCentroid(yrdat, hexgrid)
     
     #get Great Circle distances traveled each day
     dist = DailyTravel(meandat)
@@ -79,7 +78,7 @@ for (f in 1:length(files)){
     
     rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat")])   # clears the memory of the map and year-level data
   }
-  rm(list=ls()[!ls() %in% c("f", "files", "noam")])   # clears the memory of everything except the file list, iterator, and base map
+  rm(list=ls()[!ls() %in% c("f", "files", "noam", "hexgrid")])   # clears the memory of everything except the file list, iterator, and base map
 }
 
 
