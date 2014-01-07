@@ -15,8 +15,7 @@ DateConvert = function(date){
     as.numeric(substring(x, 9, 10))
   })
   
-  newdate = as.data.frame(cbind(year,month,day), row.names=NULL)
-  names(newdate) = c("year", "month", "day")
+  newdate = as.data.frame(cbind(year,month,day), row.names=FALSE)
 
   newdate = JulianDay(newdate)
 
@@ -32,6 +31,7 @@ JulianDay = function(daymoyr){
   }
   return(daymoyr)
 }
+
 
 PlotRecords = function(yeardata, species) {
   #plots the number of records across the years
