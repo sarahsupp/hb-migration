@@ -18,6 +18,39 @@ library(SDMTools)
 library(xlsx)
 library(gamm4)
 
+
+# TODO: Code for migration
+#   1. place all daily sightings into hexes
+#   2. count which hex has the most
+#   3. record central lon-lat for that hex - or record a weighted mean based on the centroid centers
+#   4. Calculate great-circle distance between centroids for daily distance
+#   5. Calculate 95% confidence bands (longitude) for occurence centroids
+#   6. Define beginning of spring migration and end of fall migration
+#   7. Link occurrence centroids with environmental data (NDVI, temp, precip, daylength)
+
+## import global equal area hex grid (shared by FAL)
+setwd("/Volumes/Elements/eBird/terr_4h6")
+hex.grd = readShapePoly("nw_vector_grid.shp")
+
+# crop to just North America, where the migratory species occur
+hex.grd = hex.grd[which(hex.grd$LAT > 10 & hex.grd$LON < -50),]
+hex.lon.lat = data.frame(POLYFID = hex.grd$POLYFID, LON = hex.grd$LONGITUDE, LAT = hex.grd$LATITUDE)
+hex.lon.lat2 = unique(hex.lon.lat)
+
+## hex map
+plot(hex.grd, xlim=c(-170,-50), ylim=c(10,80), col="lightblue", lwd=0.25, border="gray10")
+axis(side=1)
+axis(side=2, las=1)
+box()
+mtext("Longitude", side=1, cex=1.4, line=2.5)
+mtext("Latitude", side=2, cex=1.4, line=2.5)
+
+
+
+
+
+
+
 #Here are the dates for the weeks - the temporal design for SRD predictions.
 # -----------------------
 n.intervals.per.year = 365
@@ -46,11 +79,6 @@ for (iii.year in year.list){
 posix.dates = strptime( x=paste(2009,"-",jdate.ttt.seq, sep=""),"%Y-%j")
 date.string = paste(months(posix.dates, abbreviate=T), posix.dates$mday,sep="_")
 
-## import global equal area hex grid
-setwd("/Volumes/Elements/eBird/terr_4h6")
-hex.grd = readShapePoly("nw_vector_grid.shp")
-hex.lon.lat = data.frame(POLYFID = hex.grd$POLYFID, LON = hex.grd$LONGITUDE, LAT = hex.grd$LATITUDE)
-hex.lon.lat2 = unique(hex.lon.lat)
 
 ## Nature Serve centroids - a datafile with centroids already calculated? Is it just mean Lat and Long?
 setwd("pathname/analysis")
