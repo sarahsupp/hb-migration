@@ -2,6 +2,7 @@
 # (c) 2013 -2014 Sarah Supp 
 
 library(ggmap)
+library(maptools)
 
 #set working directory
 #wd = "C:/Users/sarah/Documents/eBird_data/"
@@ -17,7 +18,7 @@ hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/nw_vector_grid.shp")
   hexgrid = hexgrid[which(hexgrid$LAT > 10 & hexgrid$LON < -50),]
 
   #hex grid map
-  plot(hex.grd, xlim=c(-170,-50), ylim=c(10,80), col="lightblue", lwd=0.25, border="gray10")
+  plot(hexgrid, xlim=c(-170,-50), ylim=c(10,80), col="lightblue", lwd=0.25, border="gray10")
   axis(side=1)
   axis(side=2, las=1)
   box()
@@ -83,6 +84,14 @@ for (f in 1:length(files)){
     meanmap = ggmap(noam) + geom_point(aes(meanlon, meanlat, col=as.factor(month)),
                                        data=meandat) + ggtitle(paste(species, years[y], "daily mean loc", sep = " "))
     ggsave(meanmap, file=paste(dirpath, "/", species, years[y],"meanlocs.pdf", sep=""))
+    
+    #plot mean latitude for each julian day, point size represents number of checklists
+    meanlat = ggplot(meandat, aes(jday, meanlat, col=as.factor(month))) + geom_point(aes(size=count)) + 
+      ggtitle(paste(species, years[y], "latitudinal migration", sep = " ")) + xlab("Julian Day") + ylab("Mean Latitude") +
+      theme_bw() +  scale_x_continuous(breaks = seq(0, 365, by = 25)) +
+      scale_y_continuous(breaks = seq(10, 80, by = 5))
+    
+    ggsave(meanlat, file=paste(dirpath, "/", species, years[y], "meanlat.pdf", sep=""))
     
     rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat")])   # clears the memory of the map and year-level data
   }
