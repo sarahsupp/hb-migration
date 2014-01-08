@@ -37,6 +37,7 @@ for (f in 1:length(files)){
   require(ggplot2)
   require(plyr)
   require(reshape2)
+  require(Rmisc)
   source("/Users/sarah/Documents/GitHub/hb-migration/migration-fxns.r")
   
   humdat = read.table(files[f], header=TRUE, sep="\t", quote="", fill=TRUE, as.is=TRUE, comment.char="") #quote="/"'"
@@ -89,7 +90,8 @@ for (f in 1:length(files)){
     meanlat = ggplot(meandat, aes(jday, meanlat, col=as.factor(month))) + geom_point(aes(size=count)) + 
       ggtitle(paste(species, years[y], "latitudinal migration", sep = " ")) + xlab("Julian Day") + ylab("Mean Latitude") +
       theme_bw() +  scale_x_continuous(breaks = seq(0, 365, by = 25)) +
-      scale_y_continuous(breaks = seq(10, 80, by = 5))
+      scale_y_continuous(breaks = seq(10, 80, by = 5)) + #geom_line(aes(col=as.factor(month))) + 
+      geom_errorbar(aes(ymax=maxlat, ymin=minlat))
     
     ggsave(meanlat, file=paste(dirpath, "/", species, years[y], "meanlat.pdf", sep=""))
     

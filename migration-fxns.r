@@ -48,12 +48,15 @@ PlotRecords = function(yeardata, species) {
   return(t)
 }
 
+
 MeanDailyLoc = function(yeardata, species) {
   # input is yearly data frame for a species
   # makes a new dataframe with mean julian day lat and long (and sd)
+  require(Rmisc)
   julian = sort(unique(yeardata$julian))
   
-  df = data.frame("species"=NA, "jday"=1, "month"=1, "count"=1, "meanlat"=1, "sdlat"=1, "meanlon"=1, "sdlon"=1)
+  df = data.frame("species"=NA, "jday"=1, "month"=1, "count"=1, "meanlat"=1, "sdlat"=1, "meanlon"=1, 
+                  "sdlon"=1, "ucilat"=1, "lcilat"=1, "minlat"=1, "maxlat"=1)
   outcount = 1
   
   for (d in 1:length(julian)) {
@@ -64,12 +67,23 @@ MeanDailyLoc = function(yeardata, species) {
     sdlat = sd(daydat$LATITUDE)
     lon = mean(daydat$LONGITUDE)
     sdlon = sd(daydat$LONGITUDE)
+    minlat = min(daydat$LATITUDE)
+    maxlat = max(daydat$LATITUDE)
+    if(nrow(daydat) > 2){
+      ucilat = as.numeric(CI(daydat$LATITUDE)[1], ci=0.95)
+      lcilat = as.numeric(CI(daydat$LATITUDE)[2], ci=0.95)
+    }
+    else {
+      ucilat = NA
+      lcilat = NA
+    }
     df[outcount,1] = c(as.character(species))
-    df[outcount,2:8] = c(julian[d], month, count, lat, sdlat, lon, sdlon)
+    df[outcount,2:12] = c(julian[d], month, count, lat, sdlat, lon, sdlon, ucilat, lcilat, minlat, maxlat)
     outcount = outcount + 1
   }
   return(df)
 }
+
 
 DailyTravel = function(meanlocs){
   #use geodist to calculate Great Circle distance between daily location centers
