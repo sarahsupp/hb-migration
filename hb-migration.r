@@ -3,6 +3,8 @@
 
 library(ggmap)
 library(maptools)
+library(sp)
+library(raster)
 
 #set working directory
 #wd = "C:/Users/sarah/Documents/eBird_data/"
@@ -13,9 +15,11 @@ setwd(wd)
 noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = "bw")
 
 # read in the north ameica equal area hex grid map (F.A.L.)
-hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/nw_vector_grid.shp")
+#hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/nw_vector_grid.shp") #quad map
+hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/terr_4h6.shp") #hex map
   # crop to just North America, where the migratory species occur
-  hexgrid = hexgrid[which(hexgrid$LAT > 10 & hexgrid$LON < -50),]
+  hexgrid = hexgrid[which(hexgrid$LATITUDE > 10 & hexgrid$LATITUDE <80 & 
+                            hexgrid$LONGITUDE > -178 & hexgrid$LONGITUDE < -50),]
 
   #hex grid map
   plot(hexgrid, xlim=c(-170,-50), ylim=c(10,80), col="lightblue", lwd=0.25, border="gray10")
