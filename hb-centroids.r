@@ -29,26 +29,37 @@ library(gamm4)
 #   7. Link occurrence centroids with environmental data (NDVI, temp, precip, daylength)
 
 ## import global equal area hex grid (shared by FAL)
-setwd("/Volumes/Elements/eBird/terr_4h6")
-hex.grd = readShapePoly("nw_vector_grid.shp")
+setwd("/Volumes/Elements/eBird/")
 
+# read in the north ameica equal area hex grid map (F.A.L.)
+#hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/nw_vector_grid.shp") #quad map
+hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/terr_4h6.shp") #hex map
 # crop to just North America, where the migratory species occur
-hex.grd = hex.grd[which(hex.grd$LAT > 10 & hex.grd$LON < -50),]
-hex.lon.lat = data.frame(POLYFID = hex.grd$POLYFID, LON = hex.grd$LONGITUDE, LAT = hex.grd$LATITUDE)
-hex.lon.lat2 = unique(hex.lon.lat)
+hexgrid = hexgrid[which(hexgrid$LATITUDE > 10 & hexgrid$LATITUDE <80 & 
+                          hexgrid$LONGITUDE > -178 & hexgrid$LONGITUDE < -50),]
 
-## hex map
-plot(hex.grd, xlim=c(-170,-50), ylim=c(10,80), col="lightblue", lwd=0.25, border="gray10")
+#hex grid map
+plot(hexgrid, xlim=c(-170,-50), ylim=c(10,80), col="lightblue", lwd=0.25, border="gray10")
 axis(side=1)
 axis(side=2, las=1)
 box()
 mtext("Longitude", side=1, cex=1.4, line=2.5)
 mtext("Latitude", side=2, cex=1.4, line=2.5)
 
+#To find the POLYFID for the hexes for each observation 
+coords = yrdat[,c(10,9)]
+
+ID <- over(SpatialPoints(coords), hexgrid)
+coords2 <- cbind(coords, ID)
+
+#find the number of obs in each cell, doesn't fill with zeroes
+table(as.factor(coords2$POLYFID))
 
 
 
 
+
+#-------------------------- NOTES below, non-functional so far
 
 
 #Here are the dates for the weeks - the temporal design for SRD predictions.
