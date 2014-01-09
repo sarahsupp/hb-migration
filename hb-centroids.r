@@ -49,14 +49,17 @@ mtext("Latitude", side=2, cex=1.4, line=2.5)
 #To find the POLYFID for the hexes for each observation 
 coords = yrdat[,c(10,9)]
 
+# Matches observations with the polygon hexes in the map
 ID <- over(SpatialPoints(coords), hexgrid)
-coords2 <- cbind(coords, ID)
+
+#paste original lat-long with the cell info after matching
+coords <- cbind(coords, ID) 
 
 #find the number of obs in each cell, doesn't fill with zeroes
 table(as.factor(coords2$POLYFID))
-
-
-
+#find a way to save or match this up to plot num obs per cell on the map as colors? 
+#Use this info to calculate a weighted mean for daily location?
+#POLYFID is the ID for each polygon, or hex cell.
 
 
 #-------------------------- NOTES below, non-functional so far
