@@ -69,6 +69,9 @@ for (f in 1:length(files)){
   yeartable = PlotRecords(humdat$year, species)
   write.table(yeartable, file = paste(dirpath, "/", species,".txt",sep=""), row.names=FALSE)
   
+  #save a figure of the geographic number of checklists for the species, over all the years
+  count = PlotChecklistMap(humdat, hexgrid, dirpath)
+  
   for (y in 1:length(years)){
     yrdat = humdat[which(humdat$year == years[y]),]
     

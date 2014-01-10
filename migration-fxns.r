@@ -152,7 +152,7 @@ YearlyCentroid = function(yrdat, hexgrid) {
   return (centroids)
 }
 
-PlotChecklistMap = function(humdat, hexdat){
+PlotChecklistMap = function(humdat, hexdat, dirpath){
   #plots the hexmap with the number of checklist over the entire time period color coded. 
   #saves a jpg file in the species directory
   
@@ -180,8 +180,12 @@ PlotChecklistMap = function(humdat, hexdat){
   df5$cols <- ifelse(is.na(df5$count), "white", df5$cols)
   df5 <- df5[order(df5$POLYFID),]
   
+  vls = sort(unique(round(cols$id/100)*100))
+  vls[1] = 1
+  cols2 = tim.colors(length(vls))
+  
   #make a map with hexes colored by the number of times the species was observed in a given hex
-  jpeg('ChecklistMap.jpg')
+  png(paste(dirpath,"/", "ChecklistMap.png", sep=""))
   plot(hexdat, col=df5$cols, border="gray10", lwd=0.25, xlim=c(-170,-50), ylim=c(10,80), las=1)
   axis(side=1)
   axis(side=2, las=1)
@@ -189,10 +193,9 @@ PlotChecklistMap = function(humdat, hexdat){
   mtext("Longitude", side=1, cex=1.4, line=2.5)
   mtext("Latitude", side=2, cex=1.4, line=2.5)
   ## legend
-  vls = sort(unique(round(cols$id/100)*100))
-  vls[1] = 1
-  cols2 = tim.colors(length(vls))
   legend("bottomleft", legend=vls, pch=22, pt.bg=cols2, pt.cex=1, cex=0.75, bty="n",
-         col="black", title="Number of checklists", x.intersp=1, y.intersp=0.5, hjust=-1)
+         col="black", title="Number of checklists", x.intersp=1, y.intersp=0.5)
   dev.off()  
+  
+  return(df5)
 }
