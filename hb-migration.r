@@ -42,6 +42,8 @@ for (f in 1:length(files)){
   require(plyr)
   require(reshape2)
   require(Rmisc)
+  require(sp)
+  require(raster)
   source("/Users/sarah/Documents/GitHub/hb-migration/migration-fxns.r")
   
   humdat = read.table(files[f], header=TRUE, sep="\t", quote="", fill=TRUE, as.is=TRUE, comment.char="") #quote="/"'"
