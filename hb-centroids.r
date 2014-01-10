@@ -56,7 +56,13 @@ ID <- over(SpatialPoints(coords), hexgrid)
 coords <- cbind(coords, ID) 
 
 #find the number of obs in each cell, doesn't fill with zeroes
-table(as.factor(coords2$POLYFID))
+t= table(as.factor(coords$POLYFID))
+
+df = data.frame(POLYFID = names(t), count=as.numeric(t))
+df2 = data.frame(POLYFID = unique(hexgrid$POLYFID))
+df3 = merge(df2, df, all=TRUE)
+
+
 #find a way to save or match this up to plot num obs per cell on the map as colors? 
 #Use this info to calculate a weighted mean for daily location?
 #POLYFID is the ID for each polygon, or hex cell.
