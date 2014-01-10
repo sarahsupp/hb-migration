@@ -17,6 +17,7 @@ library(adehabitat)
 library(SDMTools)
 library(xlsx)
 library(gamm4)
+library(insol)
 
 
 # TODO: Code for migration
@@ -58,12 +59,39 @@ coords <- cbind(coords, ID)
 #find the number of obs in each cell, doesn't fill with zeroes
 t= table(as.factor(coords$POLYFID))
 
+#Merge the count data for the hexes with all the hexes in the map
 df = data.frame(POLYFID = names(t), count=as.numeric(t))
 df2 = data.frame(POLYFID = unique(hexgrid$POLYFID))
-df3 = merge(df2, df, all=TRUE)
+df3 = merge(df2, df, all.x=TRUE)
+
+cols = data.frame(id=c(NA,sort(unique(df3$count))), cols=tim.colors(length(unique(df3$count))), stringsAsFactors=FALSE)
+df4 = merge(df3, cols, by.x="count", by.y="id")
+df5 = merge(hexgrid, df4, by.x="POLYFID", by.y="POLYFID", all.x=TRUE)
+
+#hexes with no counts are white
+df5$cols <- ifelse(is.na(df5$count), "white", df5$cols)
+df5 <- df5[order(df5$POLYFID),]
 
 
-#find a way to save or match this up to plot num obs per cell on the map as colors? 
+
+#make a map with hexes colored by the number of times the species was observed in a given hex
+jpeg('ChecklistMap.jpg')
+plot(hexgrid, col=df5$cols, border="gray10", lwd=0.25, xlim=c(-170,-50), ylim=c(10,80), las=1)
+axis(side=1)
+axis(side=2, las=1)
+box()
+mtext("Longitude", side=1, cex=1.4, line=2.5)
+mtext("Latitude", side=2, cex=1.4, line=2.5)
+
+## legend
+vls = sort(unique(round(cols$id/100)*100))
+vls[1] = 1
+cols2 = tim.colors(length(vls))
+legend("bottomleft", legend=vls, pch=22, pt.bg=cols2, pt.cex=1, cex=0.75, bty="n",
+       col="black", title="Number of checklists", x.intersp=1, y.intersp=0.5, hjust=-1)
+
+dev.off()
+
 #Use this info to calculate a weighted mean for daily location?
 #POLYFID is the ID for each polygon, or hex cell.
 
