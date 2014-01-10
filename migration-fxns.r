@@ -151,3 +151,48 @@ YearlyCentroid = function(yrdat, hexgrid) {
   centroids = cbind(jdate, cntr_lon, cntr_lat)
   return (centroids)
 }
+
+PlotChecklistMap = function(humdat, hexdat){
+  #plots the hexmap with the number of checklist over the entire time period color coded. 
+  #saves a jpg file in the species directory
+  
+  #To find the POLYFID for the hexes for each observation, pull out lon and lat
+  coords = humdat[,c(10,9)]
+  
+  # Matches observations with the polygon hexes in the map
+  ID <- over(SpatialPoints(coords), hexdat)
+  coords <- cbind(coords, ID) 
+  
+  #find the number of obs in each cell
+  t= table(as.factor(coords$POLYFID))
+  
+  #Merge the count data for the hexes with all the hexes in the map
+  df = data.frame(POLYFID = names(t), count=as.numeric(t))
+  df2 = data.frame(POLYFID = unique(hexdat$POLYFID))
+  df3 = merge(df2, df, all.x=TRUE)
+  
+  #matches colors with the number of observations
+  cols = data.frame(id=c(NA,sort(unique(df3$count))), cols=tim.colors(length(unique(df3$count))), stringsAsFactors=FALSE)
+  df4 = merge(df3, cols, by.x="count", by.y="id")
+  df5 = merge(hexdat, df4, by.x="POLYFID", by.y="POLYFID", all.x=TRUE)
+  
+  #hexes with no counts are white
+  df5$cols <- ifelse(is.na(df5$count), "white", df5$cols)
+  df5 <- df5[order(df5$POLYFID),]
+  
+  #make a map with hexes colored by the number of times the species was observed in a given hex
+  jpeg('ChecklistMap.jpg')
+  plot(hexdat, col=df5$cols, border="gray10", lwd=0.25, xlim=c(-170,-50), ylim=c(10,80), las=1)
+  axis(side=1)
+  axis(side=2, las=1)
+  box()
+  mtext("Longitude", side=1, cex=1.4, line=2.5)
+  mtext("Latitude", side=2, cex=1.4, line=2.5)
+  ## legend
+  vls = sort(unique(round(cols$id/100)*100))
+  vls[1] = 1
+  cols2 = tim.colors(length(vls))
+  legend("bottomleft", legend=vls, pch=22, pt.bg=cols2, pt.cex=1, cex=0.75, bty="n",
+         col="black", title="Number of checklists", x.intersp=1, y.intersp=0.5, hjust=-1)
+  dev.off()  
+}
