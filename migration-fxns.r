@@ -150,55 +150,6 @@ FindCentroids = function(dat, loncol, latcol, hexgrid){
 }
 
 
-DailyCentroid = function(daydat, hexgrid){
-  #idenifies the centroid of location for each daily record for the species
-  # place each lon-lat (row) into one of the hexes
-  # replace the specific lat-long with the central coordinates for that hex
-  # calculate a weighted mean location for the day
-  # record: number of rows, number of hexes, weighted mean lon and lat
-  numobs = nrow(daydat)
-  
-  meanlon = mean(daydat$LONGITUDE)
-  meanlat = mean(daydat$LATITUDE)
-  
-  #To find the POLYFID for the hexes for each observation, pull out mean lon and lat
-  coords = data.frame("mean_lon" = meanlon, "mean_lat" = meanlat)
-  
-  # Matches observations with the polygon hexes in the map
-  ID <- over(SpatialPoints(coords), hexdat)
-  coords <- cbind(coords, ID) 
-  
-  centroiddat = cbind(numobs, coords)
-  return (centroiddat)
-}
-
-
-YearlyCentroid = function(dat, hexgrid) {
-  #creates a new dataframe with centroid lon-lat for each julian day in a year
-  year = dat$year[1]
-  numdays = as.numeric(as.POSIXlt(paste(year, "-12-31", sep = "")) - as.POSIXlt(paste(year, "-01-01", sep="")) + 1)
-  jdate = seq(1:numdays)
-  centroids = data.frame(julian=NA, meanlon=NA, meanlat=NA, JOIN_COUNT=NA, AREA=NA, PERIMETER=NA, BOB_=NA, BOB_ID=NA, ID=NA, POLYFID=NA, LONGITUDE=NA, LATITUDE=NA, numobs=NA)
-  outcount = 1
-  
-  for (j in seq_along(jdate)){
-    tmp = dat[which(dat$julian == j),]
-    #if the daily data exists record weighted mean lon-lat
-    if (nrow(tmp) > 0) {
-      locs = DailyCentroid(tmp, hexgrid)
-      head(locs)
-      result = cbind(j, locs)
-    }
-    #if no observations for the date, record NA
-    else {
-     result = cbind(j, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
-    }
-    centroids[j,] = result
-    outcount = outcount + 1
-  }
-  return (centroids)
-}
-
 PlotChecklistMap = function(humdat, hexdat, dirpath){
   require(fields)
   #plots the hexmap with the number of checklist over the entire time period color coded. 
