@@ -53,7 +53,12 @@ MeanDailyLoc = function(yeardata, species) {
   # input is yearly data frame for a species
   # makes a new dataframe with mean julian day lat and long (and sd)
   require(Rmisc)
-  julian = sort(unique(yeardata$julian))
+  require(chron)
+  
+  #count the number of days in the year
+  year = dat$year[1]
+  numdays = as.numeric(as.POSIXlt(paste(year, "-12-31", sep = "")) - as.POSIXlt(paste(year, "-01-01", sep="")) + 1)
+  julian = seq(1:numdays)
   
   df = data.frame("species"=NA, "jday"=1, "month"=1, "count"=1, "meanlat"=1, "sdlat"=1, "meanlon"=1, 
                   "sdlon"=1, "ucilat"=1, "lcilat"=1, "minlat"=1, "maxlat"=1)
@@ -62,22 +67,32 @@ MeanDailyLoc = function(yeardata, species) {
   for (d in 1:length(julian)) {
     daydat = yeardata[which(yeardata$julian == julian[d]),]
     count = nrow(daydat)
-    month = daydat$month[1]
-    lat = mean(daydat$LATITUDE)
-    sdlat = sd(daydat$LATITUDE)
+    month = as.numeric(months(julian[d]))
     lon = mean(daydat$LONGITUDE)
-    sdlon = sd(daydat$LONGITUDE)
-    minlat = min(daydat$LATITUDE)
-    maxlat = max(daydat$LATITUDE)
-    if(nrow(daydat) > 2){
-      ucilat = as.numeric(CI(daydat$LATITUDE)[1], ci=0.95)
-      lcilat = as.numeric(CI(daydat$LATITUDE)[2], ci=0.95)
+    lat = mean(daydat$LATITUDE)
+    if(count > 0){
+      sdlon = sd(daydat$LONGITUDE)
+      sdlat = sd(daydat$LATITUDE)
+      minlat = min(daydat$LATITUDE)
+      maxlat = max(daydat$LATITUDE)
+      if(count > 2){
+        ucilat = as.numeric(CI(daydat$LATITUDE)[1], ci=0.95)
+        lcilat = as.numeric(CI(daydat$LATITUDE)[2], ci=0.95)
+        }
+      else {
+        ucilat = NA
+        lcilat = NA
+      }
     }
-    else {
+    else{
+      sdlon = NA
+      sdlat = NA
+      minlat = NA
+      maxlat = NA
       ucilat = NA
       lcilat = NA
     }
-    df[outcount,1] = c(as.character(species))
+      df[outcount,1] = c(as.character(species))
     df[outcount,2:12] = c(julian[d], month, count, lat, sdlat, lon, sdlon, ucilat, lcilat, minlat, maxlat)
     outcount = outcount + 1
   }
