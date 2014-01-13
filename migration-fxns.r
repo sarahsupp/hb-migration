@@ -130,6 +130,26 @@ DailyTravel = function(meanlocs){
 }
   
 
+FindCentroids = function(dat, loncol, latcol, hexgrid){
+  # matches centroids with the mean lat and lons
+  
+  #To find the POLYFID for the hexes for each observation, pull out mean lon and lat
+  coords = dat[,c(loncol,latcol)]
+    names(coords) = c("MeanLon", "MeanLat")
+    coords = coords[complete.cases(coords),] #next step can't deal with NA values
+  jday = dat[complete.cases(dat$meanlon),]$jday
+  
+  # Matches observations with the polygon hexes in the map
+  ID <- over(SpatialPoints(coords), hexdat)
+  coords <- cbind(jday, coords, ID) 
+  
+  df = merge(dat, coords, by = "jday", all.x = TRUE)
+  df = df[,-which(names(df) %in% c("MeanLon", "MeanLat"))] #delete repetitive columns
+  
+  return(df)
+}
+
+
 DailyCentroid = function(daydat, hexgrid){
   #idenifies the centroid of location for each daily record for the species
   # place each lon-lat (row) into one of the hexes

@@ -80,6 +80,7 @@ for (f in 1:length(files)){
     
     #get daily mean location and sd 
     meandat = MeanDailyLoc(yrdat, species)
+    cntrdat = FindCentroids(meandat, 7, 5, hexgrid)
     cntrdat = YearlyCentroid(yrdat, hexgrid)
     
     #get Great Circle distances traveled each day
