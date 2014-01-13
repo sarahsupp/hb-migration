@@ -81,10 +81,9 @@ for (f in 1:length(files)){
     #get daily mean location and sd 
     meandat = MeanDailyLoc(yrdat, species)
     cntrdat = FindCentroids(meandat, 7, 5, hexgrid)
-    cntrdat = YearlyCentroid(yrdat, hexgrid)
     
-    #get Great Circle distances traveled each day
-    dist = DailyTravel(meandat)
+    #get Great Circle distances traveled each day between centroids
+    dist = DailyTravel(cntrdat)
     
     #plot where species was sighted within each year
     sitemap = ggmap(noam) + geom_point(aes(LONGITUDE, LATITUDE, col=as.factor(month)), 

@@ -49,7 +49,7 @@ PlotRecords = function(yeardata, species) {
 }
 
 
-MeanDailyLoc = function(yeardata, species) {
+MeanDailyLoc = function(dat, species) {
   # input is yearly data frame for a species
   # makes a new dataframe with mean julian day lat and long, sd, and 95% confidence intervals
   require(Rmisc)
@@ -65,7 +65,7 @@ MeanDailyLoc = function(yeardata, species) {
   outcount = 1
   
   for (d in 1:length(julian)) {
-    daydat = yeardata[which(yeardata$julian == julian[d]),]
+    daydat = dat[which(dat$julian == julian[d]),]
     count = nrow(daydat)
     month = as.numeric(months(julian[d]))
     lon = mean(daydat$LONGITUDE)
@@ -103,12 +103,13 @@ MeanDailyLoc = function(yeardata, species) {
 DailyTravel = function(meanlocs){
   #use geodist to calculate Great Circle distance between daily location centers
   require(spaa)
-  require(mgcv)
+  require(mgcv)   #TODO: GEt some different values when use spaa vs gmt package to calculate great circle distance. Track down issue
+  require(gmt)
   dst=c(NA)
   
   for(i in 1:nrow(meanlocs)){
     if (i < nrow(meanlocs)){
-      dist = geodist(meanlocs[i,7], meanlocs[i,5], meanlocs[i+1,7], meanlocs[i+1,5])
+      dist = geodist(meanlocs[i,]$LONGITUDE, meanlocs[i,]$LATITUDE, meanlocs[i+1,]$LONGITUDE, meanlocs[i+1,]$LATITUDE, units = "km")
       if (is.nan(dist) == TRUE) {
         dist = 0  #appaarently geodist doesn't calculate zero change in location, records as NaN
       }
@@ -118,15 +119,15 @@ DailyTravel = function(meanlocs){
   distdat = cbind(meanlocs,dst)
   
   print (ggplot(distdat, aes(jday, dst)) + geom_line(size=1) + theme_bw() + xlab("Julian Day") + 
-    ylab("Distance Traveled (km)") + ggtitle(distdat[1,1]))
+    ylab("Distance Traveled (km)") + ggtitle(distdat[1,2]))
   
   #TODO: use La Sorte method to fit gamm and determine threshold for beginning 
   # of spring and end of fall migration for each species and year; Fig A4 in 2013 article
   print (ggplot(distdat, aes(jday, count)) + geom_point() + theme_bw() + xlab("Julian Day") + 
-           ylab("Number of observances") + ggtitle(distdat[1,1]) + 
+           ylab("Number of observances") + ggtitle(distdat[1,2]) + 
            geom_smooth(se=T, method='gam', formula=y~s(x), color='indianred'))
   
-    return (dst)
+    return (distdat)
 }
   
 
