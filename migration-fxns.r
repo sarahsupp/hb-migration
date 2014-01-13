@@ -51,7 +51,7 @@ PlotRecords = function(yeardata, species) {
 
 MeanDailyLoc = function(yeardata, species) {
   # input is yearly data frame for a species
-  # makes a new dataframe with mean julian day lat and long (and sd)
+  # makes a new dataframe with mean julian day lat and long, sd, and 95% confidence intervals
   require(Rmisc)
   require(chron)
   
@@ -61,7 +61,7 @@ MeanDailyLoc = function(yeardata, species) {
   julian = seq(1:numdays)
   
   df = data.frame("species"=NA, "jday"=1, "month"=1, "count"=1, "meanlat"=1, "sdlat"=1, "meanlon"=1, 
-                  "sdlon"=1, "ucilat"=1, "lcilat"=1, "minlat"=1, "maxlat"=1)
+                  "sdlon"=1, "ucilon"=1, "lcilon"=1, "minlat"=1, "maxlat"=1)
   outcount = 1
   
   for (d in 1:length(julian)) {
@@ -76,12 +76,12 @@ MeanDailyLoc = function(yeardata, species) {
       minlat = min(daydat$LATITUDE)
       maxlat = max(daydat$LATITUDE)
       if(count > 2){
-        ucilat = as.numeric(CI(daydat$LATITUDE)[1], ci=0.95)
-        lcilat = as.numeric(CI(daydat$LATITUDE)[2], ci=0.95)
+        ucilon = as.numeric(CI(daydat$LONGITUDE)[1], ci=0.95)
+        lcilon = as.numeric(CI(daydat$LONGITUDE)[2], ci=0.95)
         }
       else {
-        ucilat = NA
-        lcilat = NA
+        ucilon = NA
+        lcilon = NA
       }
     }
     else{
@@ -89,11 +89,11 @@ MeanDailyLoc = function(yeardata, species) {
       sdlat = NA
       minlat = NA
       maxlat = NA
-      ucilat = NA
-      lcilat = NA
+      ucilon = NA
+      lcilon = NA
     }
       df[outcount,1] = c(as.character(species))
-    df[outcount,2:12] = c(julian[d], month, count, lat, sdlat, lon, sdlon, ucilat, lcilat, minlat, maxlat)
+    df[outcount,2:12] = c(julian[d], month, count, lat, sdlat, lon, sdlon, ucilon, lcilon, minlat, maxlat)
     outcount = outcount + 1
   }
   return(df)
