@@ -218,9 +218,11 @@ PlotOccurrences = function(data, species, spring, fall) {
   occ = ggplot(data, aes(jday, numcells)) + geom_point() + xlab("julian day") + ylab("number of cells") + 
     geom_smooth(se=T, method='gam', formula=y~s(x, k=40), gamma=1.5, col='#7b3294', fill='#af8dc3') + 
     theme_bw() + ggtitle(species) + scale_x_continuous(breaks = seq(0, 365, by = 25)) +
-    scale_y_continuous(breaks = seq(0, 80, by = 5))
+    scale_y_continuous(breaks = seq(0, 80, by = 5)) + 
+    geom_vline(xintercept = c(spring, fall), col = "#008837", linetype = "dashed", size = 1)
   
-  print(occ + geom_vline(xintercept = c(spring, fall), col = "#008837", linetype = "dashed", size = 1))
+  print(occ)
+  return(occ)
 }
 
 
@@ -326,5 +328,15 @@ PlotMigrationPath = function(dat, map, species, year) {
     xlab("Longitude") + ylab("Latitude") + ggtitle(paste(species, year, sep = " "))
   
   print(map)
+  return(map)
 }
 
+PlotMeanLatitude = function(dat, species, year){
+  #plot mean latitude for each julian day, point size represents number of checklists, returns the map object
+  meanlat = ggplot(dat, aes(jday, meanlat, col=as.factor(month))) + geom_point(aes(size=count)) + 
+    ggtitle(paste(species, years[y], "latitudinal migration", sep = " ")) + xlab("Julian Day") + ylab("Mean Latitude") +
+    theme_bw() +  scale_x_continuous(breaks = seq(0, 365, by = 25)) +
+    scale_y_continuous(breaks = seq(10, 80, by = 5)) +
+    geom_smooth(se=T, method='gam', formula=y~s(x), color='indianred')
+  return(meanlat)
+}
