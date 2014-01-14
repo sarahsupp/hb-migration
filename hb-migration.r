@@ -89,6 +89,12 @@ for (f in 1:length(files)){
     #grab dates for migration
     migration = GetMigrationDates(altmeandat)
     
+    #use GAM model to predict daily location along a smoothing line
+    preds = EstimateDailyLocs(altmeandat)
+    
+    #plot smoothed migration trajectory for the species and year
+    PlotMigrationPath(preds, noam, species, years[y])
+    
     #plot occurrences with lines showing beginning and end of migration
     PlotOccurrences(altmeandat, species, migration[[1]], migration[[2]])
     

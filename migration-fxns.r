@@ -222,6 +222,28 @@ PlotOccurrences = function(data, species, spring, fall) {
   
   print(occ + geom_vline(xintercept = c(spring, fall), col = "#008837", linetype = "dashed", size = 1))
 }
+
+
+EstimateDailyLocs = function(dat) {
+  #input a dataframe with the mean daily locations for the year, and uses a GAM smoothing function
+  # to estimate daily occurrence lat and long separately. Binds the fitted lat and long values together,
+  # with standard errors. Returns a dataframe.
+      #TODO: check choice of k and gamma in the GAM function
+  #find the best fit line for the data, for longitude and latitude separately
+  lon_gam <- gam(centerlon ~ s(jday, k=10), data = dat, gamma = 1.5)
+  lat_gam <- gam(centerlat ~ s(jday, k=10), data = dat, gamma = 1.5)
+  
+  #predict values along the smoothing line
+  xpred <- data.frame(jday=sort(unique(dat$jday)))
+  lonpred <- predict(lon_gam, newdata = xpred, type="response", se.fit=T)
+  latpred <- predict(lat_gam, newdata = xpred, type="response", se.fit=T)
+  
+  #bring the data back together
+  preds =  data.frame(spname = species, jday = xpred$jday, month = dat$month, lon = lonpred$fit, 
+                      lat = latpred$fit, lon_se = lonpred$se.fit, lat_se = latpred$se.fit)
+  
+  return(preds)
+}
   
 
 FindCentroids = function(dat, loncol, latcol, hexgrid){
@@ -293,3 +315,16 @@ PlotChecklistMap = function(humdat, hexdat, dirpath){
   
   return(df5)
 }
+
+
+PlotMigrationPath = function(dat, map, species, year) {
+  # makes a nice figure showing the migration trajectory of the GAM predicted daily locations, with se for longitude
+  dat$month = as.factor(dat$month)
+  
+  map = ggmap(noam) + geom_line(data = dat, aes(lon, lat, col=month)) + 
+    geom_errorbarh(data = dat, aes(xmin = lon - lon_se, xmax = lon + lon_se, col = month)) + 
+    xlab("Longitude") + ylab("Latitude") + ggtitle(paste(species, year, sep = " "))
+  
+  print(map)
+}
+

@@ -226,5 +226,5 @@ xpred <- data.frame(jday=sort(unique(altmeandat$jday)))
 lonpred <- predict(lon_gam, newdata = xpred, type="response", se.fit=T)
 latpred <- predict(lat_gam, newdata = xpred, type="response", se.fit=T)
 
-preds =  data.frame(common = species, jday = xpred$jday, month = altmeandat$month, lon_pred = lonpred$fit, 
-                    lat_pred=latpred$fit, lon_se = lonpred$se.fit, lat_se = latpred$se.fit)
+preds =  data.frame(common = species, jday = xpred$jday, month = altmeandat$month, lon= lonpred$fit, 
+                    lat=latpred$fit, lon_se = lonpred$se.fit, lat_se = latpred$se.fit)
