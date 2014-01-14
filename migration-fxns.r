@@ -224,12 +224,6 @@ PlotOccurrences = function(data, species, spring, fall) {
 }
   
 
-
-  
-    return (distdat)
-}
-  
-
 FindCentroids = function(dat, loncol, latcol, hexgrid){
   # matches centroids with the mean lat and lons
   
