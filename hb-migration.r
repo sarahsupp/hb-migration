@@ -84,7 +84,7 @@ for (f in 1:length(files)){
     altmeandat = AlternateMeanLocs(yrdat,species,hexgrid)
     
     #get Great Circle distances traveled each day between centroids
-    dist = DailyTravel(cntrdat)
+    dist = DailyTravel(altmeandat, 5, 6, species)
     
     #plot where species was sighted within each year
     sitemap = ggmap(noam) + geom_point(aes(LONGITUDE, LATITUDE, col=as.factor(month)), 
@@ -100,8 +100,9 @@ for (f in 1:length(files)){
     meanlat = ggplot(meandat, aes(jday, meanlat, col=as.factor(month))) + geom_point(aes(size=count)) + 
       ggtitle(paste(species, years[y], "latitudinal migration", sep = " ")) + xlab("Julian Day") + ylab("Mean Latitude") +
       theme_bw() +  scale_x_continuous(breaks = seq(0, 365, by = 25)) +
-      scale_y_continuous(breaks = seq(10, 80, by = 5)) + #stat_smooth(method="loess",na.rm=TRUE) #+ 
-    geom_errorbar(aes(ymax=maxlat, ymin=minlat)) #+ geom_line(aes(col=as.factor(month)))
+      scale_y_continuous(breaks = seq(10, 80, by = 5)) +
+      geom_smooth(se=T, method='gam', formula=y~s(x), color='indianred')
+    #geom_errorbar(aes(ymax=maxlat, ymin=minlat)) #+ geom_line(aes(col=as.factor(month)))
     
     ggsave(meanlat, file=paste(dirpath, "/", species, years[y], "meanlat.pdf", sep=""))
     

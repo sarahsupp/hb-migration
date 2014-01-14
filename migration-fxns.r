@@ -143,7 +143,7 @@ MeanDailyLoc = function(dat, species) {
 }
 
 
-DailyTravel = function(meanlocs){
+DailyTravel = function(meanlocs, loncol, latcol, species){
   #use geodist to calculate Great Circle distance between daily location centers
   require(spaa)
   require(mgcv)   #TODO: GEt some different values when use spaa vs gmt package to calculate great circle distance. Track down issue
@@ -152,7 +152,7 @@ DailyTravel = function(meanlocs){
   
   for(i in 1:nrow(meanlocs)){
     if (i < nrow(meanlocs)){
-      dist = geodist(meanlocs[i,]$LONGITUDE, meanlocs[i,]$LATITUDE, meanlocs[i+1,]$LONGITUDE, meanlocs[i+1,]$LATITUDE, units = "km")
+      dist = geodist(meanlocs[i,loncol], meanlocs[i,latcol], meanlocs[i+1,loncol], meanlocs[i+1,latcol], units = "km")
       if (is.nan(dist) == TRUE) {
         dist = 0  #appaarently geodist doesn't calculate zero change in location, records as NaN
       }
@@ -162,12 +162,12 @@ DailyTravel = function(meanlocs){
   distdat = cbind(meanlocs,dst)
   
   print (ggplot(distdat, aes(jday, dst)) + geom_line(size=1) + theme_bw() + xlab("Julian Day") + 
-    ylab("Distance Traveled (km)") + ggtitle(distdat[1,2]))
+    ylab("Distance Traveled (km)") + ggtitle(species))
   
   #TODO: use La Sorte method to fit gamm and determine threshold for beginning 
   # of spring and end of fall migration for each species and year; Fig A4 in 2013 article
-  print (ggplot(distdat, aes(jday, count)) + geom_point() + theme_bw() + xlab("Julian Day") + 
-           ylab("Number of observances") + ggtitle(distdat[1,2]) + 
+  print (ggplot(distdat, aes(jday, numcells)) + geom_point() + theme_bw() + xlab("Julian Day") + 
+           ylab("Number of observances") + ggtitle(species) + 
            geom_smooth(se=T, method='gam', formula=y~s(x), color='indianred'))
   
     return (distdat)
