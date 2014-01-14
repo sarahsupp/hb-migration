@@ -86,6 +86,12 @@ for (f in 1:length(files)){
     #get Great Circle distances traveled each day between centroids
     dist = DailyTravel(altmeandat, 5, 6, species)
     
+    #grab dates for migration
+    migration = GetMigrationDates(altmeandat)
+    
+    #plot occurrences with lines showing beginning and end of migration
+    PlotOccurrences(altmeandat, species, migration[[1]], migration[[2]])
+    
     #plot where species was sighted within each year
     sitemap = ggmap(noam) + geom_point(aes(LONGITUDE, LATITUDE, col=as.factor(month)), 
                                          data=yrdat) + ggtitle(paste(species, years[y], sep = " "))

@@ -162,13 +162,69 @@ DailyTravel = function(meanlocs, loncol, latcol, species){
   distdat = cbind(meanlocs,dst)
   
   print (ggplot(distdat, aes(jday, dst)) + geom_line(size=1) + theme_bw() + xlab("Julian Day") + 
-    ylab("Distance Traveled (km)") + ggtitle(species))
+           ylab("Distance Traveled (km)") + ggtitle(species))
   
-  #TODO: use La Sorte method to fit gamm and determine threshold for beginning 
-  # of spring and end of fall migration for each species and year; Fig A4 in 2013 article
-  print (ggplot(distdat, aes(jday, numcells)) + geom_point() + theme_bw() + xlab("Julian Day") + 
-           ylab("Number of observances") + ggtitle(species) + 
-           geom_smooth(se=T, method='gam', formula=y~s(x), color='indianred'))
+  return(distdat)
+}
+
+GetMigrationDates = function(data) {
+  # uses a generalized additive model (GAM) to define the start of spring and end of fall migration
+  
+  #GAM model on number of cells with observations by julian date
+  gam1 = gam(numcells ~ s(jday, k = 40), data = data, gamma = 1.5) 
+  xpred = data.frame(jday = c(1:max(data$jday)))
+  dpred = predict(gam1, newdata=xpred, type="response", se.fit=T)
+  
+  ## cutoff based on 2 SE for spring and fall combined, following La Sorte et al. 2013 methods
+  # Spring migration should be between 11 Jan and 9 July
+  # Fall migration should be between 8 August and 21 Dec
+  spring_threshold = min(dpred$se.fit[c(1:120)]*2.56 + dpred$fit[c(1:120)])
+  fall_threshold = min(dpred$se.fit[c(280:365)]*2.56 + dpred$fit[c(280:365)])
+  spring_index = 11:190
+  fall_index = 220:355
+  spring_max = spring_index[which.max(dpred$fit[spring_index])]
+  fall_max = fall_index[which.max(dpred$fit[fall_index])]
+  
+  #identify beginning of spring migration
+  tst = 1000
+  spring_index2 = spring_max
+  while(tst > spring_threshold){
+    tst = dpred$fit[spring_index2]
+    if(spring_index2 == 1) break
+    spring_index2 = spring_index2 - 1
+  }
+  spring = spring_index2+1
+  
+  #identify end of fall migration
+  tst <- 1000
+  fall_index2 = fall_max
+  while(tst > fall_threshold){
+    tst = dpred$fit[fall_index2]
+    if(fall_index2==365) break
+    fall_index2 <- fall_index2 + 1
+  }
+  fall <- fall_index2-1
+  
+  dates = list(spring=spring, fall=fall)
+  return(dates)
+}
+
+
+PlotOccurrences = function(data, species, spring, fall) {
+  #takes a dataframe with julian dates, and the number of cells, and returns a plot with lines fitted
+  # for a gam and for the onset of spring and end of fall migration
+  # sensu La Sorte and Fink code from 2013 paper
+  
+  occ = ggplot(data, aes(jday, numcells)) + geom_point() + xlab("julian day") + ylab("number of cells") + 
+    geom_smooth(se=T, method='gam', formula=y~s(x, k=40), gamma=1.5, col='#7b3294', fill='#af8dc3') + 
+    theme_bw() + ggtitle(species) + scale_x_continuous(breaks = seq(0, 365, by = 25)) +
+    scale_y_continuous(breaks = seq(0, 80, by = 5))
+  
+  print(occ + geom_vline(xintercept = c(spring, fall), col = "#008837", linetype = "dashed", size = 1))
+}
+  
+
+
   
     return (distdat)
 }
