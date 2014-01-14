@@ -204,3 +204,27 @@ lines( rep(spring,2),c(0, 100000),col="blue")
 lines( rep(fall,2),c(0, 100000),col="blue")
 
 occ + geom_vline(xintercept = c(spring, fall), col = "indianred")
+
+
+#----- trying out code for long and lat gams - can I do this within year?
+# also check specifications for k and gamma
+
+# plot the lat and long data with gam smoothing line
+long = ggplot(altmeandat, aes(jday, centerlon)) + geom_point() + xlab("julian day") + ylab("longitude") + 
+  geom_smooth(se=T, method='gam', formula=y~s(x,k=10), gamma=1.5, col="mediumpurple") + theme_bw() +
+  geom_vline(xintercept = c(spring, fall), col = "cadetblue", type = "dashed", size = 1)
+
+lati = ggplot(altmeandat, aes(jday, centerlat)) + geom_point() + xlab("julian day") + ylab("latitude") + 
+  geom_smooth(se=T, method='gam', formula=y~s(x,k=10), gamma=1.5, col="mediumpurple") + theme_bw() +
+  geom_vline(xintercept = c(spring, fall), col = "cadetblue", type = "dashed", size = 1)
+
+#find the best fit line for the data
+lon_gam <- gam(centerlon ~ s(jday, k=10), data = altmeandat, gamma = 1.5)
+lat_gam <- gam(centerlat ~ s(jday, k=10), data = altmeandat, gamma = 1.5)
+
+xpred <- data.frame(jday=sort(unique(altmeandat$jday)))
+lonpred <- predict(lon_gam, newdata = xpred, type="response", se.fit=T)
+latpred <- predict(lat_gam, newdata = xpred, type="response", se.fit=T)
+
+preds =  data.frame(common = species, jday = xpred$jday, month = altmeandat$month, lon_pred = lonpred$fit, 
+                    lat_pred=latpred$fit, lon_se = lonpred$se.fit, lat_se = latpred$se.fit)
