@@ -149,5 +149,58 @@ mig.dst.all = mig.dst.all[mig.dst.all$distance > 0, ]    ## migration distance >
 sp = sort(unique(mig.dst.all$scientific2))
 
 
+#
 
+png(paste(dirpath, "analysis_pca_plots9", species, ".png", sep=""))
+par(mai=c(1.02,1,0.82,0.22), xpd=FALSE)
+# Plot the relationship between julian date and the number of hex cells containing observations
+occ = ggplot(altmeandat, aes(jday, numcells)) + geom_point() + xlab("julian day") + ylab("number of cells") + 
+  geom_smooth(se=T, method='gam', formula=y~s(x, k=40), gamma=1.5, col='indianred', fill='orange') + theme_bw()
+plot(altmeandat$jday, altmeandat$numcells, pch=19, type="p", cex=0.5, xlab="Day", cex.axis=1.2, cex.lab=1.4, las=1, xaxt="n",
+     ylab="Cell count")
 
+#GAM model on number of cells with observations by julian date
+gam1 = gam(numcells ~ s(jday, k = 40), data = altmeandat, gamma = 1.5) 
+xpred = data.frame(jday = c(1:max(altmeandat$jday)))
+dpred = predict(gam1, newdata=xpred, type="response", se.fit=T)
+
+#Add the gam fit lines + se to the plot
+lines(xpred$jday, dpred$fit, col="red", lwd=2)
+lines(xpred$jday, dpred$fit + (2.56 * dpred$se.fit), lty=2, col="red", lwd=0.5) #99% 
+lines(xpred$jday, dpred$fit - (2.56 * dpred$se.fit), lty=2, col="red", lwd=0.5) #99%
+
+## cutoff based on 2 SE for spring and fall combined, following La Sorte et al. 2013 methods
+# Spring migration should be between 11 Jan and 9 July
+# Fall migration should be between 8 August and 21 Dec
+spring_threshold = min(dpred$se.fit[c(1:120)]*2.56 + dpred$fit[c(1:120)])
+fall_threshold = min(dpred$se.fit[c(280:365)]*2.56 + dpred$fit[c(280:365)])
+spring_index = 11:190
+fall_index = 220:355
+spring_max = spring_index[which.max(dpred$fit[spring_index])]
+fall_max = fall_index[which.max(dpred$fit[fall_index])]
+
+#identify beginning of spring migration
+tst = 1000
+spring_index2 = spring_max
+while(tst > spring_threshold){
+  tst = dpred$fit[spring_index2]
+  if(spring_index2 == 1) break
+  spring_index2 = spring_index2 - 1
+}
+spring = spring_index2+1
+
+#identify end of fall migration
+tst <- 1000
+fall_index2 = fall_max
+while(tst > fall_threshold){
+  tst = dpred$fit[fall_index2]
+  if(fall_index2==365) break
+  fall_index2 <- fall_index2 + 1
+}
+fall <- fall_index2-1
+
+#add vertical lines to plot to show when main migratory period is (i.e., NOT at winter grounds)
+lines( rep(spring,2),c(0, 100000),col="blue")
+lines( rep(fall,2),c(0, 100000),col="blue")
+
+occ + geom_vline(xintercept = c(spring, fall), col = "indianred")
