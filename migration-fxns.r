@@ -49,6 +49,48 @@ PlotRecords = function(yeardata, species) {
 }
 
 
+AlternateMeanLocs = function(dat, species, hexdat) {
+  #input is a yearly data frame for a species
+  #output is a new dataframe with mean lat and long, calculated from hexagon centers, after placing daily observed
+  #lat and long onto the isacohedron equal-area cells map, sensu La Sorte et al. 2013
+  df = data.frame("jday"=1, "month"=1, "count"=1, "centerlon"=1, "centerlat"=1)
+  outcount = 1
+  
+  #count the number of days in the year
+  year = dat$year[1]
+  numdays = as.numeric(as.POSIXlt(paste(year, "-12-31", sep = "")) - as.POSIXlt(paste(year, "-01-01", sep="")) + 1)
+  julian = seq(1:numdays)
+  
+  #To find the POLYFID for the hexes for each observation, identify observed lon and lat  
+  # Matches observations with the polygon hexes in the map
+  ID <- over(SpatialPoints(dat[,c(10,9)]), hexdat)
+    names(ID) = c("JOIN_COUNT", "AREA", "PERIMETER", "BOB_", "BOB_ID", "ID", "POLYFID", "HEX_LONGITUDE", "HEX_LATITUDE")
+  coords <- cbind(dat, ID) 
+  
+  #aggregate daily info by mean centroid location
+  dailyHexes = count(coords, vars=c("julian", "POLYFID", "HEX_LONGITUDE", "HEX_LATITUDE"))
+  
+  #calculate weighted mean (weights based on number of obs per hex) lat and long
+  for (j in 1:length(julian)){
+    jdata = dailyHexes[which(dailyHexes$julian == j),]
+    if (nrow(jdata) > 0){
+      numobs = sum(jdata$freq)
+      mo = as.numeric(months(j))
+      wtmean_lon = weighted.mean(jdata$HEX_LONGITUDE, jdata$freq)
+      wtmean_lat = weighted.mean(jdata$HEX_LATITUDE, jdata$freq)
+      df[outcount,] = c(j, mo, numobs, wtmean_lon, wtmean_lat)
+      outcount = outcount + 1
+    }
+    else {
+      mo = as.numeric(months(j))
+      df[outcount,] = c(j, mo, 0, NA, NA)
+      outcount = outcount + 1
+    }
+  }
+  return(df)
+}
+
+
 MeanDailyLoc = function(dat, species) {
   # input is yearly data frame for a species
   # makes a new dataframe with mean julian day lat and long, sd, and 95% confidence intervals
