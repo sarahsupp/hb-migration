@@ -143,7 +143,7 @@ MeanDailyLoc = function(dat, species) {
 }
 
 
-DailyTravel = function(meanlocs, loncol, latcol, species){
+DailyTravel = function(meanlocs, loncol, latcol, species, year){
   #use geodist to calculate Great Circle distance between daily location centers
   require(spaa)
   require(mgcv)   #TODO: GEt some different values when use spaa vs gmt package to calculate great circle distance. Track down issue

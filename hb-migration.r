@@ -31,7 +31,7 @@ hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/terr_4h6.shp") #hex ma
 
 # read in eBird data
 files = list.files(pattern = "*.txt")
-files = files[c(6,7,9)] #c(1,3,4,5,7,9)
+files = files[c(1,7,9)] #c(1,3,4,5,7,9)
 
 #for each eBird file, print the number sightings per year and per month.
 #plot the locations of sightings on a map, color coded by month
@@ -90,7 +90,7 @@ for (f in 1:length(files)){
     preds = EstimateDailyLocs(altmeandat)
     
     #get Great Circle distances traveled each day between predicted daily locations
-    dist = DailyTravel(preds, 4, 5, species)
+    dist = DailyTravel(preds, 4, 5, species, year)
     
     #plot smoothed migration trajectory for the species and year
     mig_path = PlotMigrationPath(preds, noam, species, years[y])
