@@ -31,7 +31,7 @@ hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/terr_4h6.shp") #hex ma
 
 # read in eBird data
 files = list.files(pattern = "*.txt")
-files = files[6] #c(1,3,4,5,7,9)
+files = files[c(6,7,9)] #c(1,3,4,5,7,9)
 
 #for each eBird file, print the number sightings per year and per month.
 #plot the locations of sightings on a map, color coded by month
@@ -79,12 +79,9 @@ for (f in 1:length(files)){
     PlotRecords(yrdat$month, species)
     
     #get daily mean location and sd 
-    meandat = MeanDailyLoc(yrdat, species)
-    cntrdat = FindCentroids(meandat, 7, 5, hexgrid)
+    #meandat = MeanDailyLoc(yrdat, species)     #----may not need this version
+    #cntrdat = FindCentroids(meandat, 7, 5, hexgrid)      #----may not need this version
     altmeandat = AlternateMeanLocs(yrdat,species,hexgrid)
-    
-    #get Great Circle distances traveled each day between centroids
-    dist = DailyTravel(altmeandat, 5, 6, species)
     
     #grab dates for migration
     migration = GetMigrationDates(altmeandat)
@@ -92,33 +89,23 @@ for (f in 1:length(files)){
     #use GAM model to predict daily location along a smoothing line
     preds = EstimateDailyLocs(altmeandat)
     
+    #get Great Circle distances traveled each day between predicted daily locations
+    dist = DailyTravel(preds, 4, 5, species)
+    
     #plot smoothed migration trajectory for the species and year
-    PlotMigrationPath(preds, noam, species, years[y])
+    mig_path = PlotMigrationPath(preds, noam, species, years[y])
+    ggsave(mig_path, file=paste(dirpath, "/", "migration", species, years[y], ".pdf", sep=""))
     
     #plot occurrences with lines showing beginning and end of migration
     PlotOccurrences(altmeandat, species, migration[[1]], migration[[2]])
     
     #plot where species was sighted within each year
-    sitemap = ggmap(noam) + geom_point(aes(LONGITUDE, LATITUDE, col=as.factor(month)), 
-                                         data=yrdat) + ggtitle(paste(species, years[y], sep = " "))
-    ggsave(sitemap, file=paste(dirpath, "/", species, years[y], ".pdf", sep=""))
-    
-    #plot species mean location on each julian day with the year
-    meanmap = ggmap(noam) + geom_point(aes(meanlon, meanlat, col=as.factor(month)),
-                                       data=meandat) + ggtitle(paste(species, years[y], "daily mean loc", sep = " "))
-    ggsave(meanmap, file=paste(dirpath, "/", species, years[y],"meanlocs.pdf", sep=""))
+    #PlotAllPoints(yrdat, noam, species, years[y])
     
     #plot mean latitude for each julian day, point size represents number of checklists
-    meanlat = ggplot(meandat, aes(jday, meanlat, col=as.factor(month))) + geom_point(aes(size=count)) + 
-      ggtitle(paste(species, years[y], "latitudinal migration", sep = " ")) + xlab("Julian Day") + ylab("Mean Latitude") +
-      theme_bw() +  scale_x_continuous(breaks = seq(0, 365, by = 25)) +
-      scale_y_continuous(breaks = seq(10, 80, by = 5)) +
-      geom_smooth(se=T, method='gam', formula=y~s(x), color='indianred')
-    #geom_errorbar(aes(ymax=maxlat, ymin=minlat)) #+ geom_line(aes(col=as.factor(month)))
+    #PlotMeanLatitude(meandat, species, years[y])
     
-    ggsave(meanlat, file=paste(dirpath, "/", species, years[y], "meanlat.pdf", sep=""))
-    
-    rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat")])   # clears the memory of the map and year-level data
+    rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat", "altmeandat", "migration", "preds", "dist", "mig_path")])   # clears the memory of the map and year-level data
   }
   rm(list=ls()[!ls() %in% c("f", "files", "noam", "hexgrid")])   # clears the memory of everything except the file list, iterator, and base map
 }

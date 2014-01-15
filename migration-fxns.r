@@ -147,7 +147,7 @@ DailyTravel = function(meanlocs, loncol, latcol, species){
   #use geodist to calculate Great Circle distance between daily location centers
   require(spaa)
   require(mgcv)   #TODO: GEt some different values when use spaa vs gmt package to calculate great circle distance. Track down issue
-  require(gmt)
+  #require(gmt)
   dst=c(NA)
   
   for(i in 1:nrow(meanlocs)){
@@ -161,8 +161,8 @@ DailyTravel = function(meanlocs, loncol, latcol, species){
   }
   distdat = cbind(meanlocs,dst)
   
-  print (ggplot(distdat, aes(jday, dst)) + geom_line(size=1) + theme_bw() + xlab("Julian Day") + 
-           ylab("Distance Traveled (km)") + ggtitle(species))
+  print (ggplot(distdat, aes(jday, dst)) + geom_line(size=1, col = "#4daf4a") + theme_bw() + xlab("Julian Day") + 
+           ylab("Distance Traveled (km)") + ggtitle(paste(species, year, sep = " ")))
   
   return(distdat)
 }
@@ -323,7 +323,7 @@ PlotMigrationPath = function(dat, map, species, year) {
   # makes a nice figure showing the migration trajectory of the GAM predicted daily locations, with se for longitude
   dat$month = as.factor(dat$month)
   
-  map = ggmap(noam) + geom_line(data = dat, aes(lon, lat, col=month)) + 
+  map = ggmap(map) + geom_line(data = dat, aes(lon, lat, col=month)) + 
     geom_errorbarh(data = dat, aes(xmin = lon - lon_se, xmax = lon + lon_se, col = month)) + 
     xlab("Longitude") + ylab("Latitude") + ggtitle(paste(species, year, sep = " "))
   
@@ -334,9 +334,18 @@ PlotMigrationPath = function(dat, map, species, year) {
 PlotMeanLatitude = function(dat, species, year){
   #plot mean latitude for each julian day, point size represents number of checklists, returns the map object
   meanlat = ggplot(dat, aes(jday, meanlat, col=as.factor(month))) + geom_point(aes(size=count)) + 
-    ggtitle(paste(species, years[y], "latitudinal migration", sep = " ")) + xlab("Julian Day") + ylab("Mean Latitude") +
+    ggtitle(paste(species, year, "latitudinal migration", sep = " ")) + xlab("Julian Day") + ylab("Mean Latitude") +
     theme_bw() +  scale_x_continuous(breaks = seq(0, 365, by = 25)) +
     scale_y_continuous(breaks = seq(10, 80, by = 5)) +
     geom_smooth(se=T, method='gam', formula=y~s(x), color='indianred')
   return(meanlat)
+}
+
+PlotAllPoints = function (dat, map, species, year){
+  #plots all observed locations for hummingbird sightings
+  dat$month = as.factor(dat$month)
+  sitemap = ggmap(map) + geom_point(data=dat, aes(LONGITUDE, LATITUDE, col=month)) + 
+            ggtitle(paste(species, year, sep = " "))
+  print(sitemap)
+  return(sitemap)
 }
