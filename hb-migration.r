@@ -7,8 +7,7 @@ library(sp)
 library(raster)
 
 #set working directory
-#wd = "C:/Users/sarah/Documents/eBird_data/"
-wd = "/Volumes/Elements/eBird/ebd_data/"
+wd = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/data"
 setwd(wd)
 
 # make a North America base map
@@ -16,7 +15,7 @@ noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = 
 
 # read in the north ameica equal area hex grid map (F.A.L.)
 #hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/nw_vector_grid.shp") #quad map
-hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/terr_4h6.shp") #hex map
+hexgrid = readShapePoly("C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/terr_4h6/terr_4h6.shp") #hex map
   # crop to just North America, where the migratory species occur
   hexgrid = hexgrid[which(hexgrid$LATITUDE > 10 & hexgrid$LATITUDE <80 & 
                             hexgrid$LONGITUDE > -178 & hexgrid$LONGITUDE < -50),]
@@ -44,8 +43,8 @@ for (f in 1:length(files)){
   require(Rmisc)
   require(sp)
   require(raster)
-  source("/Users/sarah/Documents/GitHub/hb-migration/migration-fxns.r")
-  
+  source("C:/Users/sarah/Documents/GitHub/hb-migration/migration-fxns.r")
+
   humdat = read.table(files[f], header=TRUE, sep="\t", quote="", fill=TRUE, as.is=TRUE, comment.char="") #quote="/"'"
 
   #keep only the columns that we need
@@ -62,7 +61,7 @@ for (f in 1:length(files)){
   humdat = cbind(humdat, date)
     
   #start a new directory
-  dirpath = paste("/Volumes/Elements/eBird/ebd_counts/", species, sep="")
+  dirpath = paste("C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/Figures/", species, sep="")
     dir.create(dirpath, showWarnings = TRUE, recursive = FALSE)
   
   #show how many records there are for the species across the years, write to txt file
