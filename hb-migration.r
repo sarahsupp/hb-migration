@@ -30,7 +30,6 @@ hexgrid = readShapePoly("C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbi
 
 # read in eBird data
 files = list.files(pattern = "*.txt")
-files = files[c(1,7,9)] #c(1,3,4,5,7,9)
 
 #for each eBird file, print the number sightings per year and per month.
 #plot the locations of sightings on a map, color coded by month
