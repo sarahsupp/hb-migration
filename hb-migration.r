@@ -100,6 +100,8 @@ for (f in 1:length(files)){
     
     #grab dates for migration
     migration = GetMigrationDates(altmeandat)
+    #TODO: set an add=T statement for this
+    write.table(migration, file = paste(dirpath, "/", "timing", species, years[y],".txt",sep=""), row.names=FALSE)
     
     #use GAM model to predict daily location along a smoothing line
     preds = EstimateDailyLocs(altmeandat)
