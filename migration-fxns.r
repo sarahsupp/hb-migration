@@ -20,11 +20,10 @@ DateConvert = function(date){
     origin. = c(1, 1, as.numeric(substring(x, 1, 4)))) + 1
   })
   
-  newdate = as.data.frame(cbind(year,month,day, julian), row.names=FALSE)
+  newdate = as.data.frame(cbind(year, month, day, julian), row.names=FALSE)
 
   return (newdate)
 }
-
 
 
 PlotRecords = function(yeardata, species) {
