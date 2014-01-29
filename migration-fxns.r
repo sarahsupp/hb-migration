@@ -146,7 +146,7 @@ DailyTravel = function(meanlocs, loncol, latcol, species, year){
   
   for(i in 1:nrow(meanlocs)){
     if (i < nrow(meanlocs)){
-      dist = geodist(meanlocs[i,loncol], meanlocs[i,latcol], meanlocs[i+1,loncol], meanlocs[i+1,latcol], units = "km")
+      dist = geodist(meanlocs[i,loncol], meanlocs[i,latcol], meanlocs[i+1,loncol], meanlocs[i+1,latcol])
       if (is.nan(dist) == TRUE) {
         dist = 0  #appaarently geodist doesn't calculate zero change in location, records as NaN
       }
@@ -160,6 +160,7 @@ DailyTravel = function(meanlocs, loncol, latcol, species, year){
   
   return(distdat)
 }
+
 
 GetMigrationDates = function(data) {
   # uses a generalized additive model (GAM) to define the start of spring and end of fall migration
