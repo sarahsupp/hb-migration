@@ -114,12 +114,6 @@ for (f in 1:length(files)){
     #plot occurrences with lines showing beginning and end of migration
     PlotOccurrences(altmeandat, species, migration[[1]], migration[[2]])
     
-    #plot where species was sighted within each year
-    #PlotAllPoints(yrdat, noam, species, years[y])
-    
-    #plot mean latitude for each julian day, point size represents number of checklists
-    #PlotMeanLatitude(meandat, species, years[y])
-    
     rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat", "altmeandat", "migration", "preds", "dist", "mig_path")])   # clears the memory of the map and year-level data
   }
   rm(list=ls()[!ls() %in% c("f", "files", "noam", "hexgrid")])   # clears the memory of everything except the file list, iterator, and base map
