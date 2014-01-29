@@ -1,6 +1,6 @@
 # Define functions to use in hb-migration code
 require(chron)
-require(gam)
+require(mgcv)
 
 DateConvert = function(date){
   #convert eBird column OBSERVATION.DATE into year, month and day columns
