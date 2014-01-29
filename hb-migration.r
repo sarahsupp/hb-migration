@@ -84,6 +84,8 @@ for (f in 1:length(files)){
   yeartable = PlotRecords(humdat$year, species)
   write.table(yeartable, file = paste(dirpath, "/", species,".txt",sep=""), row.names=FALSE)
   
+  write.table(NULL, file = paste(dirpath, "/", "migration", species,".txt",sep=""), row.names=FALSE)
+  
   #save a figure of the geographic number of checklists for the species, over all the years
   count = PlotChecklistMap(humdat, hexgrid, dirpath)
   
@@ -100,8 +102,10 @@ for (f in 1:length(files)){
     
     #grab dates for migration
     migration = GetMigrationDates(altmeandat)
-    #TODO: set an add=T statement for this
-    write.table(migration, file = paste(dirpath, "/", "timing", species, years[y],".txt",sep=""), row.names=FALSE)
+
+    m = c(migration[[1]], migration[[2]])
+    write.table(m, file = paste(dirpath, "/", "migration", species, ".txt",sep=""), 
+                append=TRUE, col.names=FALSE, row.names=FALSE)
     
     #use GAM model to predict daily location along a smoothing line
     preds = EstimateDailyLocs(altmeandat)
