@@ -56,8 +56,25 @@ for (f in 1:length(files)){
   species = humdat$SCIENTIFIC.NAME[1]
   years = c(2004:2013)
   
-  date = DateConvert(humdat$OBSERVATION.DATE)
-  humdat = cbind(humdat, date)
+  # separate year, month, day, and calculate julian date for later analysis and plotting
+  year <-sapply(humdat$OBSERVATION.DATE,function(x){
+    as.numeric(substring(x, 1, 4))
+  })
+  
+  month <- sapply(humdat$OBSERVATION.DATE,function(x){
+    as.numeric(substring(x, 6, 7))
+  }) 
+  
+  day <- sapply(humdat$OBSERVATION.DATE,function(x){
+    as.numeric(substring(x, 9, 10))
+  })
+  
+  julian = sapply(humdat$OBSERVATION.DATE, function(x){
+    julian(as.numeric(substring(x, 6, 7)), as.numeric(substring(x, 9, 10)), as.numeric(substring(x, 1, 4)), 
+           origin. = c(1, 1, as.numeric(substring(x, 1, 4)))) + 1
+  })
+  
+  humdat = cbind(humdat, year, month, day, julian)
     
   #start a new directory
   dirpath = paste("C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/Figures/", species, sep="")
