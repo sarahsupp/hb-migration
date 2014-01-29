@@ -14,24 +14,17 @@ DateConvert = function(date){
   day <- sapply(date,function(x){
     as.numeric(substring(x, 9, 10))
   })
+    
+  julian = sapply(date, function(x){
+    julian(as.numeric(substring(x, 6, 7)), as.numeric(substring(x, 9, 10)), as.numeric(substring(x, 1, 4)), 
+    origin. = c(1, 1, as.numeric(substring(x, 1, 4)))) + 1
+  })
   
-  newdate = as.data.frame(cbind(year,month,day), row.names=FALSE)
-
-  newdate = JulianDay(newdate)
+  newdate = as.data.frame(cbind(year,month,day, julian), row.names=FALSE)
 
   return (newdate)
 }
 
-JulianDay = function(daymoyr){
-  ## Add a column for julian day
-  require(chron)
-  for (row in 1:nrow(daymoyr)){
-    line = daymoyr[row,]
-    #Julian date ranges 1:365
-    daymoyr$julian[row] = julian(line$month, line$day, line$year, origin. = c(month=1, day=1, year=line$year)) + 1
-  }
-  return(daymoyr)
-}
 
 
 PlotRecords = function(yeardata, species) {
