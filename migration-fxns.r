@@ -2,6 +2,7 @@
 require(chron)
 require(mgcv)
 
+
 DateConvert = function(date){
   #convert eBird column OBSERVATION.DATE into year, month and day columns
   
@@ -71,8 +72,8 @@ AlternateMeanLocs = function(dat, species, hexdat) {
       numcells = nrow(jdata)
       numobs = sum(jdata$freq)
       mo = as.numeric(months(j))
-      wtmean_lon = weighted.mean(jdata$HEX_LONGITUDE, jdata$freq)
-      wtmean_lat = weighted.mean(jdata$HEX_LATITUDE, jdata$freq)
+      wtmean_lon = weighted.mean(jdata$HEX_LONGITUDE, jdata$freq, na.rm=TRUE)
+      wtmean_lat = weighted.mean(jdata$HEX_LATITUDE, jdata$freq, na.rm=TRUE)
       df[outcount,] = c(j, mo, numobs, numcells, wtmean_lon, wtmean_lat)
       outcount = outcount + 1
     }
