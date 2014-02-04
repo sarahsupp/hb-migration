@@ -3,7 +3,7 @@ require(chron)
 require(mgcv)
 require(Rmisc)
 require(spaa)
-require(ggplot)
+require(ggplot2)
 
 
 DateConvert = function(date){
