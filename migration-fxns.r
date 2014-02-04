@@ -39,7 +39,7 @@ PlotRecords = function(yeardata, species) {
   names(t) = c('year', 'count')
  
   barplot = ggplot(data = t, aes(year, count)) + geom_bar(fill="cadetblue2") + theme_bw() + 
-    ggtitle(species)
+    ggtitle(species) + theme(text = element_text(size=20)) + xlab("time") + ylab("number checklists")
   
   print(barplot)
   
@@ -218,7 +218,8 @@ PlotOccurrences = function(data, species, spring, fall) {
     geom_smooth(se=T, method='gam', formula=y~s(x, k=40), gamma=1.5, col='#7b3294', fill='#af8dc3') + 
     theme_bw() + ggtitle(species) + scale_x_continuous(breaks = seq(0, 365, by = 25)) +
     scale_y_continuous(breaks = seq(0, 80, by = 5)) + 
-    geom_vline(xintercept = c(spring, fall), col = "#008837", linetype = "dashed", size = 1)
+    geom_vline(xintercept = c(spring, fall), col = "#008837", linetype = "dashed", size = 1) +
+    theme(text = element_text(size=20))
   
   print(occ)
   return(occ)
