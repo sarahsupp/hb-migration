@@ -1,6 +1,9 @@
 # Define functions to use in hb-migration code
 require(chron)
 require(mgcv)
+require(Rmisc)
+require(spaa)
+require(ggplot)
 
 
 DateConvert = function(date){
@@ -327,6 +330,7 @@ PlotMigrationPath = function(dat, map, species, year) {
   return(map)
 }
 
+
 PlotMeanLatitude = function(dat, species, year){
   #plot mean latitude for each julian day, point size represents number of checklists, returns the map object
   meanlat = ggplot(dat, aes(jday, meanlat, col=as.factor(month))) + geom_point(aes(size=count)) + 
@@ -336,6 +340,7 @@ PlotMeanLatitude = function(dat, species, year){
     geom_smooth(se=T, method='gam', formula=y~s(x), color='indianred')
   return(meanlat)
 }
+
 
 PlotAllPoints = function (dat, map, species, year){
   #plots all observed locations for hummingbird sightings
