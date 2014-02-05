@@ -214,11 +214,13 @@ PlotOccurrences = function(data, species, spring, fall) {
   # for a gam and for the onset of spring and end of fall migration
   # sensu La Sorte and Fink code from 2013 paper
   
+  med = median(c(spring,fall))
   occ = ggplot(data, aes(jday, numcells)) + geom_point() + xlab("julian day") + ylab("number of cells") + 
     geom_smooth(se=T, method='gam', formula=y~s(x, k=40), gamma=1.5, col='#7b3294', fill='#af8dc3') + 
     theme_bw() + ggtitle(species) + scale_x_continuous(breaks = seq(0, 365, by = 25)) +
     scale_y_continuous(breaks = seq(0, 80, by = 5)) + 
     geom_vline(xintercept = c(spring, fall), col = "#008837", linetype = "dashed", size = 1) +
+    geom_vline(xintercept = med, col = "indianred", linetype = "dashed") +
     theme(text = element_text(size=20))
   
   print(occ)
