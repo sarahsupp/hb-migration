@@ -20,14 +20,6 @@ hexgrid = readShapePoly("C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbi
   hexgrid = hexgrid[which(hexgrid$LATITUDE > 10 & hexgrid$LATITUDE <80 & 
                             hexgrid$LONGITUDE > -178 & hexgrid$LONGITUDE < -50),]
 
-  #hex grid map
-  plot(hexgrid, xlim=c(-170,-50), ylim=c(10,80), col="lightblue", lwd=0.25, border="gray10")
-  axis(side=1)
-  axis(side=2, las=1)
-  box()
-  mtext("Longitude", side=1, cex=1.4, line=2.5)
-  mtext("Latitude", side=2, cex=1.4, line=2.5)
-
 # make a North America base map
 noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = "bw")
 
