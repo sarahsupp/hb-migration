@@ -4,6 +4,7 @@ require(mgcv)
 require(Rmisc)
 require(spaa)
 require(ggplot2)
+require(SDMTools)
 
 
 DateConvert = function(date){
@@ -47,7 +48,7 @@ PlotRecords = function(yeardata, species) {
 }
 
 
-AlternateMeanLocs = function(dat, species, hexdat) {
+AlternateMeanLocs = function(dat, species, hexdat, yreffort) {
   #input is a yearly data frame for a species
   #output is a new dataframe with mean lat and long, calculated from hexagon centers, after placing daily observed
   #lat and long onto the isacohedron equal-area cells map, sensu La Sorte et al. 2013
@@ -61,7 +62,7 @@ AlternateMeanLocs = function(dat, species, hexdat) {
   
   #To find the POLYFID for the hexes for each observation, identify observed lon and lat  
   # Matches observations with the polygon hexes in the map
-  ID <- over(SpatialPoints(dat[,c(10,9)]), hexdat)
+  ID <- over(SpatialPoints(dat[,c(10,9)]), hexdat)  #TODO: Check with TAC that this is working correctly based on map projection
     names(ID) = c("JOIN_COUNT", "AREA", "PERIMETER", "BOB_", "BOB_ID", "ID", "POLYFID", "HEX_LONGITUDE", "HEX_LATITUDE")
   coords <- cbind(dat, ID) 
   
@@ -71,12 +72,16 @@ AlternateMeanLocs = function(dat, species, hexdat) {
   #calculate weighted mean (weights based on number of obs per hex) lat and long
   for (j in 1:length(julian)){
     jdata = dailyHexes[which(dailyHexes$julian == j),]
+    jeffort = yreffort[which(yreffort$DAY == j),]
+    jdata = merge(jdata, jeffort)  #TODO - DOESN'T ALWAYS MATCH UP - WHY ARE SOME MISSING? (e.g. 2012 Ar. alex., day 100)
     if (nrow(jdata) > 0){
       numcells = nrow(jdata)
       numobs = sum(jdata$freq)
       mo = as.numeric(months(j))
-      wtmean_lon = weighted.mean(jdata$HEX_LONGITUDE, jdata$freq, na.rm=TRUE)
-      wtmean_lat = weighted.mean(jdata$HEX_LATITUDE, jdata$freq, na.rm=TRUE)
+      wtmean_lon = wt.mean(jdata$HEX_LONGITUDE, jdata$freq/jdata$COUNT)
+      wtmean_lat = wt.mean(jdata$HEX_LATITUDE, jdata$freq/jdata$COUNT)
+      #wtmean_lon = weighted.mean(jdata$HEX_LONGITUDE, jdata$freq, na.rm=TRUE)
+      #wtmean_lat = weighted.mean(jdata$HEX_LATITUDE, jdata$freq, na.rm=TRUE)
       df[outcount,] = c(j, mo, numobs, numcells, wtmean_lon, wtmean_lat)
       outcount = outcount + 1
     }
@@ -144,8 +149,7 @@ MeanDailyLoc = function(dat, species) {
 DailyTravel = function(meanlocs, loncol, latcol, species, year){
   #use geodist to calculate Great Circle distance between daily location centers
   require(spaa)
-  require(mgcv)   #TODO: GEt some different values when use spaa vs gmt package to calculate great circle distance. Track down issue
-  #require(gmt)
+  require(mgcv)
   dst=c(NA)
   
   for(i in 1:nrow(meanlocs)){
@@ -297,8 +301,8 @@ PlotChecklistMap = function(humdat, hexdat, dirpath){
   df5 = merge(hexdat, df4, by.x="POLYFID", by.y="POLYFID", all.x=TRUE)
   
   #hexes with no counts are white
-  df5$cols <- ifelse(is.na(df5$count), "white", df5$cols)
-  df5 <- df5[order(df5$POLYFID),]
+  df5$cols = ifelse(is.na(df5$count), "white", df5$cols)
+  df5 = df5[order(df5$POLYFID),]
   
   vls = sort(unique(round(cols$id/100)*100))
   vls[1] = 1
