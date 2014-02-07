@@ -52,7 +52,7 @@ AlternateMeanLocs = function(dat, species, hexdat, yreffort) {
   #input is a yearly data frame for a species
   #output is a new dataframe with mean lat and long, calculated from hexagon centers, after placing daily observed
   #lat and long onto the isacohedron equal-area cells map, sensu La Sorte et al. 2013
-  df = data.frame("jday"=1, "month"=1, "numobs"=1, "numcells"=1, "centerlon"=1, "centerlat"=1)
+  df = data.frame("jday"=1, "month"=1, "numobs"=1, "numcells"=1, "centerlon"=1, "centerlat"=1, "sdlon"=1, "sdlat"=1)
   outcount = 1
   
   #count the number of days in the year
@@ -80,14 +80,16 @@ AlternateMeanLocs = function(dat, species, hexdat, yreffort) {
       mo = as.numeric(months(j))
       wtmean_lon = wt.mean(jdata$HEX_LONGITUDE, jdata$freq/jdata$COUNT)
       wtmean_lat = wt.mean(jdata$HEX_LATITUDE, jdata$freq/jdata$COUNT)
+      lon_sd <- wt.sd(jdata$HEX_LONGITUDE, jdata$freq/jdata$COUNT)
+      lat_sd <- wt.sd(jdata$HEX_LATITUDE, jdata$freq/jdata$COUNT)
       #wtmean_lon = weighted.mean(jdata$HEX_LONGITUDE, jdata$freq, na.rm=TRUE)
       #wtmean_lat = weighted.mean(jdata$HEX_LATITUDE, jdata$freq, na.rm=TRUE)
-      df[outcount,] = c(j, mo, numobs, numcells, wtmean_lon, wtmean_lat)
+      df[outcount,] = c(j, mo, numobs, numcells, wtmean_lon, wtmean_lat,lon_sd, lat_sd)
       outcount = outcount + 1
     }
     else {
       mo = as.numeric(months(j))
-      df[outcount,] = c(j, mo, 0, 0, NA, NA)
+      df[outcount,] = c(j, mo, 0, 0, NA, NA, NA, NA)
       outcount = outcount + 1
     }
   }
