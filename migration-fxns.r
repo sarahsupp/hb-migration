@@ -146,7 +146,7 @@ MeanDailyLoc = function(dat, species) {
 }
 
 
-DailyTravel = function(meanlocs, loncol, latcol, species, year){
+DailyTravel = function(meanlocs, loncol, latcol, species, year, migr_dates){
   #use geodist to calculate Great Circle distance between daily location centers
   require(spaa)
   require(mgcv)
@@ -164,7 +164,10 @@ DailyTravel = function(meanlocs, loncol, latcol, species, year){
   distdat = cbind(meanlocs,dst)
   
   print (ggplot(distdat, aes(jday, dst)) + geom_line(size=1, col = "#4daf4a") + theme_bw() + xlab("Julian Day") + 
-           ylab("Distance Traveled (km)") + ggtitle(paste(species, year, sep = " ")))
+          ylab("Distance Traveled (km)") + ggtitle(paste(species, year, sep = " ")) +
+          theme(text = element_text(size=20)) +     
+          geom_vline(xintercept = c(migr_dates[1], migr_dates[2]), linetype = "dashed", size = 1) +
+          geom_vline(xintercept = median(migr_dates), col = "indianred", linetype = "dashed"))
   
   return(distdat)
 }
