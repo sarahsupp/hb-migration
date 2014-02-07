@@ -10,10 +10,10 @@ library(raster)
 wd = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/data"
 setwd(wd)
 
-# make a North America base map
-noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = "bw")
+# read in summary of effort data (Number of eBird checklists submitted per day per year)
+effort = read.table("cell_effort.txt", header=TRUE)
 
-# read in the north ameica equal area hex grid map (F.A.L.)
+# read in the north america equal area hex grid map (F.A.L.)
 #hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/nw_vector_grid.shp") #quad map
 hexgrid = readShapePoly("C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/terr_4h6/terr_4h6.shp") #hex map
   # crop to just North America, where the migratory species occur
@@ -27,6 +27,9 @@ hexgrid = readShapePoly("C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbi
   box()
   mtext("Longitude", side=1, cex=1.4, line=2.5)
   mtext("Latitude", side=2, cex=1.4, line=2.5)
+
+# make a North America base map
+noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = "bw")
 
 # read in eBird data
 files = list.files(pattern = "*.txt")
@@ -122,7 +125,7 @@ for (f in 1:length(files)){
     
     rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat", "altmeandat", "migration", "preds", "dist", "mig_path")])   # clears the memory of the map and year-level data
   }
-  rm(list=ls()[!ls() %in% c("f", "files", "noam", "hexgrid")])   # clears the memory of everything except the file list, iterator, and base map
+  rm(list=ls()[!ls() %in% c("f", "files", "noam", "hexgrid", "effort")])   # clears the memory of everything except the file list, iterator, and base map
 }
 
 
