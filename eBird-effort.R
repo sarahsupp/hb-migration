@@ -72,4 +72,4 @@ for (y in 1:length(years)){
   dev.off()
 }
 
-write.table(effort_cell, file = "cell_effort.txt", row.names=FALSE)
+write.table(effort_all, file = "cell_effort.txt", row.names=FALSE)
