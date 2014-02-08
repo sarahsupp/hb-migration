@@ -86,14 +86,13 @@ for (f in 1:length(files)){
   
   for (y in 1:length(years)){
     yrdat = humdat[which(humdat$year == years[y]),]
+    yreffort = effort[which(effort$YEAR == years[y]),]
     
     #plot frequency of sightings per month
     PlotRecords(yrdat$month, species)
     
-    #get daily mean location and sd 
-    #meandat = MeanDailyLoc(yrdat, species)     #----may not need this version
-    #cntrdat = FindCentroids(meandat, 7, 5, hexgrid)      #----may not need this version
-    altmeandat = AlternateMeanLocs(yrdat,species,hexgrid)
+    #get daily weighted mean location
+    altmeandat = AlternateMeanLocs(yrdat,species,hexgrid,yreffort)
     
     #grab dates for migration
     migration = GetMigrationDates(altmeandat)
@@ -106,7 +105,7 @@ for (f in 1:length(files)){
     preds = EstimateDailyLocs(altmeandat)
     
     #get Great Circle distances traveled each day between predicted daily locations
-    dist = DailyTravel(preds, 4, 5, species, year)
+    dist = DailyTravel(preds, 4, 5, species, year, m)
     
     #plot smoothed migration trajectory for the species and year
     mig_path = PlotMigrationPath(preds, noam, species, years[y])
@@ -114,6 +113,45 @@ for (f in 1:length(files)){
     
     #plot occurrences with lines showing beginning and end of migration
     PlotOccurrences(altmeandat, species, migration[[1]], migration[[2]])
+    
+    #add year to preds, so we can save it to compare across years
+    preds$year = years[y]
+    
+    if (y == 1){
+      pred_data = preds
+      migdates = data.frame("spr"=m[1], "fal"=m[2])
+    }
+    else{
+      pred_data = rbind(pred_data, preds)
+      migdates = rbind(migdates, m)
+    }
+    
+    if (y == length(years)){
+      ggplot(pred_data, aes(jday, lon, col=as.factor(month))) + geom_point() + theme_classic() +
+        geom_vline(xintercept = c(migdates$spr), col = "cadetblue") +
+        geom_vline(xintercept = c(migdates$fal), col = "orange") +
+        scale_x_continuous(breaks = seq(0, 365, by = 30)) + 
+        theme(text = element_text(size=20)) + ggtitle(species)
+      ggsave(filename = paste(dirpath, "/", "lon_allyears", species,".jpeg",sep=""))
+      
+      ggplot(pred_data, aes(jday, lat, col=as.factor(month))) + geom_point() + theme_classic() +
+        geom_vline(xintercept = c(migdates$spr), col = "cadetblue") +
+        geom_vline(xintercept = c(migdates$fal), col = "orange") +
+        scale_x_continuous(breaks = seq(0, 365, by = 30)) + 
+        theme(text = element_text(size=20)) + ggtitle(species)
+      ggsave(filename = paste(dirpath, "/", "lat_allyears", species,".jpeg",sep=""))
+      
+      pred_spr = pred_data[which(pred_data$jday > mean(migdates$spr) & pred_data$jday < median(c(migdates$spr, migdates$fal))),]
+      pred_fal = pred_data[which(pred_data$jday < mean(migdates$fal) & pred_data$jday > median(c(migdates$spr, migdates$fal))),]
+      
+      ggplot(pred_spr, aes(lon, lat, col=as.factor(month))) + geom_point() + theme_classic() +
+        theme(text = element_text(size=20)) + ggtitle(paste("spring -", species))
+      ggsave(filename = paste(dirpath, "/", "spr_allyears", species,".jpeg",sep=""))
+     
+      ggplot(pred_fal, aes(lon, lat, col=as.factor(month))) + geom_point() + theme_classic() +
+        theme(text = element_text(size=20)) + ggtitle(paste("spring -", species))
+      ggsave(filename = paste(dirpath, "/", "fal_allyears", species,".jpeg",sep=""))
+    }
     
     rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat", "altmeandat", "migration", "preds", "dist", "mig_path")])   # clears the memory of the map and year-level data
   }
