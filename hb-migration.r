@@ -24,7 +24,7 @@ hexgrid = readShapePoly("C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbi
 noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = "bw")
 
 # read in eBird data
-files = list.files(pattern = "*.txt")
+files = list.files(pattern = "*2013.txt")
 
 #for each eBird file, print the number sightings per year and per month.
 #plot the locations of sightings on a map, color coded by month
@@ -96,16 +96,13 @@ for (f in 1:length(files)){
     
     #grab dates for migration
     migration = GetMigrationDates(altmeandat)
-
-    m = c(migration[[1]], migration[[2]])
-    write.table(m, file = paste(dirpath, "/", "migration", species, ".txt",sep=""), 
-                append=TRUE, col.names=FALSE, row.names=FALSE)
     
     #use GAM model to predict daily location along a smoothing line
     preds = EstimateDailyLocs(altmeandat)
     
     #get Great Circle distances traveled each day between predicted daily locations
-    dist = DailyTravel(preds, 4, 5, species, year, m)
+    dist = DailyTravel(preds, 4, 5, species, years[y], migration)
+    ggsave(filename = paste(dirpath, "/", "distance", years[y], species,".jpeg",sep=""))
     
     #plot smoothed migration trajectory for the species and year
     mig_path = PlotMigrationPath(preds, noam, species, years[y])
@@ -113,20 +110,25 @@ for (f in 1:length(files)){
     
     #plot occurrences with lines showing beginning and end of migration
     PlotOccurrences(altmeandat, species, migration[[1]], migration[[2]])
+    ggsave(file=paste(dirpath, "/", "occurrences", species, years[y], ".pdf", sep=""))
     
     #add year to preds, so we can save it to compare across years
     preds$year = years[y]
     
     if (y == 1){
       pred_data = preds
-      migdates = data.frame("spr"=m[1], "fal"=m[2])
+      migdates = data.frame("spr" = migration[1], "fal" = migration[2])
     }
     else{
       pred_data = rbind(pred_data, preds)
-      migdates = rbind(migdates, m)
+      migdates = rbind(migdates, migration)
     }
     
     if (y == length(years)){
+      #write migration timing data to file
+      write.table(migdates, file = paste(dirpath, "/", "migration", species, ".txt",sep=""), 
+                  append=TRUE, col.names=FALSE, row.names=FALSE)
+      
       ggplot(pred_data, aes(jday, lon, col=as.factor(month))) + geom_point() + theme_classic() +
         geom_vline(xintercept = c(migdates$spr), col = "cadetblue") +
         geom_vline(xintercept = c(migdates$fal), col = "orange") +

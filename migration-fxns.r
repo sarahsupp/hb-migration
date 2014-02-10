@@ -114,12 +114,14 @@ DailyTravel = function(meanlocs, loncol, latcol, species, year, migr_dates){
   }
   distdat = cbind(meanlocs,dst)
   
-  print (ggplot(distdat, aes(jday, dst)) + geom_line(size=1, col = "#4daf4a") + theme_bw() + xlab("Julian Day") + 
+  subdistdat = distdat[which(distdat$jday >= migr_dates[1] & distdat$jday <= migr_dates[2]),]
+
+  print(ggplot(subdistdat, aes(jday, dst)) + geom_line(size=1, col = "#4daf4a") + theme_bw() + xlab("Julian Day") + 
           ylab("Distance Traveled (km)") + ggtitle(paste(species, year, sep = " ")) +
-          theme(text = element_text(size=20)) +     
-          geom_vline(xintercept = c(migr_dates[1], migr_dates[2]), linetype = "dashed", size = 1) +
+          theme(text = element_text(size=20)) +    
+          #geom_vline(xintercept = c(migr_dates[1], migr_dates[2]), linetype = "dashed", size = 1) +
           geom_vline(xintercept = median(migr_dates), col = "indianred", linetype = "dashed"))
-  
+
   return(distdat)
 }
 
@@ -150,7 +152,7 @@ GetMigrationDates = function(data) {
     if(spring_index2 == 1) break
     spring_index2 = spring_index2 - 1
   }
-  spring = spring_index2+1
+  spring = spring_index2 + 1
   
   #identify end of fall migration
   tst <- 1000
@@ -160,9 +162,9 @@ GetMigrationDates = function(data) {
     if(fall_index2==365) break
     fall_index2 <- fall_index2 + 1
   }
-  fall <- fall_index2-1
+  fall <- fall_index2 - 1
   
-  dates = list(spring=spring, fall=fall)
+  dates = c(spring, fall)
   return(dates)
 }
 
@@ -174,10 +176,11 @@ PlotOccurrences = function(data, species, spring, fall) {
   
   med = median(c(spring,fall))
   occ = ggplot(data, aes(jday, numcells)) + geom_point() + xlab("julian day") + ylab("number of cells") + 
-    geom_smooth(se=T, method='gam', formula=y~s(x, k=40), gamma=1.5, col='#7b3294', fill='#af8dc3') + 
+    geom_smooth(se=T, method='gam', formula=y~s(x, k=40), gamma=1.5) + 
     theme_bw() + ggtitle(species) + scale_x_continuous(breaks = seq(0, 365, by = 25)) +
     scale_y_continuous(breaks = seq(0, 80, by = 5)) + 
-    geom_vline(xintercept = c(spring, fall), col = "#008837", linetype = "dashed", size = 1) +
+    geom_vline(xintercept = spring, col = "cadetblue", size = 1) +
+    geom_vline(xintercept = fall, col = "orange", size = 1) +
     geom_vline(xintercept = med, col = "indianred", linetype = "dashed") +
     theme(text = element_text(size=20))
   
@@ -238,12 +241,12 @@ PlotChecklistMap = function(humdat, hexdat, dirpath){
   df5$cols = ifelse(is.na(df5$count), "white", df5$cols)
   df5 = df5[order(df5$POLYFID),]
   
-  vls = sort(unique(round(cols$id/100)*100))
+  vls = sort(unique(round(cols$id/500)*500))
   vls[1] = 1
   cols2 = tim.colors(length(vls))
   
   #make a map with hexes colored by the number of times the species was observed in a given hex
-  png(paste(dirpath,"/", "ChecklistMap.png", sep=""))
+  pdf(paste(dirpath,"/", "ChecklistMap.pdf", sep=""))
   plot(hexdat, col=df5$cols, border="gray10", lwd=0.25, xlim=c(-170,-50), ylim=c(10,80), las=1)
   axis(side=1)
   axis(side=2, las=1)
