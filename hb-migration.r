@@ -73,7 +73,7 @@ for (f in 1:length(files)){
     
   #start a new directory
   dirpath = paste("C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/Figures/", species, sep="")
-    dir.create(dirpath, showWarnings = TRUE, recursive = FALSE)
+ #   dir.create(dirpath, showWarnings = TRUE, recursive = FALSE)
   
   #show how many records there are for the species across the years, write to txt file
   yeartable = PlotRecords(humdat$year, species)
@@ -157,7 +157,7 @@ for (f in 1:length(files)){
     
     rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat", "altmeandat", "migration", "preds", "dist", "mig_path")])   # clears the memory of the map and year-level data
   }
-  rm(list=ls()[!ls() %in% c("f", "files", "noam", "hexgrid", "effort")])   # clears the memory of everything except the file list, iterator, and base map
+  rm(list=ls()[!ls() %in% c("f", "files", "noam", "hexgrid", "effort", "pred_data", "migdates")])   # clears the memory of everything except the file list, iterator, and base map
 }
 
 
