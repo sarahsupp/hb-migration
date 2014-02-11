@@ -136,7 +136,7 @@ for (f in 1:length(files)){
         theme(text = element_text(size=20)) + ggtitle(species)
       ggsave(filename = paste(dirpath, "/", "lon_allyears", species,".jpeg",sep=""))
       
-      ggplot(pred_data, aes(jday, lat, col=as.factor(month))) + geom_point() + theme_classic() +
+      ggplot(pred_data, aes(jday, lat, col=year)) + geom_point() + theme_classic() +
         geom_vline(xintercept = c(migdates$spr), col = "cadetblue") +
         geom_vline(xintercept = c(migdates$fal), col = "orange") +
         scale_x_continuous(breaks = seq(0, 365, by = 30)) + 
