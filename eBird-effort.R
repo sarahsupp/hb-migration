@@ -43,12 +43,15 @@ for (f in 1:length(files)){
 }
 
 #aggregate by daily effort in each year
-effort_day <- aggregate(effort_all$COUNT, list(year=effort_all$YEAR, day=effort_all$DAY), sum)
-names(effort_day)[[3]] <- "effort"
+effort_day = aggregate(effort_all$COUNT, list(year=effort_all$YEAR, day=effort_all$DAY), sum)
+names(effort_day)[3] = "effort"
 
-#aggregate by total effort in each hex cell
-effort_cell <- aggregate(effort_all$COUNT, list(year=effort_all$YEAR, POLYFID=effort_all$POLYFID), sum)
-names(effort_cell)[[3]] <- "effort"
+#aggregate by total effort in each hex cell in each year
+effort_cell = aggregate(effort_all$COUNT, list(year=effort_all$YEAR, POLYFID=effort_all$POLYFID), sum)
+names(effort_cell)[3] = "effort"
+
+effort_cellTot = aggregate(effort_all$COUNT, list(POLYFID=effort_all$POLYFID), sum)
+names(effort_cellTot)[2] = "effort"
 
 years = c(2004:2013)
 
@@ -69,7 +72,7 @@ for (y in 1:length(years)){
   
   #make a map with hexes colored by the number of times the species was observed in a given hex
   pdf(paste("TotalEffort", years[y], ".pdf", sep=""))
-  plot(hexdat, col=df$cols, border="gray10", lwd=0.25, xlim=c(-170,-50), ylim=c(10,80), las=1)
+  plot(hexgrid, col=df$cols, border="gray10", lwd=0.25, xlim=c(-170,-50), ylim=c(10,80), las=1)
   axis(side=1)
   axis(side=2, las=1)
   box()
@@ -82,4 +85,35 @@ for (y in 1:length(years)){
   dev.off()
 }
 
+
+#------------ Plot the total effort for 2004-2013
+eft = effort_cellTot
+df = merge(hexgrid, eft, by.all.x=TRUE)
+#matches colors with the number of observations
+cols = data.frame(id=c(NA,sort(unique(df$effort))), cols=tim.colors(length(unique(df$effort))), 
+                  stringsAsFactors=FALSE)
+df = merge(df,cols, by.x="effort", by.y="id")
+#hexes with no counts are white
+df$cols = ifelse(is.na(df$effort), "white", df$cols)
+df = df[order(df$POLYFID),]
+
+vls = sort(unique(round(cols$id/2000)*2000))
+vls[1] = 1
+cols2 = tim.colors(length(vls))
+
+#make a map with hexes colored by the number of times the species was observed in a given hex
+pdf("TotalEffort_2004-2013.pdf")
+plot(hexgrid, col=df$cols, border="gray10", lwd=0.25, xlim=c(-170,-50), ylim=c(10,80), las=1)
+axis(side=1)
+axis(side=2, las=1)
+box()
+mtext("Longitude", side=1, cex=1.4, line=2.5)
+mtext("Latitude", side=2, cex=1.4, line=2.5)
+mtext("Number of eBird checklists 2004-2013", side = 3, cex = 1.4, line=1)
+## legend
+legend("bottomleft", legend=vls, pch=22, pt.bg=cols2, pt.cex=1, cex=0.75, bty="n",
+       col="black", title="Number of checklists", x.intersp=1, y.intersp=0.5)
+dev.off()
+
+#------------ Write datasets to use later
 write.table(effort_all, file = "cell_effort.txt", row.names=FALSE)
