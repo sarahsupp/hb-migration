@@ -129,7 +129,7 @@ for (f in 1:length(files)){
       write.table(migdates, file = paste(dirpath, "/", "migration", species, ".txt",sep=""), 
                   append=TRUE, col.names=FALSE, row.names=FALSE)
       
-      ggplot(pred_data, aes(jday, lon, col=as.factor(month))) + geom_point() + theme_classic() +
+      ggplot(pred_data, aes(jday, lon, col=year)) + geom_point() + theme_classic() +
         geom_vline(xintercept = c(migdates$spr), col = "cadetblue") +
         geom_vline(xintercept = c(migdates$fal), col = "orange") +
         scale_x_continuous(breaks = seq(0, 365, by = 30)) + 
@@ -146,11 +146,11 @@ for (f in 1:length(files)){
       pred_spr = pred_data[which(pred_data$jday > mean(migdates$spr) & pred_data$jday < median(c(migdates$spr, migdates$fal))),]
       pred_fal = pred_data[which(pred_data$jday < mean(migdates$fal) & pred_data$jday > median(c(migdates$spr, migdates$fal))),]
       
-      ggplot(pred_spr, aes(lon, lat, col=as.factor(month))) + geom_point() + theme_classic() +
+      ggplot(pred_spr, aes(lon, lat, col=year)) + geom_point() + theme_classic() +
         theme(text = element_text(size=20)) + ggtitle(paste("spring -", species))
       ggsave(filename = paste(dirpath, "/", "spr_allyears", species,".jpeg",sep=""))
      
-      ggplot(pred_fal, aes(lon, lat, col=as.factor(month))) + geom_point() + theme_classic() +
+      ggplot(pred_fal, aes(lon, lat, col=year)) + geom_point() + theme_classic() +
         theme(text = element_text(size=20)) + ggtitle(paste("fall -", species))
       ggsave(filename = paste(dirpath, "/", "fal_allyears", species,".jpeg",sep=""))
       
