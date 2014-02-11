@@ -63,7 +63,7 @@ for (y in 1:length(years)){
   df$cols = ifelse(is.na(df$effort), "white", df$cols)
   df = df[order(df$POLYFID),]
   
-  vls = sort(unique(round(cols$id/100)*100))
+  vls = sort(unique(round(cols$id/500)*500))
   vls[1] = 1
   cols2 = tim.colors(length(vls))
   
