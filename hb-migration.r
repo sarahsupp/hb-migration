@@ -151,8 +151,25 @@ for (f in 1:length(files)){
       ggsave(filename = paste(dirpath, "/", "spr_allyears", species,".jpeg",sep=""))
      
       ggplot(pred_fal, aes(lon, lat, col=as.factor(month))) + geom_point() + theme_classic() +
-        theme(text = element_text(size=20)) + ggtitle(paste("spring -", species))
+        theme(text = element_text(size=20)) + ggtitle(paste("fall -", species))
       ggsave(filename = paste(dirpath, "/", "fal_allyears", species,".jpeg",sep=""))
+      
+      #compare location across the years using mean and sd
+      jdays = sort(unique(pred_data$jday))
+      patherr = data.frame("jday"=1,"meanlat"=1, "sdlat"=1, "meanlon"=1, "sdlon"=1)
+      outcount = 1
+      for (j in 1:length(jdays)){
+        tmp = pred_data[which(pred_data$jday == j),]
+        meanlat = mean(tmp$lat)
+        sdlat = sd(tmp$lat)
+        meanlon = mean(tmp$lon)
+        sdlon = sd(tmp$lon)
+        patherr[outcount,] = c(j, meanlat, sdlat, meanlon, sdlon)
+        outcount = outcount + 1
+      }
+      ggplot(patherr, aes(jday, sdlat)) + geom_point() + theme_classic()
+      ggplot(patherr, aes(jday, sdlon)) + geom_point() + theme_classic()
+      ggplot(patherr, aes(sdlon, sdlat, col=jday)) + geom_point() + theme_classic()
     }
     
     rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat", "altmeandat", "migration", "preds", "dist", "mig_path")])   # clears the memory of the map and year-level data
