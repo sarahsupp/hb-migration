@@ -89,7 +89,7 @@ for (f in 1:length(files)){
     yreffort = effort[which(effort$YEAR == years[y]),]
     
     #plot frequency of sightings per month
-    PlotRecords(yrdat$month, species)
+    monthtable = PlotRecords(yrdat$month, species)
     
     #get daily weighted mean location
     altmeandat = AlternateMeanLocs(yrdat,species,hexgrid,yreffort)
