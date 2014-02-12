@@ -39,7 +39,7 @@ PlotRecords = function(yeardata, species) {
   t = as.data.frame(table(yeardata))
   names(t) = c('year', 'count')
  
-  barplot = ggplot(data = t, aes(year, count)) + geom_bar(fill="cadetblue2") + theme_bw() + 
+  barplot = ggplot(data = t, aes(year, count)) + geom_bar(fill="cadetblue2", stat="identity") + theme_bw() + 
     ggtitle(species) + theme(text = element_text(size=20)) + xlab("time") + ylab("number checklists")
   
   print(barplot)
