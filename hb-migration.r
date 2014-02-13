@@ -104,6 +104,9 @@ for (f in 1:length(files)){
     dist = DailyTravel(preds, 4, 5, species, years[y], migration)
     ggsave(filename = paste(dirpath, "/", "distance", years[y], species,".jpeg",sep=""))
     
+    #estimate migration speed for spring and fall
+    speed = MigrationSpeed(dst, migration)
+    
     #plot smoothed migration trajectory for the species and year
     mig_path = PlotMigrationPath(preds, noam, species, years[y])
     ggsave(mig_path, file=paste(dirpath, "/", "migration", species, years[y], ".pdf", sep=""))
