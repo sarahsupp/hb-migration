@@ -105,7 +105,7 @@ for (f in 1:length(files)){
     ggsave(filename = paste(dirpath, "/", "distance", years[y], species,".jpeg",sep=""))
     
     #estimate migration speed for spring and fall
-    speed = MigrationSpeed(dst, migration)
+    speed = MigrationSpeed(dist, migration)
     
     #plot smoothed migration trajectory for the species and year
     mig_path = PlotMigrationPath(preds, noam, species, years[y])
@@ -121,15 +121,19 @@ for (f in 1:length(files)){
     if (y == 1){
       pred_data = preds
       migdates = data.frame("spr" = migration[1], "fal" = migration[2])
+      migspeed = data.frame("spr" = speed[1], "fal" = speed[2])
     }
     else{
       pred_data = rbind(pred_data, preds)
       migdates = rbind(migdates, migration)
+      migspeed = rbind(migspeed, speed)
     }
     
     if (y == length(years)){
-      #write migration timing data to file
+      #write migration timing and speed data to file
       write.table(migdates, file = paste(dirpath, "/", "migration", species, ".txt",sep=""), 
+                  append=TRUE, col.names=FALSE, row.names=FALSE)
+      write.table(migspeed, file = paste(dirpath, "/", "speed", species, ".txt",sep=""), 
                   append=TRUE, col.names=FALSE, row.names=FALSE)
       
       ggplot(pred_data, aes(jday, lon, col=year)) + geom_point() + theme_classic() +
