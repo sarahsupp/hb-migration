@@ -175,8 +175,11 @@ for (f in 1:length(files)){
         outcount = outcount + 1
       }
       ggplot(patherr, aes(jday, sdlat)) + geom_point() + theme_classic()
+      ggsave(filename = paste(dirpath, "/sdlat", species,".jpeg",sep=""))
       ggplot(patherr, aes(jday, sdlon)) + geom_point() + theme_classic()
+      ggsave(filename = paste(dirpath, "/sdlon", species,".jpeg",sep=""))
       ggplot(patherr, aes(sdlon, sdlat, col=jday)) + geom_point() + theme_classic()
+      ggsave(filename = paste(dirpath, "/sdlon-lat", species,".jpeg",sep=""))
     }
     
     rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat", "altmeandat", "migration", "preds", "dist", "mig_path")])   # clears the memory of the map and year-level data
