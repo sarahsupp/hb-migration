@@ -7,8 +7,14 @@ library(sp)
 library(raster)
 
 #set working directory
+main = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration"
 wd = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/data"
 setwd(wd)
+
+
+#---------------------------------------------------------------------------------------
+#              predict migration paths, dates, speed, and error across years
+#---------------------------------------------------------------------------------------
 
 # read in summary of effort data (Number of eBird checklists submitted per day per year)
 effort = read.table("cell_effort.txt", header=TRUE)
@@ -227,3 +233,24 @@ for (f in 1:length(files)){
 }
 
 
+#---------------------------------------------------------------------------------------
+#                   compare migration rates and dates across species
+#---------------------------------------------------------------------------------------
+
+# read in eBird data
+files = list.files(path = main, pattern = "speed", recursive=TRUE, full.names=TRUE)
+
+for (f in 1:length(files)){
+  rate = read.table(files[f], header=FALSE, sep=" ", quote="", fill=TRUE, comment.char="") #quote="/"'"
+  names(rate) = c("spring", "fall")
+  year = c(2004:2013)
+  rate = cbind(rate, year)
+  
+  avg_speed = ggplot(rate, aes(year, spring)) + geom_point(col = "cadetblue") + 
+    geom_point(aes(year, fall), col = "orange") + 
+    theme_classic() + ylab("migration speed (km/day)") + theme(text = element_text(size=20)) + 
+    geom_hline(yintercept = mean(rate$spring), col = "cadetblue", position="identity") +
+    geom_hline(yintercept = mean(rate$fall), col = "orange", position="identity")
+    
+  print(avg_speed)
+}
