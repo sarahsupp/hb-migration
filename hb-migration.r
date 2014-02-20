@@ -155,11 +155,28 @@ for (f in 1:length(files)){
       
       ggplot(pred_spr, aes(lon, lat, col=year)) + geom_point() + theme_classic() +
         theme(text = element_text(size=20)) + ggtitle(paste("spring -", species))
-      ggsave(filename = paste(dirpath, "/", "spr_allyears", species,".jpeg",sep=""))
+      ggsave(filename = paste(dirpath, "/spr_allyears", species,".jpeg",sep=""))
      
       ggplot(pred_fal, aes(lon, lat, col=year)) + geom_point() + theme_classic() +
         theme(text = element_text(size=20)) + ggtitle(paste("fall -", species))
-      ggsave(filename = paste(dirpath, "/", "fal_allyears", species,".jpeg",sep=""))
+      ggsave(filename = paste(dirpath, "/fal_allyears", species,".jpeg",sep=""))
+      
+      #compare sd across years
+      pdf(file = paste(dirpath, "/se_latANDlon", species, ".pdf", sep=""), width = 10, height = 4)
+      
+      ymax = ceiling(max(c(pred_data$lat_se, pred_data$lon_se)))  
+       lat = ggplot(pred_data, aes(jday, lat_se, col=as.factor(year))) + geom_point(size=1) + theme_classic() +
+        geom_vline(xintercept = c(migdates$spr), col = "cadetblue") +
+        geom_vline(xintercept = c(migdates$fal), col = "orange") + ggtitle(paste(species, "Latitude")) +
+        scale_y_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax)) 
+      
+        lon = ggplot(pred_data, aes(jday, lon_se, col=as.factor(year))) + geom_point(size=1) + theme_classic() +
+        geom_vline(xintercept = c(migdates$spr), col = "cadetblue") +
+        geom_vline(xintercept = c(migdates$fal), col = "orange") + ggtitle(paste(species, "Longitude")) +
+        scale_y_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax)) 
+      
+       multiplot(lat, lon, cols = 2)
+      dev.off()
       
       #compare location across the years using mean and sd
       jdays = sort(unique(pred_data$jday))
