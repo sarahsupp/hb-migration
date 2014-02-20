@@ -136,33 +136,42 @@ for (f in 1:length(files)){
       write.table(migspeed, file = paste(dirpath, "/", "speed", species, ".txt",sep=""), 
                   append=TRUE, col.names=FALSE, row.names=FALSE)
       
-      ggplot(pred_data, aes(jday, lon, col=year)) + geom_point() + theme_classic() +
+      # save plots comparing daily lat and long and migration date across the years
+      pdf(file = paste(dirpath, "/AllYears_lon-lat", species, ".pdf", sep=""), width = 8, height = 10)
+      
+      yrlylon = ggplot(pred_data, aes(jday, lon, col=year)) + geom_point(size=1) + theme_classic() +
         geom_vline(xintercept = c(migdates$spr), col = "cadetblue") +
         geom_vline(xintercept = c(migdates$fal), col = "orange") +
         scale_x_continuous(breaks = seq(0, 365, by = 30)) + 
         theme(text = element_text(size=20)) + ggtitle(species)
-      ggsave(filename = paste(dirpath, "/", "lon_allyears", species,".jpeg",sep=""))
       
-      ggplot(pred_data, aes(jday, lat, col=year)) + geom_point() + theme_classic() +
+      yrlylat = ggplot(pred_data, aes(jday, lat, col=year)) + geom_point(size=1) + theme_classic() +
         geom_vline(xintercept = c(migdates$spr), col = "cadetblue") +
         geom_vline(xintercept = c(migdates$fal), col = "orange") +
         scale_x_continuous(breaks = seq(0, 365, by = 30)) + 
         theme(text = element_text(size=20)) + ggtitle(species)
-      ggsave(filename = paste(dirpath, "/", "lat_allyears", species,".jpeg",sep=""))
+
+      multiplot(yrlylon, yrlylat, cols = 1)
+      dev.off()
       
+      # save plots comparing spring vs fall migration routes across the years (based on mean spring & fall migration dates) 
+      #TODO: let each year use its own estimated dates?
       pred_spr = pred_data[which(pred_data$jday > mean(migdates$spr) & pred_data$jday < median(c(migdates$spr, migdates$fal))),]
       pred_fal = pred_data[which(pred_data$jday < mean(migdates$fal) & pred_data$jday > median(c(migdates$spr, migdates$fal))),]
       
-      ggplot(pred_spr, aes(lon, lat, col=year)) + geom_point() + theme_classic() +
+      pdf(file = paste(dirpath, "/AllYears_sprVSfal", species, ".pdf", sep=""), width = 10, height = 4)
+      
+      sprplot = ggplot(pred_spr, aes(lon, lat, col=year)) + geom_point(size=1) + theme_classic() +
         theme(text = element_text(size=20)) + ggtitle(paste("spring -", species))
-      ggsave(filename = paste(dirpath, "/spr_allyears", species,".jpeg",sep=""))
      
-      ggplot(pred_fal, aes(lon, lat, col=year)) + geom_point() + theme_classic() +
+      falplot = ggplot(pred_fal, aes(lon, lat, col=year)) + geom_point(size=1) + theme_classic() +
         theme(text = element_text(size=20)) + ggtitle(paste("fall -", species))
-      ggsave(filename = paste(dirpath, "/fal_allyears", species,".jpeg",sep=""))
+      
+      multiplot(sprplot, falplot, cols = 2)
+      dev.off()
       
       #compare sd across years
-      pdf(file = paste(dirpath, "/se_latANDlon", species, ".pdf", sep=""), width = 10, height = 4)
+      pdf(file = paste(dirpath, "/Error_selon-lat", species, ".pdf", sep=""), width = 10, height = 4)
       
       ymax = ceiling(max(c(pred_data$lat_se, pred_data$lon_se)))  
        lat = ggplot(pred_data, aes(jday, lat_se, col=as.factor(year))) + geom_point(size=1) + theme_classic() +
@@ -181,7 +190,7 @@ for (f in 1:length(files)){
       # plot the relationship between lon se and lat se for each year
       latlon = ggplot(dat, aes(lon_se, lat_se)) + ggtitle(species) +
         geom_point(aes(col = as.factor(month)), alpha = 0.5) + theme_classic() + facet_wrap(~year) 
-      ggsave(filename = paste(dirpath, "/sdlon-lat_cor", species,".pdf",sep=""))
+      ggsave(filename = paste(dirpath, "/Error_corlon-lat", species,".pdf",sep=""))
       
       #compare location across the years using mean and sd
       jdays = sort(unique(pred_data$jday))
@@ -196,12 +205,20 @@ for (f in 1:length(files)){
         patherr[outcount,] = c(j, meanlat, sdlat, meanlon, sdlon)
         outcount = outcount + 1
       }
-      sdlat = ggplot(patherr, aes(jday, sdlat)) + geom_point() + theme_classic()
-      ggsave(filename = paste(dirpath, "/sdlat", species,".jpeg",sep=""))
-      sdlon = ggplot(patherr, aes(jday, sdlon)) + geom_point() + theme_classic()
-      ggsave(filename = paste(dirpath, "/sdlon", species,".jpeg",sep=""))
-      ggplot(patherr, aes(sdlon, sdlat, col=jday)) + geom_point() + theme_classic()
-      ggsave(filename = paste(dirpath, "/sdlon-lat_DailyLocs", species,".jpeg",sep=""))
+      # plot the standard deviation in daily lat and lon across the 10 years
+      pdf(file = paste(dirpath, "/ErrorinDailyLocs", species, ".pdf", sep=""), width = 10, height = 4)
+      
+      ymax = ceiling(max(c(patherr$sdlat, patherr$sdlon)))  
+      sdlocs = ggplot(patherr, aes(jday, sdlat)) + geom_point(size=1) + theme_classic() + ggtitle(paste(species, "sd in daily locs")) +
+        scale_y_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax)) + 
+        scale_x_continuous(breaks = seq(0, 366, by = 25), limits = c(0, 366)) + 
+        geom_point(aes(jday, sdlon), col = "indianred", size=1) + ylab("stdev daily lat (black) and lon (red)")
+      lonlatday = ggplot(patherr, aes(sdlon, sdlat, col=jday)) + geom_point(size=1) + theme_classic() +
+        scale_y_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax))  +
+        scale_x_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax)) 
+      
+      multiplot(sdlocs, lonlatday, cols = 2)
+      dev.off()
     }
     
     rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat", "altmeandat", "migration", "preds", "dist", "mig_path")])   # clears the memory of the map and year-level data
