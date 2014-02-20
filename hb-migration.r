@@ -178,6 +178,11 @@ for (f in 1:length(files)){
        multiplot(lat, lon, cols = 2)
       dev.off()
       
+      # plot the relationship between lon se and lat se for each year
+      latlon = ggplot(dat, aes(lon_se, lat_se)) + ggtitle(species) +
+        geom_point(aes(col = as.factor(month)), alpha = 0.5) + theme_classic() + facet_wrap(~year) 
+      ggsave(filename = paste(dirpath, "/sdlon-lat_cor", species,".pdf",sep=""))
+      
       #compare location across the years using mean and sd
       jdays = sort(unique(pred_data$jday))
       patherr = data.frame("jday"=1,"meanlat"=1, "sdlat"=1, "meanlon"=1, "sdlon"=1)
@@ -191,12 +196,12 @@ for (f in 1:length(files)){
         patherr[outcount,] = c(j, meanlat, sdlat, meanlon, sdlon)
         outcount = outcount + 1
       }
-      ggplot(patherr, aes(jday, sdlat)) + geom_point() + theme_classic()
+      sdlat = ggplot(patherr, aes(jday, sdlat)) + geom_point() + theme_classic()
       ggsave(filename = paste(dirpath, "/sdlat", species,".jpeg",sep=""))
-      ggplot(patherr, aes(jday, sdlon)) + geom_point() + theme_classic()
+      sdlon = ggplot(patherr, aes(jday, sdlon)) + geom_point() + theme_classic()
       ggsave(filename = paste(dirpath, "/sdlon", species,".jpeg",sep=""))
       ggplot(patherr, aes(sdlon, sdlat, col=jday)) + geom_point() + theme_classic()
-      ggsave(filename = paste(dirpath, "/sdlon-lat", species,".jpeg",sep=""))
+      ggsave(filename = paste(dirpath, "/sdlon-lat_DailyLocs", species,".jpeg",sep=""))
     }
     
     rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat", "altmeandat", "migration", "preds", "dist", "mig_path")])   # clears the memory of the map and year-level data
