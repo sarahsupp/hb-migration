@@ -188,7 +188,7 @@ for (f in 1:length(files)){
       dev.off()
       
       # plot the relationship between lon se and lat se for each year
-      latlon = ggplot(dat, aes(lon_se, lat_se)) + ggtitle(species) +
+      latlon = ggplot(pred_data, aes(lon_se, lat_se)) + ggtitle(species) +
         geom_point(aes(col = as.factor(month)), alpha = 0.5) + theme_classic() + facet_wrap(~year) 
       ggsave(filename = paste(dirpath, "/Error_corlon-lat", species,".pdf",sep=""))
       
