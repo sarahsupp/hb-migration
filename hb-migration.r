@@ -17,7 +17,7 @@ setwd(wd)
 #---------------------------------------------------------------------------------------
 
 # read in summary of effort data (Number of eBird checklists submitted per day per year)
-effort = read.table("cell_effort.txt", header=TRUE)
+effort = read.table("cell_effort_new.txt", header=TRUE)
 
 # read in the north america equal area hex grid map (F.A.L.)
 #hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/nw_vector_grid.shp") #quad map
@@ -85,6 +85,7 @@ for (f in 1:length(files)){
   yeartable = PlotRecords(humdat$year, species)
   write.table(yeartable, file = paste(dirpath, "/", species,".txt",sep=""), row.names=FALSE)
   
+  #start an empty table to fill in migration dates 
   write.table(NULL, file = paste(dirpath, "/", "migration", species,".txt",sep=""), row.names=FALSE)
   
   #save a figure of the geographic number of checklists for the species, over all the years
