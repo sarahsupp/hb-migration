@@ -73,8 +73,8 @@ AlternateMeanLocs = function(dat, species, hexdat, yreffort) {
   for (j in 1:length(julian)){
     jdata = dailyHexes[which(dailyHexes$julian == j),]
     jeffort = yreffort[which(yreffort$DAY == j),]
-    jdata = merge(jdata, jeffort)  #TODO - DOESN'T ALWAYS MATCH UP - WHY ARE SOME MISSING? (e.g. 2012 Ar. alex., day 100)
-    if (nrow(jdata) > 0){
+    jdata2 = merge(jdata, jeffort, by.x = "POLYFID", by.y = "POLYFID")  #TODO - DOESN'T ALWAYS MATCH UP - WHY ARE SOME MISSING? (e.g. 2012 Ar. alex., day 100)
+    if (nrow(jdata) > 0){                                               # POLYFID c(8378, 8880, 9386, 9051) is in jdata, but not in jeffort - why?
       numcells = nrow(jdata)
       numobs = sum(jdata$freq)
       mo = as.numeric(months(j))
@@ -307,4 +307,48 @@ MigrationSpeed = function(dat, migration){
   fallspeed = median(sort(falldat$dst, decreasing=TRUE)[1:5])
 
   return(c(springspeed,fallspeed))
+}
+
+
+FindMismatch = function(dat, species, hexdat, yreffort, map) {
+  #input is a yearly data frame for a species
+  #output is a new dataframe with mean lat and long, calculated from hexagon centers, after placing daily observed
+  #lat and long onto the isacohedron equal-area cells map, sensu La Sorte et al. 2013
+
+  #count the number of days in the year
+  year = dat$year[1]
+  numdays = as.numeric(as.POSIXlt(paste(year, "-12-31", sep = "")) - as.POSIXlt(paste(year, "-01-01", sep="")) + 1)
+  julian = seq(1:numdays)
+  
+  #To find the POLYFID for the hexes for each observation, identify observed lon and lat  
+  # Matches observations with the polygon hexes in the map
+  ID <- over(SpatialPoints(dat[,c(10,9)]), hexdat)  #TODO: Check with TAC that this is working correctly based on map projection
+  names(ID) = c("JOIN_COUNT", "AREA", "PERIMETER", "BOB_", "BOB_ID", "ID", "POLYFID", "HEX_LONGITUDE", "HEX_LATITUDE")
+  coords <- cbind(dat, ID) 
+  
+  #aggregate daily info by mean centroid location
+  dailyHexes = count(coords, vars=c("julian", "POLYFID", "HEX_LONGITUDE", "HEX_LATITUDE"))
+  
+  #calculate weighted mean (weights based on number of obs per hex) lat and long
+  missingdat = data.frame("julian"=1, "POLYFID"=1, "H"=1, "numcells"=1, "centerlon"=1, "centerlat"=1, "sdlon"=1, "sdlat"=1)
+  outcount = 1
+  
+  for (j in 1:length(julian)){
+    jdata = dailyHexes[which(dailyHexes$julian == j),]
+    jeffort = yreffort[which(yreffort$DAY == j),]
+    hexes = unique(jeffort$POLYFID)
+    misses = jdata[which(!jdata$POLYFID %in% hexes),]
+    if(j == 1){
+      missing = misses
+    }
+    else {
+      missing = rbind(missing, misses)
+    }
+    }
+  missing = missing[complete.cases(missing),]
+  
+  errmap = ggmap(map) + geom_point(data=missing, aes(HEX_LONGITUDE, HEX_LATITUDE)) + 
+    ggtitle(paste(species, year, sep = " "))
+  
+  print(errmap)
 }
