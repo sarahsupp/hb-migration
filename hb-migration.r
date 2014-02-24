@@ -17,7 +17,7 @@ setwd(wd)
 #---------------------------------------------------------------------------------------
 
 # read in summary of effort data (Number of eBird checklists submitted per day per year)
-effort = read.table("cell_effort_new.txt", header=TRUE)
+effort = read.table("cell_effort_new.txt", header=TRUE, as.is=TRUE)
 
 # read in the north america equal area hex grid map (F.A.L.)
 #hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/nw_vector_grid.shp") #quad map
