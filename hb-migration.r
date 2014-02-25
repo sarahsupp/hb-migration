@@ -267,13 +267,13 @@ for (f in 1:length(mfiles)){
   year = c(2004:2013)
   dates = cbind(dates, year)
   
-  avg_speed = ggplot(rate, aes(year, spring)) + geom_point(col = "cadetblue") + 
+  avg_date = ggplot(dates, aes(year, spring)) + geom_point(col = "cadetblue") + 
     geom_point(aes(year, fall), col = "orange") + 
-    theme_classic() + ylab("migration speed (km/day)") + theme(text = element_text(size=20)) + 
-    geom_hline(yintercept = mean(rate$spring), col = "cadetblue", position="identity") +
-    geom_hline(yintercept = mean(rate$fall), col = "orange", position="identity")
+    theme_classic() + ylab("migration date (start/end)") + theme(text = element_text(size=20)) + 
+    geom_hline(yintercept = mean(dates$spring), col = "cadetblue", position="identity") +
+    geom_hline(yintercept = mean(dates$fall), col = "orange", position="identity")
   
-  print(avg_speed)
+  print(avg_date)
 }
 
 
