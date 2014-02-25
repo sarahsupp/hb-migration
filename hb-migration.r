@@ -255,3 +255,26 @@ for (f in 1:length(files)){
     
   print(avg_speed)
 }
+
+mfiles = list.files(path = main, pattern = c("migration.*txt"), recursive = TRUE, full.names=TRUE)
+
+for (f in 1:length(mfiles)){
+  dates = read.table(mfiles[f], header=FALSE, sep=" ", as.is=TRUE, quote="", fill=TRUE, comment.char="") #quote="/"'"
+  dates=dates[-1,]
+  names(dates) = c("spring", "fall")
+  dates$spring = as.numeric(dates$spring)
+  dates$fall = as.numeric(dates$fall)
+  year = c(2004:2013)
+  dates = cbind(dates, year)
+  
+  avg_speed = ggplot(rate, aes(year, spring)) + geom_point(col = "cadetblue") + 
+    geom_point(aes(year, fall), col = "orange") + 
+    theme_classic() + ylab("migration speed (km/day)") + theme(text = element_text(size=20)) + 
+    geom_hline(yintercept = mean(rate$spring), col = "cadetblue", position="identity") +
+    geom_hline(yintercept = mean(rate$fall), col = "orange", position="identity")
+  
+  print(avg_speed)
+}
+
+
+
