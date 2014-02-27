@@ -31,6 +31,7 @@ noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = 
 
 # read in eBird data
 files = list.files(pattern = "*2013.txt")
+files = files[c(3,5,6,8,9)]
 
 #for each eBird file, print the number sightings per year and per month.
 #plot the locations of sightings on a map, color coded by month
@@ -84,10 +85,7 @@ for (f in 1:length(files)){
   #show how many records there are for the species across the years, write to txt file
   yeartable = PlotRecords(humdat$year, species)
   write.table(yeartable, file = paste(dirpath, "/", species,".txt",sep=""), row.names=FALSE)
-  
-  #start an empty table to fill in migration dates 
-  write.table(NULL, file = paste(dirpath, "/", "migration", species,".txt",sep=""), row.names=FALSE)
-  
+    
   #save a figure of the geographic number of checklists for the species, over all the years
   count = PlotChecklistMap(humdat, hexgrid, dirpath)
   
@@ -138,12 +136,12 @@ for (f in 1:length(files)){
     
     if (y == length(years)){
       #write migration timing and speed data to file
-      write.table(migdates, file = paste("/output_data/migration", species, ".txt", sep=""), 
-                  append=FALSE, col.names=FALSE, row.names=FALSE)
-      write.table(migspeed, file = paste("/output_data/speed", species, ".txt", sep=""), 
-                  append=FALSE, col.names=FALSE, row.names=FALSE)
-      write.table(pred_data, file = paste("/output_data/centroids", species, ".txt", sep=""),
-                  append=FALSE, col.names=FALSE, row.names=FALSE)
+      write.table(migdates, file = paste(getwd(), "/output_data/migration", species, ".txt", sep=""), 
+                  append=FALSE, row.names=FALSE)
+      write.table(migspeed, file = paste(getwd(), "/output_data/speed", species, ".txt", sep=""), 
+                  append=FALSE, row.names=FALSE)
+      write.table(pred_data, file = paste(getwd(), "/output_data/centroids", species, ".txt", sep=""), 
+                  append=FALSE,row.names=FALSE)
       
       # save plots comparing daily lat and long and migration date across the years
       pdf(file = paste(dirpath, "/AllYears_lon-lat", species, ".pdf", sep=""), width = 8, height = 10)
@@ -232,7 +230,7 @@ for (f in 1:length(files)){
     
     rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat", "altmeandat", "migration", "preds", "dist", "mig_path")])   # clears the memory of the map and year-level data
   }
-  rm(list=ls()[!ls() %in% c("f", "files", "noam", "hexgrid", "effort", "pred_data", "migdates")])   # clears the memory of everything except the file list, iterator, and base map
+  rm(list=ls()[!ls() %in% c("f", "files", "noam", "hexgrid", "effort", "pred_data", "migdates", "wd", "main")])   # clears the memory of everything except the file list, iterator, and base map
 }
 
 

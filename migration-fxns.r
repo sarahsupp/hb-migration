@@ -73,7 +73,7 @@ AlternateMeanLocs = function(dat, species, hexdat, yreffort) {
   for (j in 1:length(julian)){
     jdata = dailyHexes[which(dailyHexes$julian == j),]
     jeffort = yreffort[which(yreffort$DAY == j),]
-    jdata2 = merge(jdata, jeffort, by.x = "POLYFID", by.y = "POLYFID")  #TODO - DOESN'T ALWAYS MATCH UP - WHY ARE SOME MISSING? (e.g. 2012 Ar. alex., day 100)
+    jdata = merge(jdata, jeffort, by.x = "POLYFID", by.y = "POLYFID")  #TODO - DOESN'T ALWAYS MATCH UP - WHY ARE SOME MISSING? (e.g. 2012 Ar. alex., day 100)
     if (nrow(jdata) > 0){                                               # POLYFID c(8378, 8880, 9386, 9051) is in jdata, but not in jeffort - why?
       numcells = nrow(jdata)
       numobs = sum(jdata$freq)
