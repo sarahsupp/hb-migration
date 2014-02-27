@@ -143,6 +143,7 @@ for (f in 1:length(files)){
       write.table(pred_data, file = paste(getwd(), "/output_data/centroids", species, ".txt", sep=""), 
                   append=FALSE,row.names=FALSE)
       
+      #TODO: Move all plotting code outside the main loop
       # save plots comparing daily lat and long and migration date across the years
       pdf(file = paste(dirpath, "/AllYears_lon-lat", species, ".pdf", sep=""), width = 8, height = 10)
       
@@ -289,4 +290,7 @@ for (f in 1:length(mfiles)){
 }
 
 
-
+#TODO: read in all pred data, then re-analyze based on se results. 
+#compare 2008-2013, test for impact of 2004-2007 years on overall distribution
+#linear model on spring vs. fall in each year
+#focus on 5 migratory species
