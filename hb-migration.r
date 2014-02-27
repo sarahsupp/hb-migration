@@ -240,6 +240,8 @@ for (f in 1:length(files)){
 
 # read in eBird data
 files = list.files(path = main, pattern = "speed", recursive=TRUE, full.names=TRUE)
+#grab just the strongly migratory species
+files = files[c(1,2,7,8)]
 
 for (f in 1:length(files)){
   rate = read.table(files[f], header=FALSE, sep=" ", quote="", fill=TRUE, comment.char="") #quote="/"'"
@@ -254,6 +256,11 @@ for (f in 1:length(files)){
     geom_hline(yintercept = mean(rate$fall), col = "orange", position="identity")
     
   print(avg_speed)
+  
+  print(paste("spring sd:", sd(rate$spring)))
+  print(paste("spring mean:", mean(rate$spring)))
+  print(paste("fall sd:", sd(rate$fall)))
+  print(paste("fall mean:", mean(rate$fall)))
 }
 
 mfiles = list.files(path = main, pattern = c("migration.*txt"), recursive = TRUE, full.names=TRUE)
