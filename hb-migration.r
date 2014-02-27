@@ -257,6 +257,8 @@ for (f in 1:length(files)){
 }
 
 mfiles = list.files(path = main, pattern = c("migration.*txt"), recursive = TRUE, full.names=TRUE)
+#grab just the strongly migratory species
+mfiles = mfiles[c(1,2,7,8)]
 
 for (f in 1:length(mfiles)){
   dates = read.table(mfiles[f], header=FALSE, sep=" ", as.is=TRUE, quote="", fill=TRUE, comment.char="") #quote="/"'"
@@ -266,14 +268,17 @@ for (f in 1:length(mfiles)){
   dates$fall = as.numeric(dates$fall)
   year = c(2004:2013)
   dates = cbind(dates, year)
+  dates=dates[which(dates$year >2007),]
   
   avg_date = ggplot(dates, aes(year, spring)) + geom_point(col = "cadetblue") + 
     geom_point(aes(year, fall), col = "orange") + 
     theme_classic() + ylab("migration date (start/end)") + theme(text = element_text(size=20)) + 
     geom_hline(yintercept = mean(dates$spring), col = "cadetblue", position="identity") +
     geom_hline(yintercept = mean(dates$fall), col = "orange", position="identity")
-  
   print(avg_date)
+  
+  print(paste("spring:", sd(dates$spring)))
+  print(paste("fall:", sd(dates$fall)))
 }
 
 
