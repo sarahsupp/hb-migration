@@ -138,10 +138,12 @@ for (f in 1:length(files)){
     
     if (y == length(years)){
       #write migration timing and speed data to file
-      write.table(migdates, file = paste(dirpath, "/", "migration", species, ".txt",sep=""), 
-                  append=TRUE, col.names=FALSE, row.names=FALSE)
-      write.table(migspeed, file = paste(dirpath, "/", "speed", species, ".txt",sep=""), 
-                  append=TRUE, col.names=FALSE, row.names=FALSE)
+      write.table(migdates, file = paste("/output_data/migration", species, ".txt", sep=""), 
+                  append=FALSE, col.names=FALSE, row.names=FALSE)
+      write.table(migspeed, file = paste("/output_data/speed", species, ".txt", sep=""), 
+                  append=FALSE, col.names=FALSE, row.names=FALSE)
+      write.table(pred_data, file = paste("/output_data/centroids", species, ".txt", sep=""),
+                  append=FALSE, col.names=FALSE, row.names=FALSE)
       
       # save plots comparing daily lat and long and migration date across the years
       pdf(file = paste(dirpath, "/AllYears_lon-lat", species, ".pdf", sep=""), width = 8, height = 10)
