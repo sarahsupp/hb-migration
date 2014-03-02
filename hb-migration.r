@@ -8,6 +8,7 @@ library(raster)
 
 #set working directory
 main = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration"
+figpath = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/Figures/"
 wd = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/data"
 setwd(wd)
 
@@ -79,7 +80,7 @@ for (f in 1:length(files)){
   humdat = cbind(humdat, year, month, day, julian)
     
   #start a new directory
-  dirpath = paste("C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/Figures/", species, sep="")
+  dirpath = paste(figpath, species, sep="")
  #   dir.create(dirpath, showWarnings = TRUE, recursive = FALSE)
   
   #show how many records there are for the species across the years, write to txt file
@@ -142,25 +143,6 @@ for (f in 1:length(files)){
                   append=FALSE, row.names=FALSE)
       write.table(pred_data, file = paste(getwd(), "/output_data/centroids", species, ".txt", sep=""), 
                   append=FALSE,row.names=FALSE)
-      
-      #TODO: Move all plotting code outside the main loop
-      # save plots comparing daily lat and long and migration date across the years
-      pdf(file = paste(dirpath, "/AllYears_lon-lat", species, ".pdf", sep=""), width = 8, height = 10)
-      
-      yrlylon = ggplot(pred_data, aes(jday, lon, col=year)) + geom_point(size=1) + theme_classic() +
-        geom_vline(xintercept = c(migdates$spr), col = "cadetblue") +
-        geom_vline(xintercept = c(migdates$fal), col = "orange") +
-        scale_x_continuous(breaks = seq(0, 365, by = 30)) + 
-        theme(text = element_text(size=20)) + ggtitle(species)
-      
-      yrlylat = ggplot(pred_data, aes(jday, lat, col=year)) + geom_point(size=1) + theme_classic() +
-        geom_vline(xintercept = c(migdates$spr), col = "cadetblue") +
-        geom_vline(xintercept = c(migdates$fal), col = "orange") +
-        scale_x_continuous(breaks = seq(0, 365, by = 30)) + 
-        theme(text = element_text(size=20)) + ggtitle(species)
-
-      multiplot(yrlylon, yrlylat, cols = 1)
-      dev.off()
     }
     
     rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat", "altmeandat", "migration", "preds", "dist", "mig_path")])   # clears the memory of the map and year-level data
@@ -240,7 +222,7 @@ for (f in 1:length(files)){
   species = preds[1,1]
   
   #set species-specific directory path for figures
-  dirpath = paste("/Users/sarah/Desktop/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/Figures/", species, sep="")
+  dirpath = paste(figpath, species, sep="")
   
   #grab only the predicted daily centroids from between the migration dates
   for (y in 1:length(years)){
@@ -293,7 +275,26 @@ for (f in 1:length(files)){
     outcount = outcount + 1
   }
   
-  #----- plot the data
+  #----------- plot the data ------------
+  
+  # save plots comparing daily lat and long and migration date across the years
+  pdf(file = paste(dirpath, "/AllYears_lon-lat", species, ".pdf", sep=""), width = 8, height = 10)
+  
+  yrlylon = ggplot(preds, aes(jday, lon, col=year)) + geom_point(size=1) + theme_classic() +
+    geom_vline(xintercept = c(dates$spr), col = "cadetblue") +
+    geom_vline(xintercept = c(dates$fal), col = "orange") +
+    scale_x_continuous(breaks = seq(0, 365, by = 30)) + 
+    theme(text = element_text(size=20)) + ggtitle(species)
+  
+  yrlylat = ggplot(preds, aes(jday, lat, col=year)) + geom_point(size=1) + theme_classic() +
+    geom_vline(xintercept = c(dates$spr), col = "cadetblue") +
+    geom_vline(xintercept = c(dates$fal), col = "orange") +
+    scale_x_continuous(breaks = seq(0, 365, by = 30)) + 
+    theme(text = element_text(size=20)) + ggtitle(species)
+  
+  multiplot(yrlylon, yrlylat, cols = 1)
+  dev.off()
+  
   #compare standard error in predicted centroids across years
   pdf(file = paste(dirpath, "/Error_selon-lat", species, ".pdf", sep=""), width = 10, height = 4)
   
@@ -301,14 +302,12 @@ for (f in 1:length(files)){
   lat = ggplot(migpreds, aes(jday, lat_se, col=as.factor(year))) + geom_point(size=1) + theme_classic() +
     geom_vline(xintercept = c(dates$spr), col = "cadetblue") +
     geom_vline(xintercept = c(dates$fal), col = "orange") + ggtitle(paste(species, "Latitude")) +
-    scale_y_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax)) +
-    theme(text = element_text(size=20)) 
+    scale_y_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax))
   
   lon = ggplot(migpreds, aes(jday, lon_se, col=as.factor(year))) + geom_point(size=1) + theme_classic() +
     geom_vline(xintercept = c(dates$spr), col = "cadetblue") +
     geom_vline(xintercept = c(dates$fal), col = "orange") + ggtitle(paste(species, "Longitude")) +
-    scale_y_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax)) +
-    theme(text = element_text(size=20)) 
+    scale_y_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax))
   
   multiplot(lat, lon, cols = 2)
   dev.off()
@@ -324,11 +323,8 @@ for (f in 1:length(files)){
     scale_x_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax))
   multiplot(latlon, cols = 1)
   dev.off()
-  
-  ggsave(filename = paste(dirpath, "/Error_corlon-lat", species,".pdf",sep=""))
-  
 
-  # plot the standard deviation in daily lat and lon across the 10 years
+  # plot the standard deviation in daily lat and lon across the 10 years, and across 6 most recent years
   pdf(file = paste(dirpath, "/ErrorinDailyLocs", species, ".pdf", sep=""), width = 10, height = 8)
   
   ymax = max(c(patherr$sdlat, patherr$sdlon),na.rm=TRUE) 
@@ -351,8 +347,7 @@ for (f in 1:length(files)){
   multiplot(sdlocs, lonlatday, sdlocs_sub, lonlatday_sub, cols = 2)
   dev.off()
   
-  # save plots comparing spring vs fall migration routes across the years (based on mean spring & fall migration dates) 
-
+  # save plots comparing spring vs fall migration routes across the years
   pdf(file = paste(dirpath, "/AllYears_sprVSfal", species, ".pdf", sep=""), width = 10, height = 4)
   
   sprplot = ggplot(pred_spr, aes(lon, lat, col=year)) + geom_point(size=1) + theme_classic() +
