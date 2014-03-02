@@ -161,72 +161,6 @@ for (f in 1:length(files)){
 
       multiplot(yrlylon, yrlylat, cols = 1)
       dev.off()
-      
-      # save plots comparing spring vs fall migration routes across the years (based on mean spring & fall migration dates) 
-      #TODO: let each year use its own estimated dates?
-      pred_spr = pred_data[which(pred_data$jday > mean(migdates$spr) & pred_data$jday < median(c(migdates$spr, migdates$fal))),]
-      pred_fal = pred_data[which(pred_data$jday < mean(migdates$fal) & pred_data$jday > median(c(migdates$spr, migdates$fal))),]
-      
-      pdf(file = paste(dirpath, "/AllYears_sprVSfal", species, ".pdf", sep=""), width = 10, height = 4)
-      
-      sprplot = ggplot(pred_spr, aes(lon, lat, col=year)) + geom_point(size=1) + theme_classic() +
-        theme(text = element_text(size=20)) + ggtitle(paste("spring -", species))
-     
-      falplot = ggplot(pred_fal, aes(lon, lat, col=year)) + geom_point(size=1) + theme_classic() +
-        theme(text = element_text(size=20)) + ggtitle(paste("fall -", species))
-      
-      multiplot(sprplot, falplot, cols = 2)
-      dev.off()
-      
-      #compare sd across years
-      pdf(file = paste(dirpath, "/Error_selon-lat", species, ".pdf", sep=""), width = 10, height = 4)
-      
-      ymax = ceiling(max(c(pred_data$lat_se, pred_data$lon_se)))  
-       lat = ggplot(pred_data, aes(jday, lat_se, col=as.factor(year))) + geom_point(size=1) + theme_classic() +
-        geom_vline(xintercept = c(migdates$spr), col = "cadetblue") +
-        geom_vline(xintercept = c(migdates$fal), col = "orange") + ggtitle(paste(species, "Latitude")) +
-        scale_y_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax)) 
-      
-        lon = ggplot(pred_data, aes(jday, lon_se, col=as.factor(year))) + geom_point(size=1) + theme_classic() +
-        geom_vline(xintercept = c(migdates$spr), col = "cadetblue") +
-        geom_vline(xintercept = c(migdates$fal), col = "orange") + ggtitle(paste(species, "Longitude")) +
-        scale_y_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax)) 
-      
-       multiplot(lat, lon, cols = 2)
-      dev.off()
-      
-      # plot the relationship between lon se and lat se for each year
-      latlon = ggplot(pred_data, aes(lon_se, lat_se)) + ggtitle(species) +
-        geom_point(aes(col = as.factor(month)), alpha = 0.5) + theme_classic() + facet_wrap(~year) 
-      ggsave(filename = paste(dirpath, "/Error_corlon-lat", species,".pdf",sep=""))
-      
-      #compare location across the years using mean and sd
-      jdays = sort(unique(pred_data$jday))
-      patherr = data.frame("jday"=1,"meanlat"=1, "sdlat"=1, "meanlon"=1, "sdlon"=1)
-      outcount = 1
-      for (j in 1:length(jdays)){
-        tmp = pred_data[which(pred_data$jday == j),]
-        meanlat = mean(tmp$lat)
-        sdlat = sd(tmp$lat)
-        meanlon = mean(tmp$lon)
-        sdlon = sd(tmp$lon)
-        patherr[outcount,] = c(j, meanlat, sdlat, meanlon, sdlon)
-        outcount = outcount + 1
-      }
-      # plot the standard deviation in daily lat and lon across the 10 years
-      pdf(file = paste(dirpath, "/ErrorinDailyLocs", species, ".pdf", sep=""), width = 10, height = 4)
-      
-      ymax = ceiling(max(c(patherr$sdlat, patherr$sdlon)))  
-      sdlocs = ggplot(patherr, aes(jday, sdlat)) + geom_point(size=1) + theme_classic() + ggtitle(paste(species, "sd in daily locs")) +
-        scale_y_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax)) + 
-        scale_x_continuous(breaks = seq(0, 366, by = 25), limits = c(0, 366)) + 
-        geom_point(aes(jday, sdlon), col = "indianred", size=1) + ylab("stdev daily lat (black) and lon (red)")
-      lonlatday = ggplot(patherr, aes(sdlon, sdlat, col=jday)) + geom_point(size=1) + theme_classic() +
-        scale_y_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax))  +
-        scale_x_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax)) 
-      
-      multiplot(sdlocs, lonlatday, cols = 2)
-      dev.off()
     }
     
     rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat", "altmeandat", "migration", "preds", "dist", "mig_path")])   # clears the memory of the map and year-level data
@@ -294,3 +228,142 @@ for (f in 1:length(mfiles)){
 #compare 2008-2013, test for impact of 2004-2007 years on overall distribution
 #linear model on spring vs. fall in each year
 #focus on 5 migratory species
+
+# read in predicted data
+files = list.files(path = main, pattern = "centroids.*.txt", recursive=TRUE, full.names=TRUE)
+mfiles = list.files(path = getwd(), pattern = c("migration.*txt"), recursive = TRUE, full.names=TRUE)
+
+for (f in 1:length(files)){
+  preds = read.table(files[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  years = c(2004:2013)
+  species = preds[1,1]
+  
+  #set species-specific directory path for figures
+  dirpath = paste("/Users/sarah/Desktop/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/Figures/", species, sep="")
+  
+  #grab only the predicted daily centroids from between the migration dates
+  for (y in 1:length(years)){
+    begin = dates[y,1]
+    end = dates[y,2]
+    med = median(c(dates[y,1], dates[y,2]))
+    
+    between = preds[which(preds$year == years[y] & preds$jday >= begin & preds$jday <= end),]
+    spring = preds[which(preds$year == years[y] & preds$jday >= begin & preds$jday < med),]
+    fall = preds[which(preds$year == years[y] & preds$jday <= end & preds$jday > med),]
+    
+    if (y == 1){
+      migpreds = between
+      pred_spr = spring
+      pred_fal = fall
+    }
+    else{
+      migpreds = rbind(migpreds, between)
+      pred_spr = rbind(pred_spr, spring)
+      pred_fal = rbind(pred_fal, fall)
+    }
+  }
+  
+  #compare location across the years using mean and sd for ALL years
+  jdays = sort(unique(migpreds$jday))
+  patherr = data.frame("jday"=1,"meanlat"=1, "sdlat"=1, "meanlon"=1, "sdlon"=1)
+  outcount = 1
+  for (j in min(jdays):max(jdays)){
+    tmp = migpreds[which(migpreds$jday == j),]
+    meanlat = mean(tmp$lat)
+    sdlat = sd(tmp$lat)
+    meanlon = mean(tmp$lon)
+    sdlon = sd(tmp$lon)
+    patherr[outcount,] = c(j, meanlat, sdlat, meanlon, sdlon)
+    outcount = outcount + 1
+  }
+  
+  #compare location across the years using mean and sd for 2008:2013
+  migpreds_sub = migpreds[which(migpreds$year > 2007),]
+  jdays = sort(unique(migpreds_sub$jday))
+  patherr_sub = data.frame("jday"=1,"meanlat"=1, "sdlat"=1, "meanlon"=1, "sdlon"=1)
+  outcount = 1
+  for (j in min(jdays):max(jdays)){
+    tmp = migpreds_sub[which(migpreds_sub$jday == j),]
+    meanlat = mean(tmp$lat)
+    sdlat = sd(tmp$lat)
+    meanlon = mean(tmp$lon)
+    sdlon = sd(tmp$lon)
+    patherr_sub[outcount,] = c(j, meanlat, sdlat, meanlon, sdlon)
+    outcount = outcount + 1
+  }
+  
+  #----- plot the data
+  #compare standard error in predicted centroids across years
+  pdf(file = paste(dirpath, "/Error_selon-lat", species, ".pdf", sep=""), width = 10, height = 4)
+  
+  ymax = max(c(migpreds$lat_se, migpreds$lon_se)) 
+  lat = ggplot(migpreds, aes(jday, lat_se, col=as.factor(year))) + geom_point(size=1) + theme_classic() +
+    geom_vline(xintercept = c(dates$spr), col = "cadetblue") +
+    geom_vline(xintercept = c(dates$fal), col = "orange") + ggtitle(paste(species, "Latitude")) +
+    scale_y_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax)) +
+    theme(text = element_text(size=20)) 
+  
+  lon = ggplot(migpreds, aes(jday, lon_se, col=as.factor(year))) + geom_point(size=1) + theme_classic() +
+    geom_vline(xintercept = c(dates$spr), col = "cadetblue") +
+    geom_vline(xintercept = c(dates$fal), col = "orange") + ggtitle(paste(species, "Longitude")) +
+    scale_y_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax)) +
+    theme(text = element_text(size=20)) 
+  
+  multiplot(lat, lon, cols = 2)
+  dev.off()
+  
+  # plot the relationship between lon se and lat se for each year
+  pdf(file = paste(dirpath, "/Error_corlon-lat", species, ".pdf", sep=""), width = 10, height = 7)
+  
+  ymax = max(c(migpreds$lat_se, migpreds$lon_se))
+  latlon = ggplot(migpreds, aes(lon_se, lat_se)) + ggtitle(species) +
+    geom_point(aes(col = as.factor(month)), alpha = 0.5) + theme_classic() + facet_wrap(~year) +
+    theme(text = element_text(size=20)) +
+    scale_y_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax)) +
+    scale_x_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax))
+  multiplot(latlon, cols = 1)
+  dev.off()
+  
+  ggsave(filename = paste(dirpath, "/Error_corlon-lat", species,".pdf",sep=""))
+  
+
+  # plot the standard deviation in daily lat and lon across the 10 years
+  pdf(file = paste(dirpath, "/ErrorinDailyLocs", species, ".pdf", sep=""), width = 10, height = 8)
+  
+  ymax = max(c(patherr$sdlat, patherr$sdlon),na.rm=TRUE) 
+  sdlocs = ggplot(patherr, aes(jday, sdlat)) + geom_point(size=1) + theme_classic() + ggtitle(paste(species, "sd in daily locs, 04-13")) +
+    scale_y_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax)) + 
+    scale_x_continuous(breaks = seq(0, 366, by = 25), limits = c(0, 366)) + 
+    geom_point(aes(jday, sdlon), col = "indianred", size=1) + ylab("stdev daily lat (black) and lon (red)")
+  sdlocs_sub = ggplot(patherr_sub, aes(jday, sdlat)) + geom_point(size=1) + theme_classic() + ggtitle(paste(species, "sd in daily locs, 08-13")) +
+    scale_y_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax)) + 
+    scale_x_continuous(breaks = seq(0, 366, by = 25), limits = c(0, 366)) + 
+    geom_point(aes(jday, sdlon), col = "indianred", size=1) + ylab("stdev daily lat (black) and lon (red)")
+  
+  lonlatday = ggplot(patherr, aes(sdlon, sdlat, col=jday)) + geom_point(size=1) + theme_classic() +
+    scale_y_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax))  +
+    scale_x_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax)) 
+  lonlatday_sub = ggplot(patherr_sub, aes(sdlon, sdlat, col=jday)) + geom_point(size=1) + theme_classic() +
+    scale_y_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax))  +
+    scale_x_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax)) 
+  
+  multiplot(sdlocs, lonlatday, sdlocs_sub, lonlatday_sub, cols = 2)
+  dev.off()
+  
+  # save plots comparing spring vs fall migration routes across the years (based on mean spring & fall migration dates) 
+
+  pdf(file = paste(dirpath, "/AllYears_sprVSfal", species, ".pdf", sep=""), width = 10, height = 4)
+  
+  sprplot = ggplot(pred_spr, aes(lon, lat, col=year)) + geom_point(size=1) + theme_classic() +
+    theme(text = element_text(size=20)) + ggtitle(paste("spring-", species))
+  
+  falplot = ggplot(pred_fal, aes(lon, lat, col=year)) + geom_point(size=1) + theme_classic() +
+    theme(text = element_text(size=20)) + ggtitle(paste("fall-", species))
+  
+  multiplot(sprplot, falplot, cols = 2)
+  dev.off()
+  
+}
+  
+  
