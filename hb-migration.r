@@ -151,58 +151,67 @@ for (f in 1:length(files)){
 }
 
 
+
 #---------------------------------------------------------------------------------------
 #                   compare migration rates and dates across species
 #---------------------------------------------------------------------------------------
 
-# read in eBird data
-files = list.files(path = main, pattern = "speed", recursive=TRUE, full.names=TRUE)
-#grab just the strongly migratory species
-files = files[c(1,2,7,8)]
+# read in eBird data for migration speed
+files = list.files(path = getwd(), pattern = "speed", recursive=TRUE, full.names=TRUE)
 
 for (f in 1:length(files)){
-  rate = read.table(files[f], header=FALSE, sep=" ", quote="", fill=TRUE, comment.char="") #quote="/"'"
-  names(rate) = c("spring", "fall")
+  rate = read.table(files[f], header=TRUE, sep=" ", fill=TRUE, comment.char="")
   year = c(2004:2013)
-  rate = cbind(rate, year)
+  rate = cbind(year, rate)
+
+  #plot the variance in estimated migration speed for all and for recent years
+  pdf(file = paste(dirpath, "/speed_", species, ".pdf", sep=""), width = 10, height = 4)
   
-  avg_speed = ggplot(rate, aes(year, spring)) + geom_point(col = "cadetblue") + 
-    geom_point(aes(year, fall), col = "orange") + 
-    theme_classic() + ylab("migration speed (km/day)") + theme(text = element_text(size=20)) + 
-    geom_hline(yintercept = mean(rate$spring), col = "cadetblue", position="identity") +
-    geom_hline(yintercept = mean(rate$fall), col = "orange", position="identity")
-    
-  print(avg_speed)
+  r = melt(rate, id.vars = "year")
+  names(r) = c("year", "season", "rate")
+  bxp_speed = ggplot(r, aes(season, rate, fill=season)) + geom_boxplot() + theme_classic() + 
+    scale_fill_manual(values=c("cadetblue", "orange"))
   
-  print(paste("spring sd:", sd(rate$spring)))
-  print(paste("spring mean:", mean(rate$spring)))
-  print(paste("fall sd:", sd(rate$fall)))
-  print(paste("fall mean:", mean(rate$fall)))
+  r_sub = r[which(r$year>2007),]
+  bxp_speed_sub = ggplot(r_sub, aes(season, rate, fill=season)) + geom_boxplot() + theme_classic() + 
+    scale_fill_manual(values=c("cadetblue", "orange"))
+  
+  multiplot(bxp_speed, bxp_speed_sub, cols = 2)
+  dev.off()
+  
+  #print the mean and standard deviation of speed
+  print(paste("spring sd:", sd(rate$spr)))
+  print(paste("spring mean:", mean(rate$spr)))
+  print(paste("fall sd:", sd(rate$fal)))
+  print(paste("fall mean:", mean(rate$fal)))
 }
 
-mfiles = list.files(path = main, pattern = c("migration.*txt"), recursive = TRUE, full.names=TRUE)
-#grab just the strongly migratory species
-mfiles = mfiles[c(1,2,7,8)]
+
+mfiles = list.files(path = getwd(), pattern = c("migration.*txt"), recursive = TRUE, full.names=TRUE)
 
 for (f in 1:length(mfiles)){
-  dates = read.table(mfiles[f], header=FALSE, sep=" ", as.is=TRUE, quote="", fill=TRUE, comment.char="") #quote="/"'"
-  dates=dates[-1,]
-  names(dates) = c("spring", "fall")
-  dates$spring = as.numeric(dates$spring)
-  dates$fall = as.numeric(dates$fall)
+  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
   year = c(2004:2013)
-  dates = cbind(dates, year)
-  dates=dates[which(dates$year >2007),]
+  dates = cbind(year, dates)
   
-  avg_date = ggplot(dates, aes(year, spring)) + geom_point(col = "cadetblue") + 
-    geom_point(aes(year, fall), col = "orange") + 
-    theme_classic() + ylab("migration date (start/end)") + theme(text = element_text(size=20)) + 
-    geom_hline(yintercept = mean(dates$spring), col = "cadetblue", position="identity") +
-    geom_hline(yintercept = mean(dates$fall), col = "orange", position="identity")
-  print(avg_date)
+  #plot the variance in estimated migration begin and end for all and for recent years
+  pdf(file = paste(dirpath, "/speed_", species, ".pdf", sep=""), width = 10, height = 4)
   
-  print(paste("spring:", sd(dates$spring)))
-  print(paste("fall:", sd(dates$fall)))
+  d = melt(dates, id.vars = "year")
+  names(d) = c("year", "season", "date")
+  d_sub = d[which(d$year>2007),]  
+  
+  bxp_date = ggplot(d, aes(season, date, fill=season)) + geom_boxplot() + theme_classic() + 
+    scale_fill_manual(values=c("cadetblue", "orange")) + facet_wrap(~season)
+
+  bxp_date_sub = ggplot(d_sub, aes(season, date, fill=season)) + geom_boxplot() + theme_classic() + 
+    scale_fill_manual(values=c("cadetblue", "orange"))
+  
+  multiplot(bxp_date, bxp_date_sub, cols = 2)
+  dev.off()
+  
+  print(paste("spring:", sd(dates$spr)))
+  print(paste("fall:", sd(dates$fal)))
 }
 
 
