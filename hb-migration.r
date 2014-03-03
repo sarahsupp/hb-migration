@@ -255,15 +255,23 @@ for (f in 1:length(files)){
     spring = preds[which(preds$year == years[y] & preds$jday >= spr_begin & preds$jday <= spr_end),]
     fall = preds[which(preds$year == years[y] & preds$jday >= fal_begin & preds$jday <= fal_end),]
     
+    #get slope & r2 of spring and fall latitudinal migration
+    spr_lm = LinearMigration(spring, years[y])
+    fal_lm = LinearMigration(fall, years[y])
+    
     if (y == 1){
       migpreds = between
       pred_spr = spring
       pred_fal = fall
+      lm_spr = spr_lm
+      lm_fal = fal_lm
     }
     else{
       migpreds = rbind(migpreds, between)
       pred_spr = rbind(pred_spr, spring)
       pred_fal = rbind(pred_fal, fall)
+      lm_spr = rbind(lm_spr, spr_lm)
+      lm_fal = rbind(lm_fal, fal_lm)
     }
   }
   
@@ -297,6 +305,22 @@ for (f in 1:length(files)){
   }
   
   #----------- plot the data ------------
+  
+  # compare the slope for lat and lon change in spring vs. fall
+  pdf(file = paste(dirpath, "/slope_lon-lat", species, ".pdf", sep=""), width = 10, height = 4)
+  
+  lat_compare = ggplot(lm_spr, aes(year, abs(lat_slope))) +  geom_line() +
+    geom_point(col="cadetblue", aes(size=lat_r2)) + geom_line(data=lm_fal,aes(year, abs(lat_slope))) + 
+    geom_point(data=lm_fal, aes(year, abs(lat_slope), size=lat_r2), col="orange") + 
+    theme_classic() + ylab("slope") + ggtitle("Latitude spring vs. fall")
+
+  lon_compare = ggplot(lm_spr, aes(year, abs(lon_slope))) +  geom_line() +
+    geom_point(col="cadetblue", aes(size=lon_r2)) + geom_line(data=lm_fal,aes(year, abs(lon_slope))) + 
+    geom_point(data=lm_fal, aes(year, abs(lon_slope), size=lon_r2), col="orange") + 
+    theme_classic() + ylab("slope") + ggtitle("Longitude spring vs. fall")
+  
+  multiplot(lat_compare, lon_compare, cols = 2)
+  dev.off()
   
   # save plots comparing daily lat and long and migration date across the years
   pdf(file = paste(dirpath, "/AllYears_lon-lat", species, ".pdf", sep=""), width = 8, height = 10)

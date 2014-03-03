@@ -397,3 +397,18 @@ FindMismatch = function(dat, species, hexdat, yreffort, map) {
   
   print(errmap)
 }
+
+LinearMigration = function(seasondat, year){
+  # takes the data from a single season and runs a linear regression on the lat or lon
+  # returns slope and r2 fit
+  
+  lm1 = lm(lat ~ jday, data = seasondat)
+  lm2 = lm(lon ~ jday, data = seasondat)
+  
+  dat = data.frame("year" = year, "lat_slope" = lm1$coef[[2]], "lat_r2" = summary(lm1)$r.squared, 
+                   "lon_slope" = lm2$coef[[2]], "lon_r2" = summary(lm2)$r.squared)
+  return(dat)
+}
+
+
+
