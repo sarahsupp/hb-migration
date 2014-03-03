@@ -152,7 +152,7 @@ for (f in 1:length(files)){
     
     rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat", "altmeandat", "migration", "preds", "dist", "mig_path")])   # clears the memory of the map and year-level data
   }
-  rm(list=ls()[!ls() %in% c("f", "files", "noam", "hexgrid", "effort", "pred_data", "migdates", "wd", "main")])   # clears the memory of everything except the file list, iterator, and base map
+  rm(list=ls()[!ls() %in% c("f", "files", "noam", "hexgrid", "effort", "pred_data", "migdates", "wd", "main", "gitpath","figpath")])   # clears the memory of everything except the file list, iterator, and base map
 }
 
 
