@@ -125,6 +125,47 @@ DailyTravel = function(meanlocs, loncol, latcol, species, year, migr_dates){
   return(distdat)
 }
 
+GetBreedingDates = function(dat, migration_dates){
+  # uses a generalized additive model (GAM) on latitude to estimate the end of spring and 
+  # begin of fall migration, which defines the time at the breeding grounds
+  
+  #get median migration date
+  med = median(migration_dates)
+  
+  #GAM model on predicted latitude of centroids by julian date
+  gam1 = gam(lat ~ s(jday, k = 40), data = dat, gamma = 1.5) 
+  xpred = data.frame(jday = c(1:max(dat$jday)))
+  dpred = predict(gam1, newdata=xpred, type="response", se.fit=TRUE)
+  
+  lat_threshold = min(dpred$se.fit[c(med-30:med+30)]*2.56 + dpred$fit[c(med-30:med+30)])
+  spring_index = med-30:med
+  fall_index = med:med+30
+  spring_max = spring_index[which.max(dpred$fit[spring_index])]
+  fall_max = fall_index[which.max(dpred$fit[fall_index])]
+  
+  #identify beginning of spring migration
+  tst = 1000
+  spring_index2 = spring_max
+  while(tst > lat_threshold){
+    tst = dpred$fit[spring_index2]
+    if(spring_index2 == 1) break
+    spring_index2 = spring_index2 - 1
+  }
+  spring = spring_index2 + 1
+  
+  #identify end of fall migration
+  tst <- 1000
+  fall_index2 = fall_max
+  while(tst > lat_threshold){
+    tst = dpred$fit[fall_index2]
+    if(fall_index2==365) break
+    fall_index2 <- fall_index2 + 1
+  }
+  fall <- fall_index2 - 1
+  
+  dates = c(spring, fall)
+  return(dates)
+}
 
 GetMigrationDates = function(data) {
   # uses a generalized additive model (GAM) to define the start of spring and end of fall migration
@@ -132,7 +173,7 @@ GetMigrationDates = function(data) {
   #GAM model on number of cells with observations by julian date
   gam1 = gam(numcells ~ s(jday, k = 40), data = data, gamma = 1.5) 
   xpred = data.frame(jday = c(1:max(data$jday)))
-  dpred = predict(gam1, newdata=xpred, type="response", se.fit=T)
+  dpred = predict(gam1, newdata=xpred, type="response", se.fit=TRUE)
   
   ## cutoff based on 2 SE for spring and fall combined, following La Sorte et al. 2013 methods
   # Spring migration should be between 11 Jan and 9 July
@@ -193,7 +234,7 @@ EstimateDailyLocs = function(dat) {
   #input a dataframe with the mean daily locations for the year, and uses a GAM smoothing function
   # to estimate daily occurrence lat and long separately. Binds the fitted lat and long values together,
   # with standard errors. Returns a dataframe.
-      #TODO: check choice of k and gamma in the GAM function
+      #check choice of k and gamma in the GAM function - same as FAL 2013
   #find the best fit line for the data, for longitude and latitude separately
   lon_gam <- gam(centerlon ~ s(jday, k=10), data = dat, gamma = 1.5)
   lat_gam <- gam(centerlat ~ s(jday, k=10), data = dat, gamma = 1.5)

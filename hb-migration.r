@@ -8,7 +8,8 @@ library(raster)
 
 #set working directory
 main = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration"
-figpath = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/Figures/"
+figpath = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/Figures"
+gitpath = "C:/Users/sarah/Documents/GitHub/hb-migration"
 wd = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/data"
 setwd(wd)
 
@@ -22,7 +23,7 @@ effort = read.table("cell_effort_new.txt", header=TRUE, as.is=TRUE)
 
 # read in the north america equal area hex grid map (F.A.L.)
 #hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/nw_vector_grid.shp") #quad map
-hexgrid = readShapePoly("C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/terr_4h6/terr_4h6.shp") #hex map
+hexgrid = readShapePoly(paste(main, "/terr_4h6/terr_4h6.shp", sep="")) #hex map
   # crop to just North America, where the migratory species occur
   hexgrid = hexgrid[which(hexgrid$LATITUDE > 10 & hexgrid$LATITUDE <80 & 
                             hexgrid$LONGITUDE > -178 & hexgrid$LONGITUDE < -50),]
@@ -45,7 +46,7 @@ for (f in 1:length(files)){
   require(Rmisc)
   require(sp)
   require(raster)
-  source("C:/Users/sarah/Documents/GitHub/hb-migration/migration-fxns.r")
+  source(paste(gitpath, "/migration-fxns.r", sep=""))
 
   humdat = read.table(files[f], header=TRUE, sep="\t", quote="", fill=TRUE, as.is=TRUE, comment.char="") #quote="/"'"
 
@@ -215,7 +216,7 @@ for (f in 1:length(mfiles)){
 }
 
 
-#TODO: read in all pred data, then re-analyze based on se results. 
+#read in all pred data, then re-analyze based on se results. 
 #compare 2008-2013, test for impact of 2004-2007 years on overall distribution
 #linear model on spring vs. fall in each year
 #focus on 5 migratory species
@@ -240,6 +241,7 @@ for (f in 1:length(files)){
     med = median(c(dates[y,1], dates[y,2]))
     
     between = preds[which(preds$year == years[y] & preds$jday >= begin & preds$jday <= end),]
+    #split spring and fall on median date
     spring = preds[which(preds$year == years[y] & preds$jday >= begin & preds$jday < med),]
     fall = preds[which(preds$year == years[y] & preds$jday <= end & preds$jday > med),]
     
@@ -367,7 +369,6 @@ for (f in 1:length(files)){
   
   multiplot(sprplot, falplot, cols = 2)
   dev.off()
-  
 }
   
   
