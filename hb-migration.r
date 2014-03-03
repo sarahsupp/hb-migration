@@ -33,7 +33,7 @@ noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = 
 
 # read in eBird data
 files = list.files(pattern = "*2013.txt")
-files = files[c(3,5,6,8,9)]
+files = files[c(3,5,6,8,9)] #grab migratory species
 
 #for each eBird file, print the number sightings per year and per month.
 #plot the locations of sightings on a map, color coded by month
@@ -130,12 +130,13 @@ for (f in 1:length(files)){
     
     if (y == 1){
       pred_data = preds
-      migdates = data.frame("spr" = migration[1], "fal" = migration[2])
+      migdates = data.frame("spr_begin" = migration[1], "spr_end" = breeding[1], "fal_begin" = breeding[2], "fal_end" = migration[2])
       migspeed = data.frame("spr" = speed[1], "fal" = speed[2])
     }
     else{
       pred_data = rbind(pred_data, preds)
-      migdates = rbind(migdates, migration)
+      dates = c(migration[1], breeding[1], breeding[2], migration[2])
+      migdates = rbind(migdates, dates)
       migspeed = rbind(migspeed, speed)
     }
     
@@ -199,7 +200,7 @@ for (f in 1:length(mfiles)){
   dates = cbind(year, dates)
   
   #plot the variance in estimated migration begin and end for all and for recent years
-  pdf(file = paste(dirpath, "/speed_", species, ".pdf", sep=""), width = 10, height = 4)
+  pdf(file = paste(dirpath, "/migdates_", species, ".pdf", sep=""), width = 10, height = 4)
   
   d = melt(dates, id.vars = "year")
   names(d) = c("year", "season", "date")
@@ -214,8 +215,8 @@ for (f in 1:length(mfiles)){
   multiplot(bxp_date, bxp_date_sub, cols = 2)
   dev.off()
   
-  print(paste("spring:", sd(dates$spr)))
-  print(paste("fall:", sd(dates$fal)))
+  print(paste("spring:", sd(dates$spr_begin)))
+  print(paste("fall:", sd(dates$fal_end)))
 }
 
 
@@ -239,14 +240,14 @@ for (f in 1:length(files)){
   
   #grab only the predicted daily centroids from between the migration dates
   for (y in 1:length(years)){
-    begin = dates[y,1]
-    end = dates[y,2]
+    spr_begin = dates[y,1]
+    fal_end = dates[y,4]
     med = median(c(dates[y,1], dates[y,2]))
     
     between = preds[which(preds$year == years[y] & preds$jday >= begin & preds$jday <= end),]
     #split spring and fall on median date
-    spring = preds[which(preds$year == years[y] & preds$jday >= begin & preds$jday < med),]
-    fall = preds[which(preds$year == years[y] & preds$jday <= end & preds$jday > med),]
+    spring = preds[which(preds$year == years[y] & preds$jday >= spr_begin & preds$jday <= spr_end),]
+    fall = preds[which(preds$year == years[y] & preds$jday >= fal_begin & preds$jday <= fal_end),]
     
     if (y == 1){
       migpreds = between

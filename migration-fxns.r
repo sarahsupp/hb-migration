@@ -131,14 +131,14 @@ GetBreedingDates = function(dat, migration_dates){
   
   #get median migration date
   med = median(migration_dates)
-  #maxdate = dat[which(dat$lat==max(dat$lat)),]$jday
-  #sdlat = sd(dat$lat)
   
   #GAM model on predicted latitude of centroids by julian date
   gam1 = gam(lat ~ s(jday, k = 40), data = dat, gamma = 1.5) 
   xpred = data.frame(jday = c(1:max(dat$jday)))
   dpred = predict(gam1, newdata=xpred, type="response", se.fit=TRUE)
   
+  # cutoff based on 2 SE for the breeding period, defined as +/- 30 days from the median date,
+  # based on start of spring and end of fall migration in GetMigrationDates function.
   lat_threshold = min(dpred$se.fit[c((med-30):(med+30))]*2.56 + dpred$fit[c((med-30):(med+30))])
   spring_index = (med-30):med
   fall_index = med:(med+30)
