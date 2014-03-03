@@ -81,7 +81,7 @@ for (f in 1:length(files)){
   humdat = cbind(humdat, year, month, day, julian)
     
   #start a new directory
-  dirpath = paste(figpath, species, sep="")
+  dirpath = paste(figpath, "/", species, sep="")
  #   dir.create(dirpath, showWarnings = TRUE, recursive = FALSE)
   
   #show how many records there are for the species across the years, write to txt file
