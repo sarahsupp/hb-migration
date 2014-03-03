@@ -339,13 +339,14 @@ PlotAllPoints = function (dat, map, species, year){
   return(sitemap)
 }
 
-MigrationSpeed = function(dat, migration){
+MigrationSpeed = function(dat, migration, breeding){
   # estimates daily migration speed for spring and fall, separately
   # takes the top 5 fastest migration speeds for each time period, and assigns the median as the migration speed
   # migration has two elements, beginning of spring migration and end of fall migration
-  med = median(migration)
-  springdat = dat[which(dat$jday >= migration[1] & dat$jday < med),]
-  falldat = dat[which(dat$jday <= migration[2] & dat$jday > med),]
+  # breeding has two elements, end of spring migration and beginning of fall migration from breeding grounds
+
+  springdat = dat[which(dat$jday >= migration[1] & dat$jday <= breeding[1]),]
+  falldat = dat[which(dat$jday >= breeding[2] & dat$jday <= migration[2]),]
   
   springspeed = median(sort(springdat$dst, decreasing=TRUE)[1:5])
   fallspeed = median(sort(falldat$dst, decreasing=TRUE)[1:5])

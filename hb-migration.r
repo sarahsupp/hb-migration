@@ -115,7 +115,7 @@ for (f in 1:length(files)){
     ggsave(filename = paste(dirpath, "/", "distance", years[y], species,".jpeg",sep=""))
     
     #estimate migration speed for spring and fall
-    speed = MigrationSpeed(dist, migration)
+    speed = MigrationSpeed(dist, migration, breeding)
     
     #plot smoothed migration trajectory for the species and year
     mig_path = PlotMigrationPath(preds, noam, species, years[y])
