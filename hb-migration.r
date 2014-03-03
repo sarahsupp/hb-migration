@@ -101,11 +101,14 @@ for (f in 1:length(files)){
     #get daily weighted mean location
     altmeandat = AlternateMeanLocs(yrdat,species,hexgrid,yreffort)
     
-    #grab dates for migration
+    #grab dates for begin and end of migration
     migration = GetMigrationDates(altmeandat)
     
     #use GAM model to predict daily location along a smoothing line
     preds = EstimateDailyLocs(altmeandat)
+    
+    #grab dates for breeding ground based on predicted latitude  #TODO: Is this weird since start and end are set on number of observation cells?
+    breeding = GetBreedingDates(preds, migration)
     
     #get Great Circle distances traveled each day between predicted daily locations
     dist = DailyTravel(preds, 4, 5, species, years[y], migration)

@@ -131,19 +131,21 @@ GetBreedingDates = function(dat, migration_dates){
   
   #get median migration date
   med = median(migration_dates)
+  #maxdate = dat[which(dat$lat==max(dat$lat)),]$jday
+  #sdlat = sd(dat$lat)
   
   #GAM model on predicted latitude of centroids by julian date
   gam1 = gam(lat ~ s(jday, k = 40), data = dat, gamma = 1.5) 
   xpred = data.frame(jday = c(1:max(dat$jday)))
   dpred = predict(gam1, newdata=xpred, type="response", se.fit=TRUE)
   
-  lat_threshold = min(dpred$se.fit[c(med-30:med+30)]*2.56 + dpred$fit[c(med-30:med+30)])
-  spring_index = med-30:med
-  fall_index = med:med+30
+  lat_threshold = min(dpred$se.fit[c((med-30):(med+30))]*2.56 + dpred$fit[c((med-30):(med+30))])
+  spring_index = (med-30):med
+  fall_index = med:(med+30)
   spring_max = spring_index[which.max(dpred$fit[spring_index])]
   fall_max = fall_index[which.max(dpred$fit[fall_index])]
   
-  #identify beginning of spring migration
+  #identify end of spring migration
   tst = 1000
   spring_index2 = spring_max
   while(tst > lat_threshold){
@@ -153,7 +155,7 @@ GetBreedingDates = function(dat, migration_dates){
   }
   spring = spring_index2 + 1
   
-  #identify end of fall migration
+  #identify beginning of fall migration
   tst <- 1000
   fall_index2 = fall_max
   while(tst > lat_threshold){
@@ -166,6 +168,7 @@ GetBreedingDates = function(dat, migration_dates){
   dates = c(spring, fall)
   return(dates)
 }
+
 
 GetMigrationDates = function(data) {
   # uses a generalized additive model (GAM) to define the start of spring and end of fall migration
