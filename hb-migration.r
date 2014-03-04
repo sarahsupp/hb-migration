@@ -11,7 +11,6 @@ main = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration
 figpath = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/Figures"
 gitpath = "C:/Users/sarah/Documents/GitHub/hb-migration"
 wd = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/data"
-#wd = "/Users/tcormier/Documents/820_Hummingbirds/migration_study/data/ebird"
 setwd(wd)
 
 
@@ -24,15 +23,10 @@ effort = read.table("cell_effort_new.txt", header=TRUE, as.is=TRUE)
 
 # read in the north america equal area hex grid map (F.A.L.)
 #hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/nw_vector_grid.shp") #quad map
-<<<<<<< HEAD
-hexgrid = readShapePoly("C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/terr_4h6/terr_4h6.shp") #hex map
-#hexgrid = readShapePoly("/Users/tcormier/Documents/820_Hummingbirds/migration_study/data/hex/DGGRID/terr_4h6.shp")
-=======
 hexgrid = readShapePoly(paste(main, "/terr_4h6/terr_4h6.shp", sep="")) #hex map
->>>>>>> 97a00f1c33aa711f25e824788b42bb704374e647
-  # crop to just North America, where the migratory species occur
-  hexgrid = hexgrid[which(hexgrid$LATITUDE > 10 & hexgrid$LATITUDE <80 & 
-                            hexgrid$LONGITUDE > -178 & hexgrid$LONGITUDE < -50),]
+# crop to just North America, where the migratory species occur
+hexgrid = hexgrid[which(hexgrid$LATITUDE > 10 & hexgrid$LATITUDE <80 & 
+                          hexgrid$LONGITUDE > -178 & hexgrid$LONGITUDE < -50),]
 
 # make a North America base map
 noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = "bw")
@@ -52,22 +46,17 @@ for (f in 1:length(files)){
   require(Rmisc)
   require(sp)
   require(raster)
-<<<<<<< HEAD
-  source("C:/Users/sarah/Documents/GitHub/hb-migration/migration-fxns.r")
-  #source("/Users/tcormier/Documents/scripts/git_repos/hb-migration/migration-fxns.r")
-=======
   source(paste(gitpath, "/migration-fxns.r", sep=""))
->>>>>>> 97a00f1c33aa711f25e824788b42bb704374e647
-
+  
   humdat = read.table(files[f], header=TRUE, sep="\t", quote="", fill=TRUE, as.is=TRUE, comment.char="") #quote="/"'"
-
+  
   #keep only the columns that we need
   keepcols = c("COMMON.NAME", "SCIENTIFIC.NAME", "OBSERVATION.COUNT", "AGE.SEX", "COUNTRY",
                "COUNTRY_CODE", "STATE_PROVINCE", "COUNTY", "LATITUDE", "LONGITUDE",
                "OBSERVATION.DATE", "TIME.OBSERVATIONS.STARTED", "PROTOCOL.TYPE", "PROJECT.CODE",
                "DURATION.MINUTES", "EFFORT.DISTANCE.KM", "EFFORT.AREA.HA", "NUMBER.OBSERVERS")
   humdat = humdat[,which(names(humdat) %in% keepcols)]
-
+  
   species = humdat$SCIENTIFIC.NAME[1]
   years = c(2004:2013)
   
@@ -90,21 +79,15 @@ for (f in 1:length(files)){
   })
   
   humdat = cbind(humdat, year, month, day, julian)
-    
+  
   #start a new directory
-<<<<<<< HEAD
-  dirpath = paste("C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/Figures/", species, sep="")
-  #dirpath = paste("/Users/tcormier/Documents/820_Hummingbirds/migration_study/figures/", species, sep="")
-  #  dir.create(dirpath, showWarnings = TRUE, recursive = FALSE)
-=======
   dirpath = paste(figpath, "/", species, sep="")
- #   dir.create(dirpath, showWarnings = TRUE, recursive = FALSE)
->>>>>>> 97a00f1c33aa711f25e824788b42bb704374e647
+  #   dir.create(dirpath, showWarnings = TRUE, recursive = FALSE)
   
   #show how many records there are for the species across the years, write to txt file
   yeartable = PlotRecords(humdat$year, species)
   write.table(yeartable, file = paste(dirpath, "/", species,".txt",sep=""), row.names=FALSE)
-    
+  
   #save a figure of the geographic number of checklists for the species, over all the years
   count = PlotChecklistMap(humdat, hexgrid, dirpath)
   
@@ -228,7 +211,7 @@ for (f in 1:length(mfiles)){
   
   bxp_date = ggplot(d, aes(season, date, fill=season)) + geom_boxplot() + theme_classic() + 
     scale_fill_manual(values=c("cadetblue", "cadetblue", "orange","orange"))
-
+  
   bxp_date_sub = ggplot(d_sub, aes(season, date, fill=season)) + geom_boxplot() + theme_classic() + 
     scale_fill_manual(values=c("cadetblue", "cadetblue", "orange","orange"))
   
@@ -330,7 +313,7 @@ for (f in 1:length(files)){
     geom_point(col="cadetblue", aes(size=lat_r2)) + geom_line(data=lm_fal,aes(year, abs(lat_slope))) + 
     geom_point(data=lm_fal, aes(year, abs(lat_slope), size=lat_r2), col="orange") + 
     theme_classic() + ylab("slope") + ggtitle("Latitude spring vs. fall")
-
+  
   lon_compare = ggplot(lm_spr, aes(year, abs(lon_slope))) +  geom_line() +
     geom_point(col="cadetblue", aes(size=lon_r2)) + geom_line(data=lm_fal,aes(year, abs(lon_slope))) + 
     geom_point(data=lm_fal, aes(year, abs(lon_slope), size=lon_r2), col="orange") + 
@@ -385,7 +368,7 @@ for (f in 1:length(files)){
     scale_x_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax))
   multiplot(latlon, cols = 1)
   dev.off()
-
+  
   # plot the standard deviation in daily lat and lon across the 10 years, and across 6 most recent years
   pdf(file = paste(dirpath, "/ErrorinDailyLocs", species, ".pdf", sep=""), width = 10, height = 8)
   
@@ -421,5 +404,4 @@ for (f in 1:length(files)){
   multiplot(sprplot, falplot, cols = 2)
   dev.off()
 }
-  
-  
+
