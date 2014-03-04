@@ -1,49 +1,33 @@
-# This code is to bind together the effort tables for the migration project and plot the results
+# This code is for the eBird observer effort tables for the migration project and to plot the results
 # In this case, effort represents the total number of submitted checklists per hex cell
 # The data can be aggregated by day, year, or hex cell. 
-# Data was obtained from FAL
+# Data was obtained from FAL, 2014/02/21
+# NOTE: This is only complete through 30 Nov 2013
 #(c) 2014 Sarah Supp
 
 
 #set working directory
-wd = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/data/effort_2004-2013"
+wd = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/data/"
 setwd(wd)
 
-# read in the north america equal area hex grid map (FAL)
-hexgrid = readShapePoly("C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/terr_4h6/terr_4h6.shp") #hex map
-# crop to just North America, where the migratory species occur
-hexgrid = hexgrid[which(hexgrid$LATITUDE > 10 & hexgrid$LATITUDE <80 & 
-                          hexgrid$LONGITUDE > -178 & hexgrid$LONGITUDE < -50),]
+#read in checklist effort data from FAL
+eft = read.table("icosohedron_ebd_effort_2004-2013.txt", sep=" ", header=T, as.is=TRUE)
 
-#hex grid map
-pdf("HexgridMap.pdf")
-plot(hexgrid, xlim=c(-170,-50), ylim=c(10,80), col="lightblue", lwd=0.25, border="gray10")
-axis(side=1)
-axis(side=2, las=1)
-box()
-mtext("Longitude", side=1, cex=1.4, line=2.5)
-mtext("Latitude", side=2, cex=1.4, line=2.5)
-dev.off()
+#convert to year and julian date & bind into new dataframe
+YEAR = sapply(eft$OBSERVATION.DATE,function(x){
+  as.numeric(substring(x, 1, 4))
+})
 
-# read in effort data, number of checklists submitted per hex cell
-files = list.files(pattern = "*.txt")
+DAY = sapply(eft$OBSERVATION.DATE, function(x){
+  julian(as.numeric(substring(x, 6, 7)), as.numeric(substring(x, 9, 10)), as.numeric(substring(x, 1, 4)), 
+         origin. = c(1, 1, as.numeric(substring(x, 1, 4)))) + 1
+})
 
-#import and rbind all the files together
+eft_new = data.frame(YEAR, DAY, "POLYFID" = eft$POLYFID, "COUNT" = eft$COUNT)
 
-for (f in 1:length(files)){
-  
-  effort = read.table(files[f], sep="\t", header=T, as.is=TRUE)
-  
-  if (f == 1) {
-    effort_all = effort
-  }
-  else{
-   effort_all = rbind(effort_all, effort) 
-  }
-}
 
 #aggregate by daily effort in each year
-effort_day = aggregate(effort_all$COUNT, list(year=effort_all$YEAR, day=effort_all$DAY), sum)
+effort_day = aggregate(eft_new$COUNT, list(year=eft_new$YEAR, day=eft_new$DAY), sum)
 names(effort_day)[3] = "effort"
 
 #aggregate by total effort in each hex cell in each year
@@ -71,7 +55,7 @@ for (y in 1:length(years)){
   cols2 = tim.colors(length(vls))
   
   #make a map with hexes colored by the number of times the species was observed in a given hex
-  pdf(paste("TotalEffort", years[y], ".pdf", sep=""))
+  pdf(paste("TotalEffort_new", years[y], ".pdf", sep=""))
   plot(hexgrid, col=df$cols, border="gray10", lwd=0.25, xlim=c(-170,-50), ylim=c(10,80), las=1)
   axis(side=1)
   axis(side=2, las=1)
@@ -102,7 +86,7 @@ vls[1] = 1
 cols2 = tim.colors(length(vls))
 
 #make a map with hexes colored by the number of times the species was observed in a given hex
-pdf("TotalEffort_2004-2013.pdf")
+pdf("TotalEffort_new_2004-2013.pdf")
 plot(hexgrid, col=df$cols, border="gray10", lwd=0.25, xlim=c(-170,-50), ylim=c(10,80), las=1)
 axis(side=1)
 axis(side=2, las=1)
@@ -116,4 +100,6 @@ legend("bottomleft", legend=vls, pch=22, pt.bg=cols2, pt.cex=1, cex=0.75, bty="n
 dev.off()
 
 #------------ Write datasets to use later
-write.table(effort_all, file = "cell_effort.txt", row.names=FALSE)
+write.table(effort_all, file = "cell_effort_new.txt", row.names=FALSE)
+
+
