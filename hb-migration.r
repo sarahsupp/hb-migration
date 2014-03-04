@@ -170,10 +170,10 @@ for (f in 1:length(files)){
   rate = cbind(year, rate)
   species = f #TOOD: Set species path - pull from filename?
   
-  dirpath = paste(figpath, "/", species, sep="")
+  dirpath = paste(dirpath, "/", species, sep="")
   
   #plot the variance in estimated migration speed for all and for recent years
-  pdf(file = paste(dirpath, "/speed_", species, ".pdf", sep=""), width = 10, height = 4)
+  pdf(file = paste(figpath, "/speed_", species, ".pdf", sep=""), width = 10, height = 4)
   
   r = melt(rate, id.vars = "year")
   names(r) = c("year", "season", "rate")
