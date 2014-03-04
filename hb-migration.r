@@ -8,6 +8,7 @@ library(raster)
 
 #set working directory
 wd = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/data"
+#wd = "/Users/tcormier/Documents/820_Hummingbirds/migration_study/data/ebird"
 setwd(wd)
 
 # read in summary of effort data (Number of eBird checklists submitted per day per year)
@@ -16,6 +17,7 @@ effort = read.table("cell_effort.txt", header=TRUE)
 # read in the north america equal area hex grid map (F.A.L.)
 #hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/nw_vector_grid.shp") #quad map
 hexgrid = readShapePoly("C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/terr_4h6/terr_4h6.shp") #hex map
+#hexgrid = readShapePoly("/Users/tcormier/Documents/820_Hummingbirds/migration_study/data/hex/DGGRID/terr_4h6.shp")
   # crop to just North America, where the migratory species occur
   hexgrid = hexgrid[which(hexgrid$LATITUDE > 10 & hexgrid$LATITUDE <80 & 
                             hexgrid$LONGITUDE > -178 & hexgrid$LONGITUDE < -50),]
@@ -38,6 +40,7 @@ for (f in 1:length(files)){
   require(sp)
   require(raster)
   source("C:/Users/sarah/Documents/GitHub/hb-migration/migration-fxns.r")
+  #source("/Users/tcormier/Documents/scripts/git_repos/hb-migration/migration-fxns.r")
 
   humdat = read.table(files[f], header=TRUE, sep="\t", quote="", fill=TRUE, as.is=TRUE, comment.char="") #quote="/"'"
 
@@ -73,7 +76,8 @@ for (f in 1:length(files)){
     
   #start a new directory
   dirpath = paste("C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/Figures/", species, sep="")
- #   dir.create(dirpath, showWarnings = TRUE, recursive = FALSE)
+  #dirpath = paste("/Users/tcormier/Documents/820_Hummingbirds/migration_study/figures/", species, sep="")
+  #  dir.create(dirpath, showWarnings = TRUE, recursive = FALSE)
   
   #show how many records there are for the species across the years, write to txt file
   yeartable = PlotRecords(humdat$year, species)
