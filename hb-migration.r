@@ -82,7 +82,7 @@ for (f in 1:length(files)){
   
   #start a new directory
   dirpath = paste(figpath, "/", species, sep="")
-  #   dir.create(dirpath, showWarnings = TRUE, recursive = FALSE)
+  #   dir.create(dirpath, showWarnings = TRUE, recursive = FALSE) #only need if directory did not previously exist
   
   #show how many records there are for the species across the years, write to txt file
   yeartable = PlotRecords(humdat$year, species)
