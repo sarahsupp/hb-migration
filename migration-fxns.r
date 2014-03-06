@@ -82,8 +82,6 @@ AlternateMeanLocs = function(dat, species, hexdat, yreffort) {
       wtmean_lat = wt.mean(jdata$HEX_LATITUDE, jdata$freq/jdata$COUNT)
       lon_sd <- wt.sd(jdata$HEX_LONGITUDE, jdata$freq/jdata$COUNT)
       lat_sd <- wt.sd(jdata$HEX_LATITUDE, jdata$freq/jdata$COUNT)
-      #wtmean_lon = weighted.mean(jdata$HEX_LONGITUDE, jdata$freq, na.rm=TRUE)
-      #wtmean_lat = weighted.mean(jdata$HEX_LATITUDE, jdata$freq, na.rm=TRUE)
       df[outcount,] = c(j, mo, numobs, numcells, wtmean_lon, wtmean_lat,lon_sd, lat_sd)
       outcount = outcount + 1
     }
@@ -124,6 +122,7 @@ DailyTravel = function(meanlocs, loncol, latcol, species, year, migr_dates){
 
   return(distdat)
 }
+
 
 GetBreedingDates = function(dat, migration_dates){
   # uses a generalized additive model (GAM) on latitude to estimate the end of spring and 
@@ -390,13 +389,14 @@ FindMismatch = function(dat, species, hexdat, yreffort, map) {
       missing = rbind(missing, misses)
     }
     }
-  missing = missing[complete.cases(missing),]
+  missing = missing[complete.cases(missing),] #TODO: Are the missing points because of some mismatch in what is being counted towards effort?
+  nadat = missing[!complete.cases(missing),] #TODO: Are the NA points coming from the coast? TAC found some coastal mismatch - worth trying to put into nearest neighbor cell?
   
   errmap = ggmap(map) + geom_point(data=missing, aes(HEX_LONGITUDE, HEX_LATITUDE)) + 
     ggtitle(paste(species, year, sep = " "))
   
   print(errmap)
-  return(missing)
+  return(list(missing, nadat))
 }
 
 LinearMigration = function(seasondat, year){
