@@ -396,6 +396,7 @@ FindMismatch = function(dat, species, hexdat, yreffort, map) {
     ggtitle(paste(species, year, sep = " "))
   
   print(errmap)
+  return(missing)
 }
 
 LinearMigration = function(seasondat, year){
