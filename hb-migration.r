@@ -161,7 +161,17 @@ for (f in 1:length(files)){
 #                   compare migration rates and dates across species
 #---------------------------------------------------------------------------------------
 
-#TODO: import libraries, make sure wd are set, pull species name correctly below, set path to inside each species directory
+require(ggmap)
+require(ggplot2)
+require(plyr)
+require(reshape2)
+require(Rmisc)
+require(sp)
+require(raster)
+
+setwd(wd)
+
+#TODO: pull species name correctly below, set path to inside each species directory
 
 # read in eBird data for migration speed
 files = list.files(path = getwd(), pattern = "speed", recursive=TRUE, full.names=TRUE)
