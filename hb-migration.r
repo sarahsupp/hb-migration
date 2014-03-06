@@ -48,7 +48,25 @@ for (f in 1:length(files)){
   require(raster)
   source(paste(gitpath, "/migration-fxns.r", sep=""))
   
-  humdat = read.table(files[f], header=TRUE, sep="\t", quote="", fill=TRUE, as.is=TRUE, comment.char="") #quote="/"'"
+  humdat = read.table(files[f], header=TRUE, sep="\t", quote="", fill=TRUE, as.is=TRUE, comment.char="")
+  
+  #TODO: Account for unique sampling events (e.g. some people bird in groups)
+  #  sum number of unique GROUP.IDENTIFIER --> MAKE SURE OBSERVATIONS AREN'T REPLICATED
+  gid = sort(unique(humdat$GROUP.IDENTIFIER))
+  gid = gid[-1] #don't include no Group ID, ""
+  
+  keep = humdat[which(humdat$GROUP.IDENTIFIER == ""),]
+  out = 0
+  
+  for (g in 1:length(gid)){
+    out = out + 1
+    tmp = humdat[which(humdat$GROUP.IDENTIFIER == gid[g]),]
+    if (nrow(tmp) == 1) { 
+      keep[out,] = rbind(keep,tmp)}
+    else{
+      keep[out,] = rbind(keep, tmp[1,])
+    }
+  }
   
   #keep only the columns that we need
   keepcols = c("COMMON.NAME", "SCIENTIFIC.NAME", "OBSERVATION.COUNT", "AGE.SEX", "COUNTRY",
@@ -82,7 +100,7 @@ for (f in 1:length(files)){
   
   #start a new directory
   dirpath = paste(figpath, "/", species, sep="")
-  #   dir.create(dirpath, showWarnings = TRUE, recursive = FALSE)
+  #   dir.create(dirpath, showWarnings = TRUE, recursive = FALSE) #only need if directory did not previously exist
   
   #show how many records there are for the species across the years, write to txt file
   yeartable = PlotRecords(humdat$year, species)
@@ -160,6 +178,18 @@ for (f in 1:length(files)){
 #---------------------------------------------------------------------------------------
 #                   compare migration rates and dates across species
 #---------------------------------------------------------------------------------------
+
+require(ggmap)
+require(ggplot2)
+require(plyr)
+require(reshape2)
+require(Rmisc)
+require(sp)
+require(raster)
+
+setwd(wd)
+
+#TODO: pull species name correctly below, set path to inside each species directory
 
 # read in eBird data for migration speed
 files = list.files(path = getwd(), pattern = "speed", recursive=TRUE, full.names=TRUE)
