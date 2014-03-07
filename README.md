@@ -24,5 +24,6 @@ Data is currently privately housed, but may be requested for the purposes of rep
 * `eBird-effort.r` script -- makes maps of total citizen science checklist effort per hex cell for each year. Contains daily data.
 * `hb-centroids.r` script -- current a "junk" script. Is not necessary to run analyses.
 * `BBLmapcode.r` script -- maps foreign recaptures from Bird Banding Lab data.
+* `hb_movebank_createXML.py` script -- creates xml files for submission to movebank.org for annotation with environmental variables.
 
 **License:** This code is available under a BSD 2-Clause License.
