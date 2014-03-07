@@ -55,16 +55,18 @@ for (f in 1:length(files)){
   gid = sort(unique(humdat$GROUP.IDENTIFIER))
   gid = gid[-1] #don't include no Group ID, ""
   
-  keep = humdat[which(humdat$GROUP.IDENTIFIER == ""),]
-  out = 0
+  keep = humdat[1,]
   
   for (g in 1:length(gid)){
     out = out + 1
     tmp = humdat[which(humdat$GROUP.IDENTIFIER == gid[g]),]
-    if (nrow(tmp) == 1) { 
-      keep[out,] = rbind(keep,tmp)}
-    else{
-      keep[out,] = rbind(keep, tmp[1,])
+    if(nrow(tmp) > 0){
+      if (nrow(tmp) == 1) { 
+        keep[out,] = tmp
+      }
+      else{
+        keep[out,] = tmp[1,]
+      }
     }
   }
   
