@@ -238,8 +238,8 @@ EstimateDailyLocs = function(dat) {
   # with standard errors. Returns a dataframe.
       #check choice of k and gamma in the GAM function - same as FAL 2013
   #find the best fit line for the data, for longitude and latitude separately
-  lon_gam <- gam(centerlon ~ s(jday, k=10), data = dat, gamma = 1.5)
-  lat_gam <- gam(centerlat ~ s(jday, k=10), data = dat, gamma = 1.5)
+  lon_gam <- gam(centerlon ~ s(jday, k=20), data = dat, gamma = 1.5) # TODO: consider upping gamma? and changing basis? (adaptive spline or penalized spline?)
+  lat_gam <- gam(centerlat ~ s(jday, k=20), data = dat, gamma = 1.5)
   
   #predict values along the smoothing line
   xpred <- data.frame(jday=sort(unique(dat$jday)))
