@@ -52,6 +52,7 @@ for (f in 1:length(files)){
   
   #TODO: Account for unique sampling events (e.g. some people bird in groups)
   #  sum number of unique GROUP.IDENTIFIER --> MAKE SURE OBSERVATIONS AREN'T REPLICATED
+  #humdat = GroupDuplicates(humdat) #FIXME: Don't run until the fxn in migration-fxns has been fixed
   
   #keep only the columns that we need
   keepcols = c("COMMON.NAME", "SCIENTIFIC.NAME", "OBSERVATION.COUNT", "AGE.SEX", "COUNTRY",
