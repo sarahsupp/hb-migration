@@ -7,10 +7,10 @@ library(sp)
 library(raster)
 
 #set working directory
-main = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration"
-figpath = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/Figures"
-gitpath = "C:/Users/sarah/Documents/GitHub/hb-migration"
-wd = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/data"
+main = "/Users/sarah/Desktop/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration"
+figpath = "/Users/sarah/Desktop/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/Figures"
+gitpath = "/Users/sarah/Documents/GitHub/hb-migration"
+wd = "/Users/sarah/Desktop/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/data"
 setwd(wd)
 
 
@@ -46,13 +46,13 @@ for (f in 1:length(files)){
   require(Rmisc)
   require(sp)
   require(raster)
+  require(segmented)
   source(paste(gitpath, "/migration-fxns.r", sep=""))
   
   humdat = read.table(files[f], header=TRUE, sep="\t", quote="", fill=TRUE, as.is=TRUE, comment.char="")
   
-  #TODO: Account for unique sampling events (e.g. some people bird in groups)
-  #  sum number of unique GROUP.IDENTIFIER --> MAKE SURE OBSERVATIONS AREN'T REPLICATED
-  #humdat = GroupDuplicates(humdat) #FIXME: Don't run until the fxn in migration-fxns has been fixed
+  # Some records are duplicated as multiple members of a group enter identical checklists. Reduce to a single record per group.
+  humdat = GroupDuplicates(humdat) 
   
   #keep only the columns that we need
   keepcols = c("COMMON.NAME", "SCIENTIFIC.NAME", "OBSERVATION.COUNT", "AGE.SEX", "COUNTRY",
