@@ -118,8 +118,11 @@ for (f in 1:length(files)){
     segmod = segmented(lm1, seg.Z = ~jday, psi=startpoints,control = seg.control(it.max=200))
     migration = round(segmod$psi[,2])
     
-    plot(jday,lat)
+    pdf(file = paste(dirpath, "/breaks_", species, ".pdf", sep=""), width = 5, height = 4)
+    plot(jday,lat, col = "gray60", main = paste(species, years[y]), xlab = "")
+    mtext(side = 1, line = 2, paste(migration[[1]], "-", migration[[2]], "-",  migration[[3]], "-", migration[[4]]), cex = 1.5)
     plot(segmod, add=T, col = "red", lwd=4)
+    dev.off()
     
     #get Great Circle distances traveled each day between predicted daily locations
     dist = DailyTravel(preds, 4, 5, species, years[y], migration)
