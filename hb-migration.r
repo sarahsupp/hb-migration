@@ -100,7 +100,7 @@ for (f in 1:length(files)){
     yreffort = effort[which(effort$YEAR == years[y]),]
     
     #plot frequency of sightings per month
-    monthtable = PlotRecords(yrdat$month, species)
+    #monthtable = PlotRecords(yrdat$month, species)
     
     #get daily weighted mean location - #FIXME: Effort checklist data does not yet match perfectly
     meanlocs = AlternateMeanLocs(yrdat,species,hexgrid,yreffort)
@@ -118,7 +118,7 @@ for (f in 1:length(files)){
     segmod = segmented(lm1, seg.Z = ~jday, psi=startpoints,control = seg.control(it.max=200))
     migration = round(segmod$psi[,2])
     
-    pdf(file = paste(dirpath, "/breaks_", species, ".pdf", sep=""), width = 5, height = 4)
+    pdf(file = paste(dirpath, "/breaks_", species, years[y], ".pdf", sep=""), width = 5, height = 4)
     plot(jday,lat, col = "gray60", main = paste(species, years[y]), xlab = "")
     mtext(side = 1, line = 2, paste(migration[[1]], "-", migration[[2]], "-",  migration[[3]], "-", migration[[4]]), cex = 1.5)
     plot(segmod, add=T, col = "red", lwd=4)
@@ -163,7 +163,7 @@ for (f in 1:length(files)){
                   append=FALSE,row.names=FALSE)
     }
     
-    rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat", "altmeandat", "migration", "preds", "dist", "mig_path")])   # clears the memory of the map and year-level data
+    rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat", "meanlocs", "migration", "preds", "dist", "mig_path")])   # clears the memory of the map and year-level data
   }
   rm(list=ls()[!ls() %in% c("f", "files", "noam", "hexgrid", "effort", "pred_data", "migdates", "wd", "main", "gitpath","figpath")])   # clears the memory of everything except the file list, iterator, and base map
 }
