@@ -102,44 +102,50 @@ for (f in 1:length(files)){
     #plot frequency of sightings per month
     monthtable = PlotRecords(yrdat$month, species)
     
-    #get daily weighted mean location
-    altmeandat = AlternateMeanLocs(yrdat,species,hexgrid,yreffort)
-    
-    #grab dates for begin and end of migration
-    migration = GetMigrationDates(altmeandat)
+    #get daily weighted mean location - #FIXME: Effort checklist data does not yet match perfectly
+    meanlocs = AlternateMeanLocs(yrdat,species,hexgrid,yreffort)
     
     #use GAM model to predict daily location along a smoothing line
-    preds = EstimateDailyLocs(altmeandat)
+    preds = EstimateDailyLocs(meanlocs)
     
-    #grab dates for breeding ground based on predicted latitude  #TODO: Is this weird since start and end are set on number of observation cells?
-    breeding = GetBreedingDates(preds, migration)
+    #use gam approach to estimate rough starting points for segmentation from the mean loc latitude data
+    startpoints = round(EstMigrationDates(meanlocs))
+    
+    #use piecewise regression on centroid latitude to find the start and end of spring and fall migration
+    lat = preds$lat
+    jday = preds$jday
+    lm1 = lm(lat~jday)
+    segmod = segmented(lm1, seg.Z = ~jday, psi=startpoints,control = seg.control(it.max=200))
+    migration = round(segmod$psi[,2])
+    
+    plot(jday,lat)
+    plot(segmod, add=T, col = "red", lwd=4)
     
     #get Great Circle distances traveled each day between predicted daily locations
     dist = DailyTravel(preds, 4, 5, species, years[y], migration)
-    ggsave(filename = paste(dirpath, "/", "distance", years[y], species,".jpeg",sep=""))
     
     #estimate migration speed for spring and fall
-    speed = MigrationSpeed(dist, migration, breeding)
+    speed = MigrationSpeed(dist, migration)
     
     #plot smoothed migration trajectory for the species and year
     mig_path = PlotMigrationPath(preds, noam, species, years[y])
     ggsave(mig_path, file=paste(dirpath, "/", "migration", species, years[y], ".pdf", sep=""))
     
-    #plot occurrences with lines showing beginning and end of migration
-    PlotOccurrences(altmeandat, species, migration[[1]], migration[[2]])
-    ggsave(file=paste(dirpath, "/", "occurrences", species, years[y], ".pdf", sep=""))
+#     #plot occurrences with lines showing beginning and end of migration
+#     PlotOccurrences(altmeandat, species, migration[[1]], migration[[4]])
+#     ggsave(file=paste(dirpath, "/", "occurrences", species, years[y], ".pdf", sep=""))
     
     #add year to preds, so we can save it to compare across years
     preds$year = years[y]
     
     if (y == 1){
       pred_data = preds
-      migdates = data.frame("spr_begin" = migration[1], "spr_end" = breeding[1], "fal_begin" = breeding[2], "fal_end" = migration[2])
+      migdates = data.frame("spr_begin" = migration[[1]], "spr_end" = migration[[2]], "fal_begin" = migration[[3]], "fal_end" = migration[[4]])
       migspeed = data.frame("spr" = speed[1], "fal" = speed[2])
     }
     else{
       pred_data = rbind(pred_data, preds)
-      dates = c(migration[1], breeding[1], breeding[2], migration[2])
+      dates = c(migration[[1]], migration[[2]], migration[[3]], migration[[4]])
       migdates = rbind(migdates, dates)
       migspeed = rbind(migspeed, speed)
     }

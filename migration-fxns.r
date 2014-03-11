@@ -112,7 +112,7 @@ DailyTravel = function(meanlocs, loncol, latcol, species, year, migr_dates){
   }
   distdat = cbind(meanlocs,dst)
   
-  subdistdat = distdat[which(distdat$jday >= migr_dates[1] & distdat$jday <= migr_dates[2]),]
+  subdistdat = distdat[which(distdat$jday >= migr_dates[[1]] & distdat$jday <= migr_dates[[4]]),]
 
   print(ggplot(subdistdat, aes(jday, dst)) + geom_line(size=1, col = "#4daf4a") + theme_bw() + xlab("Julian Day") + 
           ylab("Distance Traveled (km)") + ggtitle(paste(species, year, sep = " ")) +
@@ -238,13 +238,13 @@ EstimateDailyLocs = function(dat) {
   # with standard errors. Returns a dataframe.
       #check choice of k and gamma in the GAM function - same as FAL 2013
   #find the best fit line for the data, for longitude and latitude separately
-  lon_gam <- gam(centerlon ~ s(jday, k=20), data = dat, gamma = 1.5) # TODO: consider upping gamma? and changing basis? (adaptive spline or penalized spline?)
-  lat_gam <- gam(centerlat ~ s(jday, k=20), data = dat, gamma = 1.5)
+  lon_gam = gam(centerlon ~ s(jday, k=20), data = dat, gamma = 1.5) # TODO: consider upping gamma? and changing basis? (adaptive spline or penalized spline?)
+  lat_gam = gam(centerlat ~ s(jday, k=20), data = dat, gamma = 1.5)
   
   #predict values along the smoothing line
-  xpred <- data.frame(jday=sort(unique(dat$jday)))
-  lonpred <- predict(lon_gam, newdata = xpred, type="response", se.fit=T)
-  latpred <- predict(lat_gam, newdata = xpred, type="response", se.fit=T)
+  xpred = data.frame(jday=sort(unique(dat$jday)))
+  lonpred = predict(lon_gam, newdata = xpred, type="response", se.fit=T)
+  latpred = predict(lat_gam, newdata = xpred, type="response", se.fit=T)
   
   #bring the data back together
   preds =  data.frame(spname = species, jday = xpred$jday, month = dat$month, lon = lonpred$fit, 
@@ -338,14 +338,14 @@ PlotAllPoints = function (dat, map, species, year){
   return(sitemap)
 }
 
-MigrationSpeed = function(dat, migration, breeding){
+MigrationSpeed = function(dat, migration){
   # estimates daily migration speed for spring and fall, separately
   # takes the top 5 fastest migration speeds for each time period, and assigns the median as the migration speed
   # migration has two elements, beginning of spring migration and end of fall migration
   # breeding has two elements, end of spring migration and beginning of fall migration from breeding grounds
 
-  springdat = dat[which(dat$jday >= migration[1] & dat$jday <= breeding[1]),]
-  falldat = dat[which(dat$jday >= breeding[2] & dat$jday <= migration[2]),]
+  springdat = dat[which(dat$jday >= migration[[1]] & dat$jday <= migration[[2]]),]
+  falldat = dat[which(dat$jday >= migration[[3]] & dat$jday <= migration[[4]]),]
   
   springspeed = median(sort(springdat$dst, decreasing=TRUE)[1:5])
   fallspeed = median(sort(falldat$dst, decreasing=TRUE)[1:5])
@@ -437,5 +437,78 @@ GroupDuplicates = function(humdat) {
   keepnongroup = humdat[which(humdat$GROUP.IDENTIFIER == ""),]
   keep = rbind(keep, keepnongroup)
   return(keep)
+}
+
+
+EstMigrationDates = function(dat){
+  #takes in predicted centroids for migration path, and estimates the beginnig and end of spring migration,
+  # and the beginning and end of fall migration
+  
+  #GAM model on predicted latitude of centroids by julian date
+  gam1 = gam(centerlat ~ s(jday, k = 40), data = dat, gamma = 1.5) 
+  xpred = data.frame(jday = c(1:max(dat$jday)))
+  dpred = predict(gam1, newdata=xpred, type="response", se.fit=TRUE)
+  
+  ## cutoff based on 2 SE for spring and fall combined, following La Sorte et al. 2013 methods
+  # Spring migration should be between 11 Jan and 9 July
+  # Fall migration should be between 8 August and 21 Dec
+  spring_threshold = min(dpred$se.fit[c(1:120)]*2.56 + dpred$fit[c(1:120)])
+  fall_threshold = min(dpred$se.fit[c(280:365)]*2.56 + dpred$fit[c(280:365)])
+  spring_index = 11:190
+  fall_index = 220:355
+  spring_max = spring_index[which.max(dpred$fit[spring_index])]
+  fall_max = fall_index[which.max(dpred$fit[fall_index])]
+  
+  #identify beginning of spring migration
+  tst = 1000
+  spring_index2 = spring_max
+  while(tst > spring_threshold){
+    tst = dpred$fit[spring_index2]
+    if(spring_index2 == 1) break
+    spring_index2 = spring_index2 - 1
+  }
+  spring_begin = spring_index2 + 1
+  
+  #identify end of fall migration
+  tst <- 1000
+  fall_index2 = fall_max
+  while(tst > fall_threshold){
+    tst = dpred$fit[fall_index2]
+    if(fall_index2==365) break
+    fall_index2 <- fall_index2 + 1
+  }
+  fall_end <- fall_index2 - 1
+  
+  med = median(c(spring_begin, fall_end))
+  # cutoff based on 2 SE for the breeding period, defined as +/- 30 days from the median date,
+  # based on start of spring and end of fall migration in GetMigrationDates function
+  lat_threshold = min(dpred$se.fit[c((med-30):(med+30))]*2.56 + dpred$fit[c((med-30):(med+30))])
+  spring_index = (med-30):med
+  fall_index = med:(med+30)
+  spring_max = spring_index[which.max(dpred$fit[spring_index])]
+  fall_max = fall_index[which.max(dpred$fit[fall_index])]
+  
+  #identify end of spring migration
+  tst = 1000
+  spring_index2 = spring_max
+  while(tst > lat_threshold){
+    tst = dpred$fit[spring_index2]
+    if(spring_index2 == 1) break
+    spring_index2 = spring_index2 - 1
+  }
+  spring_end = spring_index2 + 1
+  
+  #identify beginning of fall migration
+  tst <- 1000
+  fall_index2 = fall_max
+  while(tst > lat_threshold){
+    tst = dpred$fit[fall_index2]
+    if(fall_index2==365) break
+    fall_index2 <- fall_index2 + 1
+  }
+  fall_begin <- fall_index2 - 1
+  
+  dates = c(spring_begin, spring_end, fall_begin, fall_end)
+  return(dates)
 }
 
