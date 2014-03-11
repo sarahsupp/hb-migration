@@ -7,10 +7,10 @@ library(sp)
 library(raster)
 
 #set working directory
-main = "/Users/sarah/Desktop/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration"
-figpath = "/Users/sarah/Desktop/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/Figures"
-gitpath = "/Users/sarah/Documents/GitHub/hb-migration"
-wd = "/Users/sarah/Desktop/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/data"
+main = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration"
+figpath = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/Figures"
+gitpath = "C:/Users/sarah/Documents/GitHub/hb-migration"
+wd = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/data"
 setwd(wd)
 
 
