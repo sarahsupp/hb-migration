@@ -115,7 +115,7 @@ for (f in 1:length(files)){
     lat = preds$lat
     jday = preds$jday
     lm1 = lm(lat~jday)
-    segmod = segmented(lm1, seg.Z = ~jday, psi=startpoints,control = seg.control(it.max=200))
+    segmod = segmented(lm1, seg.Z = ~jday, psi=startpoints, control = seg.control(it.max=200)) #FIXME: Fails on brthu 2007
     migration = round(segmod$psi[,2])
     
     pdf(file = paste(dirpath, "/breaks_", species, years[y], ".pdf", sep=""), width = 5, height = 4)
