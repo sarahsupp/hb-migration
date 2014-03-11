@@ -54,6 +54,12 @@ for (f in 1:length(files)){
   # Some records are duplicated as multiple members of a group enter identical checklists. Reduce to a single record per group.
   humdat = GroupDuplicates(humdat) 
   
+  # make sure that only include protocols that are also in the effort data
+  humdat = humdat[which(humdat$PROTOCOL.TYPE %in% c("eBird - Casual Observation","eBird - Exhaustive Area Count",
+                                                     "eBird - Stationary Count", "eBird - Traveling Count",
+                                                     "eBird My Yard Count", "eBird--Nocturnal Flight Call Count",
+                                                     "Kiosk")),]
+  
   #keep only the columns that we need
   keepcols = c("COMMON.NAME", "SCIENTIFIC.NAME", "OBSERVATION.COUNT", "AGE.SEX", "COUNTRY",
                "COUNTRY_CODE", "STATE_PROVINCE", "COUNTY", "LATITUDE", "LONGITUDE",

@@ -62,9 +62,9 @@ AlternateMeanLocs = function(dat, species, hexdat, yreffort) {
   
   #To find the POLYFID for the hexes for each observation, identify observed lon and lat  
   # Matches observations with the polygon hexes in the map
-  ID <- over(SpatialPoints(dat[,c(10,9)]), hexdat)  #TODO: Check with TAC that this is working correctly based on map projection
+  ID = over(SpatialPoints(dat[,c(10,9)]), hexdat)  #TODO: Check with TAC that this is working correctly based on map projection
     names(ID) = c("JOIN_COUNT", "AREA", "PERIMETER", "BOB_", "BOB_ID", "ID", "POLYFID", "HEX_LONGITUDE", "HEX_LATITUDE")
-  coords <- cbind(dat, ID) 
+  coords = cbind(dat, ID) 
   
   #aggregate daily info by mean centroid location
   dailyHexes = count(coords, vars=c("julian", "POLYFID", "HEX_LONGITUDE", "HEX_LATITUDE"))
