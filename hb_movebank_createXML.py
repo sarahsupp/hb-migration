@@ -36,6 +36,7 @@ def prettify(elem):
     rough_string = ET.tostring(elem, 'utf-8')
     reparsed = minidom.parseString(rough_string)
     return reparsed.toprettyxml(indent="  ")
+
 ########
 #function to create xml from user-input variables.
 def CreateXML(var_labels, int_type, type_name, var_names, outfile):
