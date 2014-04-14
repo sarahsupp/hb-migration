@@ -62,9 +62,9 @@ AlternateMeanLocs = function(dat, species, hexdat, yreffort) {
   
   #To find the POLYFID for the hexes for each observation, identify observed lon and lat  
   # Matches observations with the polygon hexes in the map
-  ID <- over(SpatialPoints(dat[,c(10,9)]), hexdat)  #TODO: Check with TAC that this is working correctly based on map projection
+  ID = over(SpatialPoints(dat[,c(10,9)]), hexdat)  #TODO: Check with TAC that this is working correctly based on map projection
     names(ID) = c("JOIN_COUNT", "AREA", "PERIMETER", "BOB_", "BOB_ID", "ID", "POLYFID", "HEX_LONGITUDE", "HEX_LATITUDE")
-  coords <- cbind(dat, ID) 
+  coords = cbind(dat, ID) 
   
   #aggregate daily info by mean centroid location
   dailyHexes = count(coords, vars=c("julian", "POLYFID", "HEX_LONGITUDE", "HEX_LATITUDE"))
@@ -73,7 +73,7 @@ AlternateMeanLocs = function(dat, species, hexdat, yreffort) {
   for (j in 1:length(julian)){
     jdata = dailyHexes[which(dailyHexes$julian == j),]
     jeffort = yreffort[which(yreffort$DAY == j),]
-    jdata2 = merge(jdata, jeffort, by.x = "POLYFID", by.y = "POLYFID")  #TODO - DOESN'T ALWAYS MATCH UP - WHY ARE SOME MISSING? (e.g. 2012 Ar. alex., day 100)
+    jdata = merge(jdata, jeffort, by.x = "POLYFID", by.y = "POLYFID")  #TODO - DOESN'T ALWAYS MATCH UP - WHY ARE SOME MISSING? (e.g. 2012 Ar. alex., day 100)
     if (nrow(jdata) > 0){                                               # POLYFID c(8378, 8880, 9386, 9051) is in jdata, but not in jeffort - why?
       numcells = nrow(jdata)
       numobs = sum(jdata$freq)
@@ -82,8 +82,6 @@ AlternateMeanLocs = function(dat, species, hexdat, yreffort) {
       wtmean_lat = wt.mean(jdata$HEX_LATITUDE, jdata$freq/jdata$COUNT)
       lon_sd <- wt.sd(jdata$HEX_LONGITUDE, jdata$freq/jdata$COUNT)
       lat_sd <- wt.sd(jdata$HEX_LATITUDE, jdata$freq/jdata$COUNT)
-      #wtmean_lon = weighted.mean(jdata$HEX_LONGITUDE, jdata$freq, na.rm=TRUE)
-      #wtmean_lat = weighted.mean(jdata$HEX_LATITUDE, jdata$freq, na.rm=TRUE)
       df[outcount,] = c(j, mo, numobs, numcells, wtmean_lon, wtmean_lat,lon_sd, lat_sd)
       outcount = outcount + 1
     }
@@ -114,7 +112,7 @@ DailyTravel = function(meanlocs, loncol, latcol, species, year, migr_dates){
   }
   distdat = cbind(meanlocs,dst)
   
-  subdistdat = distdat[which(distdat$jday >= migr_dates[1] & distdat$jday <= migr_dates[2]),]
+  subdistdat = distdat[which(distdat$jday >= migr_dates[[1]] & distdat$jday <= migr_dates[[4]]),]
 
   print(ggplot(subdistdat, aes(jday, dst)) + geom_line(size=1, col = "#4daf4a") + theme_bw() + xlab("Julian Day") + 
           ylab("Distance Traveled (km)") + ggtitle(paste(species, year, sep = " ")) +
@@ -126,13 +124,58 @@ DailyTravel = function(meanlocs, loncol, latcol, species, year, migr_dates){
 }
 
 
+GetBreedingDates = function(dat, migration_dates){
+  # uses a generalized additive model (GAM) on latitude to estimate the end of spring and 
+  # begin of fall migration, which defines the time at the breeding grounds
+  
+  #get median migration date
+  med = median(migration_dates)
+  
+  #GAM model on predicted latitude of centroids by julian date
+  gam1 = gam(lat ~ s(jday, k = 40), data = dat, gamma = 1.5) 
+  xpred = data.frame(jday = c(1:max(dat$jday)))
+  dpred = predict(gam1, newdata=xpred, type="response", se.fit=TRUE)
+  
+  # cutoff based on 2 SE for the breeding period, defined as +/- 30 days from the median date,
+  # based on start of spring and end of fall migration in GetMigrationDates function.
+  lat_threshold = min(dpred$se.fit[c((med-30):(med+30))]*2.56 + dpred$fit[c((med-30):(med+30))])
+  spring_index = (med-30):med
+  fall_index = med:(med+30)
+  spring_max = spring_index[which.max(dpred$fit[spring_index])]
+  fall_max = fall_index[which.max(dpred$fit[fall_index])]
+  
+  #identify end of spring migration
+  tst = 1000
+  spring_index2 = spring_max
+  while(tst > lat_threshold){
+    tst = dpred$fit[spring_index2]
+    if(spring_index2 == 1) break
+    spring_index2 = spring_index2 - 1
+  }
+  spring = spring_index2 + 1
+  
+  #identify beginning of fall migration
+  tst <- 1000
+  fall_index2 = fall_max
+  while(tst > lat_threshold){
+    tst = dpred$fit[fall_index2]
+    if(fall_index2==365) break
+    fall_index2 <- fall_index2 + 1
+  }
+  fall <- fall_index2 - 1
+  
+  dates = c(spring, fall)
+  return(dates)
+}
+
+
 GetMigrationDates = function(data) {
   # uses a generalized additive model (GAM) to define the start of spring and end of fall migration
   
   #GAM model on number of cells with observations by julian date
   gam1 = gam(numcells ~ s(jday, k = 40), data = data, gamma = 1.5) 
   xpred = data.frame(jday = c(1:max(data$jday)))
-  dpred = predict(gam1, newdata=xpred, type="response", se.fit=T)
+  dpred = predict(gam1, newdata=xpred, type="response", se.fit=TRUE)
   
   ## cutoff based on 2 SE for spring and fall combined, following La Sorte et al. 2013 methods
   # Spring migration should be between 11 Jan and 9 July
@@ -193,15 +236,15 @@ EstimateDailyLocs = function(dat) {
   #input a dataframe with the mean daily locations for the year, and uses a GAM smoothing function
   # to estimate daily occurrence lat and long separately. Binds the fitted lat and long values together,
   # with standard errors. Returns a dataframe.
-      #TODO: check choice of k and gamma in the GAM function
+      #check choice of k and gamma in the GAM function - same as FAL 2013
   #find the best fit line for the data, for longitude and latitude separately
-  lon_gam <- gam(centerlon ~ s(jday, k=10), data = dat, gamma = 1.5)
-  lat_gam <- gam(centerlat ~ s(jday, k=10), data = dat, gamma = 1.5)
+  lon_gam = gam(centerlon ~ s(jday, k=20), data = dat, gamma = 1.5) # TODO: consider upping gamma? and changing basis? (adaptive spline or penalized spline?)
+  lat_gam = gam(centerlat ~ s(jday, k=20), data = dat, gamma = 1.5)
   
   #predict values along the smoothing line
-  xpred <- data.frame(jday=sort(unique(dat$jday)))
-  lonpred <- predict(lon_gam, newdata = xpred, type="response", se.fit=T)
-  latpred <- predict(lat_gam, newdata = xpred, type="response", se.fit=T)
+  xpred = data.frame(jday=sort(unique(dat$jday)))
+  lonpred = predict(lon_gam, newdata = xpred, type="response", se.fit=T)
+  latpred = predict(lat_gam, newdata = xpred, type="response", se.fit=T)
   
   #bring the data back together
   preds =  data.frame(spname = species, jday = xpred$jday, month = dat$month, lon = lonpred$fit, 
@@ -299,9 +342,10 @@ MigrationSpeed = function(dat, migration){
   # estimates daily migration speed for spring and fall, separately
   # takes the top 5 fastest migration speeds for each time period, and assigns the median as the migration speed
   # migration has two elements, beginning of spring migration and end of fall migration
-  med = median(migration)
-  springdat = dat[which(dat$jday >= migration[1] & dat$jday < med),]
-  falldat = dat[which(dat$jday <= migration[2] & dat$jday > med),]
+  # breeding has two elements, end of spring migration and beginning of fall migration from breeding grounds
+
+  springdat = dat[which(dat$jday >= migration[[1]] & dat$jday <= migration[[2]]),]
+  falldat = dat[which(dat$jday >= migration[[3]] & dat$jday <= migration[[4]]),]
   
   springspeed = median(sort(springdat$dst, decreasing=TRUE)[1:5])
   fallspeed = median(sort(falldat$dst, decreasing=TRUE)[1:5])
@@ -345,10 +389,126 @@ FindMismatch = function(dat, species, hexdat, yreffort, map) {
       missing = rbind(missing, misses)
     }
     }
-  missing = missing[complete.cases(missing),]
+  missing = missing[complete.cases(missing),] #TODO: Are the missing points because of some mismatch in what is being counted towards effort?
+  nadat = missing[!complete.cases(missing),] #TODO: Are the NA points coming from the coast? TAC found some coastal mismatch - worth trying to put into nearest neighbor cell?
   
   errmap = ggmap(map) + geom_point(data=missing, aes(HEX_LONGITUDE, HEX_LATITUDE)) + 
     ggtitle(paste(species, year, sep = " "))
   
   print(errmap)
+  return(list(missing, nadat))
 }
+
+LinearMigration = function(seasondat, year){
+  # takes the data from a single season and runs a linear regression on the lat or lon
+  # returns slope and r2 fit
+  
+  lm1 = lm(lat ~ jday, data = seasondat)
+  lm2 = lm(lon ~ jday, data = seasondat)
+  
+  dat = data.frame("year" = year, "lat_slope" = lm1$coef[[2]], "lat_r2" = summary(lm1)$r.squared, 
+                   "lon_slope" = lm2$coef[[2]], "lon_r2" = summary(lm2)$r.squared)
+  return(dat)
+}
+
+
+GroupDuplicates = function(humdat) { 
+  #gets rid of duplicate records that are part of the same group. 
+  #Takes only the first record to move to analysis, keeps all single records that are not part of a group.
+  gid = sort(unique(humdat$GROUP.IDENTIFIER))
+  gid = gid[-which(gid=="")]
+  
+  #open start a new dataframe with same columns as the main dataframe
+  keep = humdat[1,]
+  out = 0
+  
+  for (g in 1:length(gid)){
+    out = out + 1
+    tmp = humdat[which(humdat$GROUP.IDENTIFIER == gid[g]),]
+    #record the first line of the data (assume the group has the same information)
+    if (nrow(tmp) == 1) { 
+      keep[out,] = tmp
+    }
+    else{
+      keep[out,] = tmp[1,]
+    }
+  }
+  
+  keepnongroup = humdat[which(humdat$GROUP.IDENTIFIER == ""),]
+  keep = rbind(keep, keepnongroup)
+  return(keep)
+}
+
+
+EstMigrationDates = function(dat){
+  #takes in predicted centroids for migration path, and estimates the beginnig and end of spring migration,
+  # and the beginning and end of fall migration
+  
+  #GAM model on predicted latitude of centroids by julian date
+  gam1 = gam(centerlat ~ s(jday, k = 40), data = dat, gamma = 1.5) 
+  xpred = data.frame(jday = c(1:max(dat$jday)))
+  dpred = predict(gam1, newdata=xpred, type="response", se.fit=TRUE)
+  
+  ## cutoff based on 2 SE for spring and fall combined, following La Sorte et al. 2013 methods
+  # Spring migration should be between 11 Jan and 9 July
+  # Fall migration should be between 8 August and 21 Dec
+  spring_threshold = min(dpred$se.fit[c(1:120)]*2.56 + dpred$fit[c(1:120)])
+  fall_threshold = min(dpred$se.fit[c(280:365)]*2.56 + dpred$fit[c(280:365)])
+  spring_index = 11:190
+  fall_index = 220:355
+  spring_max = spring_index[which.max(dpred$fit[spring_index])]
+  fall_max = fall_index[which.max(dpred$fit[fall_index])]
+  
+  #identify beginning of spring migration
+  tst = 1000
+  spring_index2 = spring_max
+  while(tst > spring_threshold){
+    tst = dpred$fit[spring_index2]
+    if(spring_index2 == 1) break
+    spring_index2 = spring_index2 - 1
+  }
+  spring_begin = spring_index2 + 1
+  
+  #identify end of fall migration
+  tst <- 1000
+  fall_index2 = fall_max
+  while(tst > fall_threshold){
+    tst = dpred$fit[fall_index2]
+    if(fall_index2==365) break
+    fall_index2 <- fall_index2 + 1
+  }
+  fall_end <- fall_index2 - 1
+  
+  med = median(c(spring_begin, fall_end))
+  # cutoff based on 2 SE for the breeding period, defined as +/- 30 days from the median date,
+  # based on start of spring and end of fall migration in GetMigrationDates function
+  lat_threshold = min(dpred$se.fit[c((med-30):(med+30))]*2.56 + dpred$fit[c((med-30):(med+30))])
+  spring_index = (med-30):med
+  fall_index = med:(med+30)
+  spring_max = spring_index[which.max(dpred$fit[spring_index])]
+  fall_max = fall_index[which.max(dpred$fit[fall_index])]
+  
+  #identify end of spring migration
+  tst = 1000
+  spring_index2 = spring_max
+  while(tst > lat_threshold){
+    tst = dpred$fit[spring_index2]
+    if(spring_index2 == 1) break
+    spring_index2 = spring_index2 - 1
+  }
+  spring_end = spring_index2 + 1
+  
+  #identify beginning of fall migration
+  tst <- 1000
+  fall_index2 = fall_max
+  while(tst > lat_threshold){
+    tst = dpred$fit[fall_index2]
+    if(fall_index2==365) break
+    fall_index2 <- fall_index2 + 1
+  }
+  fall_begin <- fall_index2 - 1
+  
+  dates = c(spring_begin, spring_end, fall_begin, fall_end)
+  return(dates)
+}
+
