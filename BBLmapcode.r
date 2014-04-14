@@ -1,22 +1,83 @@
 # This code is for mapping North American hummingbird banding data from the Bird Banding 
-# Laboratory (BBL). Miscellaneous old code at end (to be cleaned)
+# Laboratory (BBL). Recapture data is available through 2013 and was last updated 11 April 2014. 
+# Miscellaneous old code at end (to be cleaned/deleted)
 #(c) 2013 Marisa Lim, Stony Brook University
 
 # required packages
-library(maps)
-library(geosphere)
-library(raster)
+require(maps)
+require(geosphere)
+require(raster)
 
+--------------------------------------------------------------------------------------------
 # To Do:
-# 1. Write code to systematically clean dataset
-# 2. Edit code
- 
-################# Test data with time, connections, sex, and age #################
+# Clean up code
+--------------------------------------------------------------------------------------------
 
 # set working directory
 
 wd = "C:\\Users\\mcwlim\\Desktop\\StonyBrook\\GrahamLab\\Hbird_data_maps\\BBL recapture data"
 setwd(wd)
+
+################# Updated BBL 11April2014 #################
+BBLdat <- read.csv("11April14_BBLdata.csv", sep=",", header=T)
+head(BBLdat)
+names(BBLdat)
+dim(BBLdat)
+
+# First, let's clean up the data. Information that needs to be cleaned: (quick filter check of excel file shows that these need cleaning)
+# 1. incorrect months of year (in ENCOUNTER_MONTH)
+# 2. incorrect days of month (in ENCOUNTER_DAY)
+# 3. unidentified species (in B_SPECIES_NAME)
+# 4. missing lat/long information (in E_LAT_DECIMAL_DEGREES, E_LON_DECIMAL_DEGREES)
+
+BBLdat1 <- subset(BBLdat, BBLdat$ENCOUNTER_MONTH <= 12)
+BBLdat2 <- subset (BBLdat1, BBLdat1$ENCOUNTER_DAY <= 31)
+BBLdat3 <- subset(BBLdat2, BBLdat2$B_SPECIES_NAME != "Unidentified Hummingbird")
+BBLdat4 <- subset(BBLdat3, BBLdat3$E_LAT_DECIMAL_DEGREES != "NA")
+dim(BBLdat4)
+
+# based on 11April14 data, there were 28 entries removed, 1293 records used 
+
+# set extent
+xlim <- c(-171.738281, -56.601563)
+ylim <- c(8, 71.856229)
+# set color for connecting lines
+colors <- "#FF3300"
+
+# maps of each species, banding and recapture points connected with a line
+species <- unique(BBLdat4$B_SPECIES_NAME)
+for(i in 1:length(species)){
+  pdf(paste("species_", species[i], ".pdf", sep=""), width=11, height=7)
+  map("world", col="whitesmoke", fill=T, bg="azure3", lwd=0.05, xlim=xlim, ylim=ylim)
+  birdies <- BBLdat4[BBLdat4$B_SPECIES_NAME == species[i], ] #all rows for a specified species i
+  bandnums <- unique(birdies$BAND_NUM)
+  par(adj=0.5)
+  title(main=species[i], col.main="black")
+  par(adj=0.55)
+  title(sub=length(bandnums), cex.sub=1.5, line=0.5)
+  par(adj=0.35)
+  title(sub="# unique birds =", line=0.5, cex.sub=1.5)
+  for(j in 1:nrow(birdies)){
+    inter <- gcIntermediate(c(birdies[j,]$B_LON_DECIMAL_DEGREES, birdies[j,]$B_LAT_DECIMAL_DEGREES),
+                            c(birdies[j,]$E_LON_DECIMAL_DEGREES, birdies[j,]$E_LAT_DECIMAL_DEGREES),
+                            n=50, addStartEnd=TRUE,)
+    lines(inter, col=colors, lwd=2)
+    points(birdies$B_LAT_DECIMAL_DEGREES ~ birdies$B_LON_DECIMAL_DEGREES, cex=1, pch=20, col="black")  
+  }
+  dev.off()
+}
+
+
+
+
+
+
+
+
+
+
+################# Test data with time, connections, sex, and age #################
+
 humtest <- read.csv("humtest27aug.csv", sep=",", header=T)
 humtest <- humtest[order(humtest$B_SPECIES_NAME, humtest$B_BAND_NUM, humtest$BANDING_YEAR, humtest$BANDING_MONTH, humtest$BANDING_DATE),]
 head(humtest)
@@ -423,7 +484,7 @@ me<-maxent(predictors,hum.sp)
 ################# OLD/test code #################
 # need to clean up/delete? 
 
-############################### OLD recap connection code, by species
+############################### OLD recap connection code, by species ########################
 
 library(maps)
 library(geosphere)
