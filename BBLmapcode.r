@@ -68,14 +68,6 @@ for(i in 1:length(species)){
 }
 
 
-
-
-
-
-
-
-
-
 ################# Test data with time, connections, sex, and age #################
 
 humtest <- read.csv("humtest27aug.csv", sep=",", header=T)
