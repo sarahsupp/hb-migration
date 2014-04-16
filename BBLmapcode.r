@@ -15,7 +15,7 @@ require(raster)
 
 # set working directory
 
-wd = "C:\\Users\\mcwlim\\Desktop\\StonyBrook\\GrahamLab\\Hbird_data_maps\\BBL recapture data"
+wd = "C:/Users/mcwlim/Dropbox/NASA_Anusha/MarisaRAstuff/BBLrecapproj"
 setwd(wd)
 
 ################# Updated BBL 11April2014 #################
@@ -473,10 +473,8 @@ predictors <- stack(list.files(path=paste(system.file(package="dismo"), '/ex', s
                                pattern='grd', full.names=TRUE ))
 me<-maxent(predictors,hum.sp)
 
-################# OLD/test code #################
+################# OLD/test code for recap connections by species #################
 # need to clean up/delete? 
-
-############################### OLD recap connection code, by species ########################
 
 library(maps)
 library(geosphere)
