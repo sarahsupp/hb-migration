@@ -47,16 +47,14 @@ colors <- "#FF3300"
 # maps of each species, banding and recapture points connected with a line
 species <- unique(BBLdat4$B_SPECIES_NAME)
 for(i in 1:length(species)){
-  pdf(paste("species_", species[i], ".pdf", sep=""), width=11, height=7)
+  jpeg(paste("species_", species[i], ".jpg"), height=5, width=5, units="in", res=500)
   map("world", col="whitesmoke", fill=T, bg="azure3", lwd=0.05, xlim=xlim, ylim=ylim)
   birdies <- BBLdat4[BBLdat4$B_SPECIES_NAME == species[i], ] #all rows for a specified species i
   bandnums <- unique(birdies$BAND_NUM)
   par(adj=0.5)
   title(main=species[i], col.main="black")
-  par(adj=0.55)
-  title(sub=length(bandnums), cex.sub=1.5, line=0.5)
   par(adj=0.35)
-  title(sub="# unique birds =", line=0.5, cex.sub=1.5)
+  title(sub=paste("# unique birds = ", length(bandnums)), cex.sub=1.5, line=0.5)
   for(j in 1:nrow(birdies)){
     inter <- gcIntermediate(c(birdies[j,]$B_LON_DECIMAL_DEGREES, birdies[j,]$B_LAT_DECIMAL_DEGREES),
                             c(birdies[j,]$E_LON_DECIMAL_DEGREES, birdies[j,]$E_LAT_DECIMAL_DEGREES),
