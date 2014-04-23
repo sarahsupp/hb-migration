@@ -3,6 +3,7 @@
 
 library(ggmap)
 library(maptools)
+library(fields)
 library(sp)
 library(raster)
 
@@ -21,12 +22,23 @@ setwd(wd)
 # read in summary of effort data (Number of eBird checklists submitted per day per year)
 effort = read.table("cell_effort_new.txt", header=TRUE, as.is=TRUE)
 
-# read in the north america equal area hex grid map (F.A.L.)
+# read in the north america equal area hex grid map (F.A.L.) and format for use
 #hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/nw_vector_grid.shp") #quad map
-hexgrid = readShapePoly(paste(main, "/terr_4h6/terr_4h6.shp", sep="")) #hex map
+#hexgrid = readShapePoly(paste(main, "/terr_4h6/terr_4h6.shp", sep="")) #hex map with land only
+hexgrid = readShapePoly(paste(main, "/data/icosahedron_land_and_sea/cell_out2.shp", sep=""))
+hexpoints = readShapePoints(paste(main, "/data/icosahedron_land_and_sea/point_out2.shp", sep=""))
+hexlonlat = data.frame(ID = hexpoints@data$global_id, LON = hexpoints@coords[,1], LAT = hexpoints@coords[,2])
+hexlonlat$POLYFID = as.integer(as.character(hexlonlat$ID))
+
+hexgrid$POLYFID = hexlonlat$POLYFID
+hexgrid$LATITUDE = hexlonlat$LAT
+hexgrid$LONGITUDE = hexlonlat$LON
+
 # crop to just North America, where the migratory species occur
 hexgrid = hexgrid[which(hexgrid$LATITUDE > 10 & hexgrid$LATITUDE <80 & 
                           hexgrid$LONGITUDE > -178 & hexgrid$LONGITUDE < -50),]
+
+#plot(hexgrid)
 
 # make a North America base map
 noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = "bw")
