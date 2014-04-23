@@ -3,6 +3,7 @@
 
 library(ggmap)
 library(maptools)
+library(fields)
 library(sp)
 library(raster)
 
@@ -19,14 +20,31 @@ setwd(wd)
 #---------------------------------------------------------------------------------------
 
 # read in summary of effort data (Number of eBird checklists submitted per day per year)
-effort = read.table("cell_effort_new.txt", header=TRUE, as.is=TRUE)
+#effort = read.table("cell_effort_new.txt", header=TRUE, as.is=TRUE)
+effort = read.table("FAL_hummingbird_data/checklist_12_2004-2013wh_grp.txt", header=TRUE, as.is=TRUE)
 
-# read in the north america equal area hex grid map (F.A.L.)
+#data = read.table("FAL_hummingbird_data/hummingbirds_12_2004-2013wh_grp.txt", header=TRUE, as.is=TRUE) #not in right format yet
+
+# read in the north america equal area hex grid map (F.A.L.) and format for use
 #hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/nw_vector_grid.shp") #quad map
-hexgrid = readShapePoly(paste(main, "/terr_4h6/terr_4h6.shp", sep="")) #hex map
+#hexgrid = readShapePoly(paste(main, "/terr_4h6/terr_4h6.shp", sep="")) #hex map with land only
+hexgrid = readShapePoly(paste(main, "/data/icosahedron_land_and_sea/cell_out2.shp", sep=""))
+hexpoints = readShapePoints(paste(main, "/data/icosahedron_land_and_sea/point_out2.shp", sep=""))
+hexlonlat = data.frame(ID = hexpoints@data$global_id, LON = hexpoints@coords[,1], LAT = hexpoints@coords[,2])
+hexlonlat$POLYFID = as.integer(as.character(hexlonlat$ID))
+
+hexgrid$POLYFID = hexlonlat$POLYFID
+hexgrid$HEX_LATITUDE = hexlonlat$LAT
+hexgrid$HEX_LONGITUDE = hexlonlat$LON
+
 # crop to just North America, where the migratory species occur
-hexgrid = hexgrid[which(hexgrid$LATITUDE > 10 & hexgrid$LATITUDE <80 & 
-                          hexgrid$LONGITUDE > -178 & hexgrid$LONGITUDE < -50),]
+hexgrid = hexgrid[which(hexgrid$HEX_LATITUDE > 10 & hexgrid$HEX_LATITUDE <80 & 
+                          hexgrid$HEX_LONGITUDE > -178 & hexgrid$HEX_LONGITUDE < -50),]
+
+# plot the hexgrid on a map of north america
+plot(NA, NA, xlim=c(-178, -50), ylim=c(10, 80), xlab = "Longitude", ylab = "Latitude")
+map("usa", add=TRUE, fill = T, col= "lightblue")
+plot(hexgrid, add=T)
 
 # make a North America base map
 noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = "bw")
@@ -109,7 +127,7 @@ for (f in 1:length(files)){
     #monthtable = PlotRecords(yrdat$month, species)
     
     #get daily weighted mean location - #FIXME: Effort checklist data does not yet match perfectly
-    meanlocs = AlternateMeanLocs(yrdat,species,hexgrid,yreffort)
+    meanlocs = AlternateMeanLocs(yrdat, species, hexgrid, yreffort)
     
     #use GAM model to predict daily location along a smoothing line
     preds = EstimateDailyLocs(meanlocs)

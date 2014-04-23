@@ -52,8 +52,8 @@ outdir=${6}
 ###############################
 
 #output file naming
-today=$(date +%Y%m%d_%H%M%S)
-outfile=$(echo ${outdir}/$(basename ${xy} .csv)_$(basename ${xml} .xml)_request_${today}.xml)
+now=$(date +%Y%m%d_%H%M%S)
+outfile=$(echo ${outdir}/$(basename ${xy} .csv)_$(basename ${xml} .xml)_request_${now}.xml)
 
 #access key list - hardcoded and is appended to, not overwritten.
 ak=/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/submitted_requests_accessKeys.txt
@@ -64,16 +64,17 @@ ak_lut=/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_
 #curl request - should return xml with access key
 curl -o ${outfile}  -F "request=@${xml}" -F "tracks=@${xy}" -F "login=${un}" -F "password=${pw}" ${url}
 
-#add access key to list
-accessKey=$(cat ${outfile} | awk -F "=" '{print $4}' | awk -F " " '{print $1}' | sed 's/"//g')
-echo ${accessKey} >> ${ak}
+#add access key to list - may just be able to parse the lut
+#accessKey=$(cat ${outfile} | awk -F "=" '{print $4}' | awk -F " " '{print $1}' | sed 's/"//g')
+#echo ${accessKey} >> ${ak}
 
 #append info to access key lut
 if [ ! -f ${ak_lut} ]; then
 	echo AccessKey,date_time,tracks,xml,status > ${ak_lut}
-	echo ${accessKey},${today},${xy},${xml},requested >> ${ak_lut}
+	echo ${accessKey},${now},${xy},${xml},requested >> ${ak_lut}
 else
-	
+	echo ${accessKey},${now},${xy},${xml},requested >> ${ak_lut}
+fi
 
 
 
