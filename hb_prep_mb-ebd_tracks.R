@@ -48,7 +48,8 @@ ebd.names <- c("timestamp", "location-long", "location-lat", "height-above-ellip
 ebd.2012.csv <- as.data.frame(matrix(data=NA, nrow=length(polyebd2012$GRIDCODE),ncol=length(ebd.names),))
 
 #head(ebd.2012.csv)
-ebd.2012.csv[,1] <- ebd2012$OBSERVAT_1
+timestamp <- paste(ebd2012$OBSERVAT_1, "12:00:00.000")
+ebd.2012.csv[,1] <- timestamp
 ebd.2012.csv[,2] <- ebd2012$LONGITUDE
 ebd.2012.csv[,3] <- ebd2012$LATITUDE
 ebd.2012.csv[,4] <- ""
