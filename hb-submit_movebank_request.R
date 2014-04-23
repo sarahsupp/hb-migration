@@ -33,10 +33,12 @@ url <- "http://www.bioinfo.mpg.de/orn-gateway/request-annotation-xml.jsp"
 
 #Text file of xy locations of points to be annotated. Must have the following columns
 #with no spaces: Timestamp, location-long, location-lat, height-above-ellipsoid (optional)
-xy <- "/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/test_calliope.csv"
+#xy <- "/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/test_calliope.csv"
+xy <- "/Volumes/Share/tcormier/hummingbirds/migration_study/movebank/track_csvs/ebd_rfuhum_2004_201312_relNove-2013_albers_tracks.csv"
 
 #XML containing movebank request details (see hb_movebank_createXML.py)
-xml <- "/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/NDVI_EVI.xml"
+#xml <- "/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/NDVI_EVI.xml"
+xml <- "/Volumes/Share/tcormier/hummingbirds/migration_study/movebank/request_xmls/lwrf_swrf_t10m_u10m_v10m.xml"
 
 #user name
 un <- "tcormier"
@@ -46,7 +48,7 @@ pw <- "nohg3ITh"
 
 #outdir
 outdir <- "/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/submitted_requests/"
-outfile <- "/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/submitted_requests/testR.xml"
+#outfile <- "/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/submitted_requests/testR.xml"
 ##############################
 #connect to db
 # Connect to database
