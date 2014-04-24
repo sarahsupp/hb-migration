@@ -416,8 +416,8 @@ LinearMigration = function(seasondat, year){
 GroupDuplicates = function(humdat) { 
   #gets rid of duplicate records that are part of the same group. 
   #Takes only the first record to move to analysis, keeps all single records that are not part of a group.
-  gid = sort(unique(humdat$GROUP.IDENTIFIER))
-  gid = gid[-which(gid=="")]
+  gid = sort(unique(humdat$GROUP_ID))
+  #gid = gid[which(gid!=NA)]
   
   #open start a new dataframe with same columns as the main dataframe
   keep = humdat[1,]
@@ -425,7 +425,7 @@ GroupDuplicates = function(humdat) {
   
   for (g in 1:length(gid)){
     out = out + 1
-    tmp = humdat[which(humdat$GROUP.IDENTIFIER == gid[g]),]
+    tmp = humdat[which(humdat$GROUP_ID == gid[g]),]
     #record the first line of the data (assume the group has the same information)
     if (nrow(tmp) == 1) { 
       keep[out,] = tmp
@@ -435,7 +435,7 @@ GroupDuplicates = function(humdat) {
     }
   }
   
-  keepnongroup = humdat[which(humdat$GROUP.IDENTIFIER == ""),]
+  keepnongroup = humdat[which(is.na(humdat$GROUP_ID)),] #FIXME
   keep = rbind(keep, keepnongroup)
   return(keep)
 }
