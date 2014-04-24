@@ -112,7 +112,7 @@ DailyTravel = function(meanlocs, loncol, latcol, species, year, migr_dates){
   }
   distdat = cbind(meanlocs,dst)
   
-  subdistdat = distdat[which(distdat$jday >= migr_dates[[1]] & distdat$jday <= migr_dates[[4]]),]
+  subdistdat = distdat[which(distdat$jday >= migr_dates[[1]] & distdat$jday <= migr_dates[[3]]),]
 
   print(ggplot(subdistdat, aes(jday, dst)) + geom_line(size=1, col = "#4daf4a") + theme_bw() + xlab("Julian Day") + 
           ylab("Distance Traveled (km)") + ggtitle(paste(species, year, sep = " ")) +
@@ -345,7 +345,7 @@ MigrationSpeed = function(dat, migration){
   # breeding has two elements, end of spring migration and beginning of fall migration from breeding grounds
 
   springdat = dat[which(dat$jday >= migration[[1]] & dat$jday <= migration[[2]]),]
-  falldat = dat[which(dat$jday >= migration[[3]] & dat$jday <= migration[[4]]),]
+  falldat = dat[which(dat$jday >= migration[[2]] & dat$jday <= migration[[3]]),]
   
   springspeed = median(sort(springdat$dst, decreasing=TRUE)[1:5])
   fallspeed = median(sort(falldat$dst, decreasing=TRUE)[1:5])
@@ -559,3 +559,25 @@ Est4MigrationDates = function(dat){
   return(dates)
 }
 
+
+#Base plot migration route, trimmed by migration dates
+BasePlotMigration = function(preds, yrdat, migration){
+  
+  predpts = preds[which(preds$jday > migration[1] & preds$jday < migration[3]),]
+  
+  predpts$month = as.factor(predpts$month)
+  cols3 = data.frame(id=c(sort(unique(predpts$month))), cols=tim.colors(length(unique(predpts$month))), stringsAsFactors=FALSE)
+  predpts = merge(predpts, cols3, by.x="month", by.y="id")
+  #set color scale
+  vls = sort(unique(round(cols3$id)))
+  vls[1] = 1
+  cols4 = tim.colors(length(vls))
+  
+  plot(predpts$lon, predpts$lat, xlim = c(-130, -65), ylim = c(25, 50), 
+       xlab = "longitude", ylab = "latitude", main = "summarized migration route", cex.lab = 2, cex.axis = 2)
+  map("usa", add=TRUE)
+  points(yrdat$LONGITUDE, yrdat$LATITUDE, pch=16, col = "grey60")
+  points(predpts$lon, predpts$lat, pch=19, col = predpts$cols)
+  legend("bottomleft", legend=vls, pch=22, pt.bg=cols4, pt.cex=1.5, cex=1.5, bty="n",
+         col="black", title="", x.intersp=0.5, y.intersp=0.25)
+}

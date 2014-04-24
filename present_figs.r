@@ -85,7 +85,7 @@ preds$month = as.factor(preds$month)
 cols3 = data.frame(id=c(sort(unique(preds$month))), cols=tim.colors(length(unique(preds$month))), stringsAsFactors=FALSE)
 preds = merge(preds, cols3, by.x="month", by.y="id")
 #set color scale
-vls = sort(unique(round(cols3$id))
+vls = sort(unique(round(cols3$id)))
 vls[1] = 1
 cols4 = tim.colors(length(vls))
 

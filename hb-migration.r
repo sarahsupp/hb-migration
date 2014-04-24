@@ -134,19 +134,22 @@ for (f in 1:length(files)){
     
     #use gam approach to estimate rough starting points for segmentation from the mean loc latitude data
     startpoints = round(Est3MigrationDates(meanlocs))
+    migration = startpoints
     
-    #use piecewise regression on centroid latitude to find the start and end of spring and fall migration
-    lat = preds$lat
-    jday = preds$jday
-    lm1 = lm(lat~jday)
-    segmod = segmented(lm1, seg.Z = ~jday, psi=startpoints[c(1,3)], control = seg.control(it.max=200)) #FIXME: Fails on brthu 2007
-    migration = round(segmod$psi[,2])
+    BasePlotMigration(preds, yrdat, migration)
     
-    pdf(file = paste(dirpath, "/breaks_", species, years[y], ".pdf", sep=""), width = 5, height = 4)
-    plot(jday,lat, col = "gray60", main = paste(species, years[y]), xlab = "")
-    mtext(side = 1, line = 2, paste(migration[[1]], "-", migration[[2]], "-",  migration[[3]], "-", migration[[4]]), cex = 1.5)
-    plot(segmod, add=T, col = "red", lwd=4)
-    dev.off()
+#     #use piecewise regression on centroid latitude to find the start and end of spring and fall migration
+#     lat = preds$lat
+#     jday = preds$jday
+#     lm1 = lm(lat~jday)
+#     segmod = segmented(lm1, seg.Z = ~jday, psi=startpoints[c(1,3)], control = seg.control(it.max=200)) #FIXME: Fails on brthu 2007
+#     migration = round(segmod$psi[,2])
+   
+#     pdf(file = paste(dirpath, "/breaks_", species, years[y], ".pdf", sep=""), width = 5, height = 4)
+#     plot(jday,lat, col = "gray60", main = paste(species, years[y]), xlab = "")
+#     mtext(side = 1, line = 2, paste(migration[[1]], "-", migration[[2]], "-",  migration[[3]], "-", migration[[4]]), cex = 1.5)
+#     plot(segmod, add=T, col = "red", lwd=4)
+#     dev.off()
     
     #get Great Circle distances traveled each day between predicted daily locations
     dist = DailyTravel(preds, 4, 5, species, years[y], migration)
@@ -167,12 +170,15 @@ for (f in 1:length(files)){
     
     if (y == 1){
       pred_data = preds
-      migdates = data.frame("spr_begin" = migration[[1]], "spr_end" = migration[[2]], "fal_begin" = migration[[3]], "fal_end" = migration[[4]])
-      migspeed = data.frame("spr" = speed[1], "fal" = speed[2])
+      migdates = data.frame("spr_begin" = migration[[1]], "spr_end" = migration[[2]], 
+                            "fal_begin" = migration[[2]], "fal_end" = migration[[3]],
+                            "species" = species, "year" = years[y])
+      migspeed = data.frame("spr" = speed[1], "fal" = speed[2], "species" = species, "year" = years[y])
     }
     else{
       pred_data = rbind(pred_data, preds)
-      dates = c(migration[[1]], migration[[2]], migration[[3]], migration[[4]])
+      dates = c(migration[[1]], migration[[2]], migration[[2]], migration[[3]], "species" = species, year = years[y])
+      speed = c(speed, species, years[y])
       migdates = rbind(migdates, dates)
       migspeed = rbind(migspeed, speed)
     }
