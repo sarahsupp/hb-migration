@@ -63,7 +63,7 @@ AlternateMeanLocs = function(dat, species, hexdat, yreffort) {
   #To find the POLYFID for the hexes for each observation, identify observed lon and lat  
   # Matches observations with the polygon hexes in the map
   ID = over(SpatialPoints(dat[,c(10,9)]), hexdat)  #TODO: Check with TAC that this is working correctly based on map projection
-    names(ID) = c("global_id", "POLYFID", "HEX_LONGITUDE", "HEX_LATITUDE")
+    names(ID) = c("global_id", "POLYFID", "HEX_LATITUDE", "HEX_LONGITUDE")
   coords = cbind(dat, ID) 
   
   #aggregate daily info by mean centroid location
@@ -399,6 +399,7 @@ FindMismatch = function(dat, species, hexdat, yreffort, map) {
   return(list(missing, nadat))
 }
 
+
 LinearMigration = function(seasondat, year){
   # takes the data from a single season and runs a linear regression on the lat or lon
   # returns slope and r2 fit
@@ -440,7 +441,53 @@ GroupDuplicates = function(humdat) {
 }
 
 
-EstMigrationDates = function(dat){
+Est3MigrationDates = function(dat){
+  #takes in predicted centroids for migration path, and estimates the beginning of spring migration,
+  # the end of fall migration, and the date where the species reaches maximum latitude.
+  
+  #GAM model on predicted latitude of centroids by julian date
+  gam1 = gam(centerlat ~ s(jday, k = 40), data = dat, gamma = 1.5) 
+  xpred = data.frame(jday = c(1:max(dat$jday)))
+  dpred = predict(gam1, newdata=xpred, type="response", se.fit=TRUE)
+  
+  ## cutoff based on 2 SE for spring and fall combined, following La Sorte et al. 2013 methods
+  # Spring migration should be between 11 Jan and 9 July
+  # Fall migration should be between 8 August and 21 Dec
+  spring_threshold = min(dpred$se.fit[c(1:120)]*2.56 + dpred$fit[c(1:120)])
+  fall_threshold = min(dpred$se.fit[c(280:365)]*2.56 + dpred$fit[c(280:365)])
+  spring_index = 11:190
+  fall_index = 220:355
+  spring_max = spring_index[which.max(dpred$fit[spring_index])]
+  fall_max = fall_index[which.max(dpred$fit[fall_index])]
+  
+  #identify beginning of spring migration
+  tst = 1000
+  spring_index2 = spring_max
+  while(tst > spring_threshold){
+    tst = dpred$fit[spring_index2]
+    if(spring_index2 == 1) break
+    spring_index2 = spring_index2 - 1
+  }
+  spring_begin = spring_index2 + 1
+  
+  #identify end of fall migration
+  tst <- 1000
+  fall_index2 = fall_max
+  while(tst > fall_threshold){
+    tst = dpred$fit[fall_index2]
+    if(fall_index2==365) break
+    fall_index2 <- fall_index2 + 1
+  }
+  fall_end <- fall_index2 - 1
+  
+  max_lat =   xpred$jday[which.max(dpred$fit[xpred$jday])]
+  
+  dates = c(spring_begin, max_lat, fall_end)
+  return(dates)
+}
+
+
+Est4MigrationDates = function(dat){
   #takes in predicted centroids for migration path, and estimates the beginnig and end of spring migration,
   # and the beginning and end of fall migration
   

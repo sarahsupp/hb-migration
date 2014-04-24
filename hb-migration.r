@@ -34,12 +34,12 @@ hexlonlat = data.frame(ID = hexpoints@data$global_id, LON = hexpoints@coords[,1]
 hexlonlat$POLYFID = as.integer(as.character(hexlonlat$ID))
 
 hexgrid$POLYFID = hexlonlat$POLYFID
-hexgrid$HEX_LATITUDE = hexlonlat$LAT
-hexgrid$HEX_LONGITUDE = hexlonlat$LON
+hexgrid$LATITUDE = hexlonlat$LAT
+hexgrid$LONGITUDE = hexlonlat$LON
 
 # crop to just North America, where the migratory species occur
-hexgrid = hexgrid[which(hexgrid$HEX_LATITUDE > 10 & hexgrid$HEX_LATITUDE <80 & 
-                          hexgrid$HEX_LONGITUDE > -178 & hexgrid$HEX_LONGITUDE < -50),]
+hexgrid = hexgrid[which(hexgrid$LATITUDE > 10 & hexgrid$LATITUDE <80 & 
+                          hexgrid$LONGITUDE > -178 & hexgrid$LONGITUDE < -50),]
 
 # plot the hexgrid on a map of north america
 plot(NA, NA, xlim=c(-178, -50), ylim=c(10, 80), xlab = "Longitude", ylab = "Latitude")
@@ -133,13 +133,13 @@ for (f in 1:length(files)){
     preds = EstimateDailyLocs(meanlocs)
     
     #use gam approach to estimate rough starting points for segmentation from the mean loc latitude data
-    startpoints = round(EstMigrationDates(meanlocs))
+    startpoints = round(Est3MigrationDates(meanlocs))
     
     #use piecewise regression on centroid latitude to find the start and end of spring and fall migration
     lat = preds$lat
     jday = preds$jday
     lm1 = lm(lat~jday)
-    segmod = segmented(lm1, seg.Z = ~jday, psi=startpoints, control = seg.control(it.max=200)) #FIXME: Fails on brthu 2007
+    segmod = segmented(lm1, seg.Z = ~jday, psi=startpoints[c(1,3)], control = seg.control(it.max=200)) #FIXME: Fails on brthu 2007
     migration = round(segmod$psi[,2])
     
     pdf(file = paste(dirpath, "/breaks_", species, years[y], ".pdf", sep=""), width = 5, height = 4)
