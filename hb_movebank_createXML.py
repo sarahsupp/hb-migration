@@ -10,17 +10,23 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 import os
 
-# variable names you want to extract (these are the names that will appear in the 
+# variable names you want to extract (these are the names that will appear in the
 # output table - can name them as you wish).
-var_labels = "NDVI,EVI"
+var_labels = "lwrf,swrf,t10m,u10m,v10m"
+
 # Interpolation type - one of "inverse-distance-weighted", "bilinear", or "nearest-neighbor"
 int_type = "inverse-distance-weighted"
+
 # Type Name - need directory and sensor type (e.g. "modis-land/MOD13Q1.005")
-type_name = "modis-land/MOD13Q1.005"
+#type_name = "modis-land/MOD13Q1.005"
+type_name = "nomads.ncdc.noaa.gov/NARR"
+
 # Variable names - must be names listed in movebank
-var_names = "250m 16 days NDVI,250m 16 days EVI"
+#var_names = "250m 16 days NDVI,250m 16 days EVI"
+var_names = "Downward_longwave_radiation_flux_sfc,Downward_shortwave_radiation_flux_sfc,Temp._10_m_above_gnd,u_wind_10_m_above_gnd,v_wind_10_m_above_gnd"
+
 # Set output directory for xml file
-outdir = "/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/xml/"
+outdir = "C:/Share/tcormier/hummingbirds/migration_study/movebank/request_xmls/"
 
 #set output file
 #first add trailing slash if missing
@@ -41,13 +47,13 @@ def prettify(elem):
 #function to create xml from user-input variables.
 def CreateXML(var_labels, int_type, type_name, var_names, outfile):
     #Create xml
-    root = ET.Element("AnnotationRequest") 
-    root.set("annotationType","track2") 
-    root.set("name","test_annotation") 
-    root.set("notificationEmail","tcormier@whrc.org") 
+    root = ET.Element("AnnotationRequest")
+    root.set("annotationType","track2")
+    root.set("name","test_annotation")
+    root.set("notificationEmail","tcormier@whrc.org")
     root.set("owner","tcormier")
     elements = ET.SubElement(root, "Elements")
-    are = ET.SubElement(elements, "AnnotationRequestElement") 
+    are = ET.SubElement(elements, "AnnotationRequestElement")
     are.set("variableLabel", var_labels)
     properties = ET.SubElement(are, "Properties")
     arep = ET.SubElement(properties, "AnnotationRequestElementProperty")
@@ -60,16 +66,19 @@ def CreateXML(var_labels, int_type, type_name, var_names, outfile):
     arep3.set("name", "type")
     arep3.set("value","simple")
     arep4 = ET.SubElement(properties, "AnnotationRequestElementProperty")
-    arep4.set("name","distance-function-spatial") 
+    arep4.set("name","distance-function-spatial")
     arep4.set("value","geodetic")
     arep5 = ET.SubElement(properties, "AnnotationRequestElementProperty")
     arep5.set("name","variable-names")
     arep5.set("value", var_names)
     messages = ET.SubElement(root,"Messages")
-    
+
     #print prettify(root)
-    
+
     output_file = open( outfile, 'w' )
     output_file.write( '<?xml version="1.0"?>' )
     output_file.write( ET.tostring( root ) )
     output_file.close()
+
+#create xml
+CreateXML(var_labels, int_type, type_name, var_names, outfile)
