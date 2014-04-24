@@ -136,7 +136,10 @@ for (f in 1:length(files)){
     startpoints = round(Est3MigrationDates(meanlocs))
     migration = startpoints
     
+    setEPS()
+    postscript(file = paste(dirpath, "/trimmed-route_", species, years[y], ".eps", sep=""), width = 7, height = 4.5)
     BasePlotMigration(preds, yrdat, migration)
+    dev.off() 
     
 #     #use piecewise regression on centroid latitude to find the start and end of spring and fall migration
 #     lat = preds$lat
