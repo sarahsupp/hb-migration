@@ -8,6 +8,8 @@ library(sp)
 library(raster)
 library(maps)
 library(mapdata)
+library(rgdal)
+library(raster)
 
 #set working directory
 main = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration"
@@ -67,7 +69,7 @@ for (f in 1:length(files)){
 
   #start a new directory
   dirpath = paste(figpath, "/", species, sep="")
-  #   dir.create(dirpath, showWarnings = TRUE, recursive = FALSE) #only need if directory did not previously exist
+     dir.create(dirpath, showWarnings = TRUE, recursive = FALSE) #only need if directory did not previously exist
   
   #show how many records there are for the species across the years, write to txt file
   yeartable = PlotRecords(humdat$YEAR, species)
@@ -98,19 +100,6 @@ for (f in 1:length(files)){
     BasePlotMigration(preds, yrdat, migration)
     dev.off() 
     
-#     #use piecewise regression on centroid latitude to find the start and end of spring and fall migration
-#     lat = preds$lat
-#     jday = preds$jday
-#     lm1 = lm(lat~jday)
-#     segmod = segmented(lm1, seg.Z = ~jday, psi=startpoints[c(1,3)], control = seg.control(it.max=200)) #FIXME: Fails on brthu 2007
-#     migration = round(segmod$psi[,2])
-   
-#     pdf(file = paste(dirpath, "/breaks_", species, years[y], ".pdf", sep=""), width = 5, height = 4)
-#     plot(jday,lat, col = "gray60", main = paste(species, years[y]), xlab = "")
-#     mtext(side = 1, line = 2, paste(migration[[1]], "-", migration[[2]], "-",  migration[[3]], "-", migration[[4]]), cex = 1.5)
-#     plot(segmod, add=T, col = "red", lwd=4)
-#     dev.off()
-    
     #get Great Circle distances traveled each day between predicted daily locations
     dist = DailyTravel(preds, 4, 5, species, years[y], migration)
     
@@ -122,7 +111,7 @@ for (f in 1:length(files)){
     ggsave(mig_path, file=paste(dirpath, "/", "migration", species, years[y], ".pdf", sep=""))
     
 #     #plot occurrences with lines showing beginning and end of migration
-#     PlotOccurrences(altmeandat, species, migration[[1]], migration[[4]])
+#     PlotOccurrences(altmeandat, species, migration[[1]], migration[[3]])
 #     ggsave(file=paste(dirpath, "/", "occurrences", species, years[y], ".pdf", sep=""))
     
     #add year to preds, so we can save it to compare across years
