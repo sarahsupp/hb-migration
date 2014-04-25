@@ -435,7 +435,7 @@ GroupDuplicates = function(humdat) {
     }
   }
   
-  keepnongroup = humdat[which(is.na(humdat$GROUP_ID)),] #FIXME
+  keepnongroup = humdat[which(is.na(humdat$GROUP_ID)),]
   keep = rbind(keep, keepnongroup)
   return(keep)
 }
