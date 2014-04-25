@@ -163,23 +163,22 @@ require(raster)
 
 setwd(wd)
 
-#TODO: pull species name correctly below, set path to inside each species directory
-
 # read in eBird data for migration speed
-files = list.files(path = getwd(), pattern = "speed", recursive=TRUE, full.names=TRUE)
+rfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = "speed", full.names=TRUE)
 
-for (f in 1:length(files)){
-  rate = read.table(files[f], header=TRUE, sep=" ", fill=TRUE, comment.char="")
-  year = c(2004:2013)
-  rate = cbind(year, rate)
-  species = f #TOOD: Set species path - pull from filename?
+for (f in 1:length(rfiles)){
+  rate = read.table(rfiles[f], header=TRUE, sep=" ", fill=TRUE, comment.char="")
+  species = rate$species[1]
+  print(species)
   
-  dirpath = paste(dirpath, "/", species, sep="")
+  dirpath = paste(figpath, "/", species, sep="")
+  
+  rate_sub = rate[which(rate$year > 2007),]
   
   #plot the variance in estimated migration speed for all and for recent years
   pdf(file = paste(figpath, "/speed_", species, ".pdf", sep=""), width = 10, height = 4)
   
-  r = melt(rate, id.vars = "year")
+  r = melt(rate[,c(1,2,4)], id.vars = "year")
   names(r) = c("year", "season", "rate")
   bxp_speed = ggplot(r, aes(season, rate, fill=season)) + geom_boxplot() + theme_classic() + 
     scale_fill_manual(values=c("cadetblue", "orange")) + ylab("km/day")
@@ -192,39 +191,38 @@ for (f in 1:length(files)){
   dev.off()
   
   #print the mean and standard deviation of speed
-  print(paste("spring sd:", sd(rate$spr)))
-  print(paste("spring mean:", mean(rate$spr)))
-  print(paste("fall sd:", sd(rate$fal)))
-  print(paste("fall mean:", mean(rate$fal)))
+  print(paste("spring sd:", sd(rate_sub$spr)))
+  print(paste("spring mean:", mean(rate_sub$spr)))
+  print(paste("fall sd:", sd(rate_sub$fal)))
+  print(paste("fall mean:", mean(rate_sub$fal)))
 }
 
 
-mfiles = list.files(path = getwd(), pattern = c("migration.*txt"), recursive = TRUE, full.names=TRUE)
+mfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = c("migration.*txt"), full.names=TRUE)
 
 for (f in 1:length(mfiles)){
   dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
-  year = c(2004:2013)
-  dates = cbind(year, dates)
+  species = dates$species[1]
+  print(species)
   
   #plot the variance in estimated migration begin and end for all and for recent years
-  pdf(file = paste(dirpath, "/migdates_", species, ".pdf", sep=""), width = 10, height = 4)
+  pdf(file = paste(figpath, "/migdates_", species, ".pdf", sep=""), width = 10, height = 4)
   
-  d = melt(dates, id.vars = "year")
+  d = melt(dates[,c(1,2,4,6)], id.vars = "year")
   names(d) = c("year", "season", "date")
   d_sub = d[which(d$year>2007),]  
   
   bxp_date = ggplot(d, aes(season, date, fill=season)) + geom_boxplot() + theme_classic() + 
-    scale_fill_manual(values=c("cadetblue", "cadetblue", "orange","orange"))
+    scale_fill_manual(values=c("cadetblue", "olivedrab3", "orange"))
   
   bxp_date_sub = ggplot(d_sub, aes(season, date, fill=season)) + geom_boxplot() + theme_classic() + 
-    scale_fill_manual(values=c("cadetblue", "cadetblue", "orange","orange"))
+    scale_fill_manual(values=c("cadetblue", "olivedrab3", "orange"))
   
   multiplot(bxp_date, bxp_date_sub, cols = 2)
   dev.off()
   
   print(paste("spring begin:", sd(dates$spr_begin)))
-  print(paste("spring end:", sd(dates$spr_end)))
-  print(paste("fall begin:", sd(dates$fal_begin)))
+  print(paste("lat peak:", sd(dates$spr_end)))
   print(paste("fall end:", sd(dates$fal_end)))
 }
 
@@ -235,14 +233,15 @@ for (f in 1:length(mfiles)){
 #focus on 5 migratory species
 
 # read in predicted data
-files = list.files(path = main, pattern = "centroids.*.txt", recursive=TRUE, full.names=TRUE)
-mfiles = list.files(path = getwd(), pattern = c("migration.*txt"), recursive = TRUE, full.names=TRUE)
+cfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = "centroids.*.txt", full.names=TRUE)
 
-for (f in 1:length(files)){
-  preds = read.table(files[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+for (f in 1:length(cfiles)){
+  preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
   dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
-  years = c(2004:2013)
   species = preds[1,1]
+  years = c(2004:2013)
+  preds_sub = preds[which(preds$year > 2007),]
+  dates_sub = dates[which(dates$year > 2007),]
   
   #set species-specific directory path for figures
   dirpath = paste(figpath, "/", species, sep="")
@@ -251,13 +250,13 @@ for (f in 1:length(files)){
   for (y in 1:length(years)){
     spr_begin = dates[y,1]
     spr_end = dates[y,2]
-    fal_begin = dates[y,3]
+    fal_begin = dates[y,2]
     fal_end = dates[y,4]
     
     between = preds[which(preds$year == years[y] & preds$jday >= spr_begin & preds$jday <= fal_end),]
     #split spring and fall on estimated breeding bounds
-    spring = preds[which(preds$year == years[y] & preds$jday >= spr_begin & preds$jday <= spr_end),]
-    fall = preds[which(preds$year == years[y] & preds$jday >= fal_begin & preds$jday <= fal_end),]
+    spring = preds[which(preds$year == years[y] & preds$jday >= spr_begin & preds$jday < spr_end),]
+    fall = preds[which(preds$year == years[y] & preds$jday > fal_begin & preds$jday <= fal_end),]
     
     #get slope & r2 of spring and fall latitudinal migration
     spr_lm = LinearMigration(spring, years[y])
@@ -308,6 +307,9 @@ for (f in 1:length(files)){
     outcount = outcount + 1
   }
   
+  #----------- model to test variance in lat and lon across years
+  
+  
   #----------- plot the data ------------
   
   # compare the slope for lat and lon change in spring vs. fall
@@ -329,15 +331,17 @@ for (f in 1:length(files)){
   # save plots comparing daily lat and long and migration date across the years
   pdf(file = paste(dirpath, "/AllYears_lon-lat", species, ".pdf", sep=""), width = 8, height = 10)
   
-  yrlylon = ggplot(preds, aes(jday, lon, col=year)) + geom_point(size=1) + theme_classic() +
-    geom_vline(xintercept = c(dates$spr_begin, dates$spr_end), col = "cadetblue") +
-    geom_vline(xintercept = c(dates$fal_begin, dates$fal_end), col = "orange") +
+  yrlylon = ggplot(preds_sub, aes(jday, lon, col=year)) + geom_point(size=1) + theme_classic() +
+    geom_vline(xintercept = c(dates_sub$spr_begin), col = "cadetblue") +
+    geom_vline(xintercept = c(dates_sub$spr_end), col = "olivedrab3") +
+    geom_vline(xintercept = c(dates_sub$fal_end), col = "orange") +
     scale_x_continuous(breaks = seq(0, 365, by = 30)) + 
     theme(text = element_text(size=20)) + ggtitle(species)
   
-  yrlylat = ggplot(preds, aes(jday, lat, col=year)) + geom_point(size=1) + theme_classic() +
-    geom_vline(xintercept = c(dates$spr_begin, dates$spr_end), col = "cadetblue") +
-    geom_vline(xintercept = c(dates$fal_begin, dates$fal_end), col = "orange") +
+  yrlylat = ggplot(preds_sub, aes(jday, lat, col=year)) + geom_point(size=1) + theme_classic() +
+    geom_vline(xintercept = c(dates_sub$spr_begin), col = "cadetblue") +
+    geom_vline(xintercept = c(dates_sub$spr_end), col = "olivedrab3") +
+    geom_vline(xintercept = c(dates_sub$fal_end), col = "orange") +
     scale_x_continuous(breaks = seq(0, 365, by = 30)) + 
     theme(text = element_text(size=20)) + ggtitle(species)
   
@@ -368,8 +372,8 @@ for (f in 1:length(files)){
   latlon = ggplot(migpreds, aes(lon_se, lat_se)) + ggtitle(species) +
     geom_point(aes(col = as.factor(month)), alpha = 0.5) + theme_classic() + facet_wrap(~year) +
     theme(text = element_text(size=20)) +
-    scale_y_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax)) +
-    scale_x_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax))
+    scale_y_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax)) +
+    scale_x_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax))
   multiplot(latlon, cols = 1)
   dev.off()
   
@@ -402,8 +406,8 @@ for (f in 1:length(files)){
   sprplot = ggplot(pred_spr, aes(lon, lat, col=year, group=year)) + geom_line(size=1) + theme_classic() +
     theme(text = element_text(size=20)) + ggtitle(paste("spring-", species))
   
-  falplot = ggplot(pred_fal, aes(lon, lat, col=year, group=year)) + geom_line(size=1) + theme_classic() +
-    theme(text = element_text(size=20)) + ggtitle(paste("fall-", species))
+  falplot = ggplot(pred_fal, aes(lon, lat, col=year, group=year)) + geom_point(size=1) + theme_classic() +
+    theme(text = element_text(size=20)) + ggtitle(paste("fall-", species)) + 
   
   multiplot(sprplot, falplot, cols = 2)
   dev.off()
