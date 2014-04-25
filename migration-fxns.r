@@ -7,32 +7,6 @@ require(ggplot2)
 require(SDMTools)
 
 
-DateConvert = function(date){
-  #convert eBird column OBSERVATION.DATE into year, month and day columns
-  
-  year <-sapply(date,function(x){
-    as.numeric(substring(x, 1, 4))
-  })
-  
-  month <- sapply(date,function(x){
-    as.numeric(substring(x, 6, 7))
-  }) 
-  
-  day <- sapply(date,function(x){
-    as.numeric(substring(x, 9, 10))
-  })
-    
-  julian = sapply(date, function(x){
-    julian(as.numeric(substring(x, 6, 7)), as.numeric(substring(x, 9, 10)), as.numeric(substring(x, 1, 4)), 
-    origin. = c(1, 1, as.numeric(substring(x, 1, 4)))) + 1
-  })
-  
-  newdate = as.data.frame(cbind(year, month, day, julian), row.names=FALSE)
-
-  return (newdate)
-}
-
-
 PlotRecords = function(yeardata, species) {
   #plots the number of records across the years
   
@@ -290,7 +264,7 @@ PlotChecklistMap = function(humdat, hexdat, dirpath){
   
   #make a map with hexes colored by the number of times the species was observed in a given hex
   pdf(paste(dirpath,"/", "ChecklistMap.pdf", sep=""))
-  plot(hexdat, col=df5$cols, border="gray10", lwd=0.25, xlim=c(-170,-50), ylim=c(10,80), las=1)
+  plot(hexdat, col=df5$cols, border="gray10", lwd=0.25, xlim=c(-170,-50), ylim=c(10,75), las=1)
   axis(side=1)
   axis(side=2, las=1)
   box()
@@ -323,7 +297,7 @@ PlotMeanLatitude = function(dat, species, year){
   meanlat = ggplot(dat, aes(jday, meanlat, col=as.factor(month))) + geom_point(aes(size=count)) + 
     ggtitle(paste(species, year, "latitudinal migration", sep = " ")) + xlab("Julian Day") + ylab("Mean Latitude") +
     theme_bw() +  scale_x_continuous(breaks = seq(0, 365, by = 25)) +
-    scale_y_continuous(breaks = seq(10, 80, by = 5)) +
+    scale_y_continuous(breaks = seq(10, 75, by = 5)) +
     geom_smooth(se=T, method='gam', formula=y~s(x), color='indianred')
   return(meanlat)
 }
