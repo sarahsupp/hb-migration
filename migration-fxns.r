@@ -30,32 +30,29 @@ AlternateMeanLocs = function(dat, species, hexdat, yreffort) {
   outcount = 1
   
   #count the number of days in the year
-  year = dat$year[1]
+  year = dat$YEAR[1]
   numdays = as.numeric(as.POSIXlt(paste(year, "-12-31", sep = "")) - as.POSIXlt(paste(year, "-01-01", sep="")) + 1)
   julian = seq(1:numdays)
-  
-  #To find the POLYFID for the hexes for each observation, identify observed lon and lat  
-  # Matches observations with the polygon hexes in the map
-  ID = over(SpatialPoints(dat[,c(10,9)]), hexdat)  #TODO: Check with TAC that this is working correctly based on map projection
-    names(ID) = c("global_id", "POLYFID", "HEX_LATITUDE", "HEX_LONGITUDE")
-  coords = cbind(dat, ID) 
+
+  #merge data on POLYFID so it includes the center of each hex cell (LONGITUDE.y, LATITUDE.y)
+  dat_merged = merge(dat, hexdat, by.x = "POLYFID", by.y = "POLYFID")
   
   #aggregate daily info by mean centroid location
-  dailyHexes = count(coords, vars=c("julian", "POLYFID", "HEX_LONGITUDE", "HEX_LATITUDE"))
+  dailyHexes = count(dat_merged, vars=c("DAY", "POLYFID", "LONGITUDE.y", "LATITUDE.y"))
   
-  #calculate weighted mean (weights based on number of obs per hex) lat and long
+  #calculate weighted mean (weights based on number of obs per hex and total effort per hex) LAT and LON
   for (j in 1:length(julian)){
-    jdata = dailyHexes[which(dailyHexes$julian == j),]
+    jdata = dailyHexes[which(dailyHexes$DAY == j),]
     jeffort = yreffort[which(yreffort$DAY == j),]
-    jdata = merge(jdata, jeffort, by.x = "POLYFID", by.y = "POLYFID")  #TODO - DOESN'T ALWAYS MATCH UP - WHY ARE SOME MISSING? (e.g. 2012 Ar. alex., day 100)
-    if (nrow(jdata) > 0){                                               # POLYFID c(8378, 8880, 9386, 9051) is in jdata, but not in jeffort - why?
+    jdata = merge(jdata, jeffort, by.x = c("POLYFID", "DAY"), by.y = c("POLYFID", "DAY"))
+    if (nrow(jdata) > 0){                                              
       numcells = nrow(jdata)
       numobs = sum(jdata$freq)
       mo = as.numeric(months(j))
-      wtmean_lon = wt.mean(jdata$HEX_LONGITUDE, jdata$freq/jdata$COUNT)
-      wtmean_lat = wt.mean(jdata$HEX_LATITUDE, jdata$freq/jdata$COUNT)
-      lon_sd <- wt.sd(jdata$HEX_LONGITUDE, jdata$freq/jdata$COUNT)
-      lat_sd <- wt.sd(jdata$HEX_LATITUDE, jdata$freq/jdata$COUNT)
+      wtmean_lon = wt.mean(jdata$LONGITUDE.y, jdata$freq/jdata$COUNT)
+      wtmean_lat = wt.mean(jdata$LATITUDE.y, jdata$freq/jdata$COUNT)
+      lon_sd <- wt.sd(jdata$LONGITUDE.y, jdata$freq/jdata$COUNT)
+      lat_sd <- wt.sd(jdata$LATITUDE.y, jdata$freq/jdata$COUNT)
       df[outcount,] = c(j, mo, numobs, numcells, wtmean_lon, wtmean_lat,lon_sd, lat_sd)
       outcount = outcount + 1
     }
@@ -231,19 +228,11 @@ EstimateDailyLocs = function(dat) {
 PlotChecklistMap = function(humdat, hexdat, dirpath){
   require(fields)
   #plots the hexmap with the number of checklist over the entire time period color coded. 
-  #saves a jpg file in the species directory
-  
-  #To find the POLYFID for the hexes for each observation, pull out lon and lat
-  coords = humdat[,c(10,9)]
-  names(coords) = c("real_lon", "real_lat") #rename so we can tell real from hex coordinates later
-  
-  # Matches observations with the polygon hexes in the map
-  ID <- over(SpatialPoints(coords), hexdat)
-  coords <- cbind(coords, ID) 
-  
+  #saves a pdf file in the species directory
+
   #find the number of obs in each cell
-  t= table(as.factor(coords$POLYFID))
-  
+  t = table(as.factor(humdat$POLYFID))
+ 
   #Merge the count data for the hexes with all the hexes in the map
   df = data.frame(POLYFID = names(t), count=as.numeric(t))
   df2 = data.frame(POLYFID = unique(hexdat$POLYFID))
@@ -258,21 +247,24 @@ PlotChecklistMap = function(humdat, hexdat, dirpath){
   df5$cols = ifelse(is.na(df5$count), "white", df5$cols)
   df5 = df5[order(df5$POLYFID),]
   
+  #set scale for legend
   vls = sort(unique(round(cols$id/500)*500))
   vls[1] = 1
   cols2 = tim.colors(length(vls))
   
   #make a map with hexes colored by the number of times the species was observed in a given hex
-  pdf(paste(dirpath,"/", "ChecklistMap.pdf", sep=""))
-  plot(hexdat, col=df5$cols, border="gray10", lwd=0.25, xlim=c(-170,-50), ylim=c(15,75), las=1)
+  setEPS()
+  postscript(paste(dirpath,"/", "ChecklistMap.eps", sep=""), width=10, height=7)
+  plot(hexdat, col=df5$cols, border="gray50", lwd=0.25, xlim=c(-170,-50), ylim=c(15,75), las=1)
   axis(side=1)
   axis(side=2, las=1)
   box()
   mtext("Longitude", side=1, cex=1.4, line=2.5)
   mtext("Latitude", side=2, cex=1.4, line=2.5)
   ## legend
-  legend("bottomleft", legend=vls, pch=22, pt.bg=cols2, pt.cex=1, cex=0.75, bty="n",
-         col="black", title="Number of checklists", x.intersp=1, y.intersp=0.5)
+  legend("bottomleft", legend=vls, pch=22, pt.bg=cols2, pt.cex=1, cex=0.75, bty="",
+         col="black", title="Number of checklists", x.intersp=1, y.intersp=0.5, bg="white")
+  map("worldHires", c("usa", "canada", "mexico"), add=TRUE)
   dev.off()  
   
   return(df5)

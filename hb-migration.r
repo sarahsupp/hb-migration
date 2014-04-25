@@ -77,7 +77,7 @@ for (f in 1:length(files)){
   count = PlotChecklistMap(humdat, hexgrid, dirpath)
   
   for (y in 1:length(years)){
-    yrdat = humdat[which(humdat$year == years[y]),]
+    yrdat = humdat[which(humdat$YEAR == years[y]),]
     yreffort = effort[which(effort$YEAR == years[y]),]
     
     #plot frequency of sightings per month
