@@ -10,6 +10,7 @@ library(maps)
 library(mapdata)
 library(rgdal)
 library(raster)
+library(gamm4)
 
 #set working directory
 main = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration"
@@ -24,7 +25,6 @@ setwd(wd)
 #---------------------------------------------------------------------------------------
 
 # read in summary of effort data (Number of eBird checklists submitted per day per year)
-#effort = read.table("cell_effort_new.txt", header=TRUE, as.is=TRUE)
 effort = read.table("FAL_hummingbird_data/checklist_12_2004-2013wh_grp.txt", header=TRUE, as.is=TRUE)
 
 # read in the north america equal area hex grid map (FAL) and format for use
@@ -160,6 +160,7 @@ require(reshape2)
 require(Rmisc)
 require(sp)
 require(raster)
+require(gamm4)
 
 setwd(wd)
 
@@ -230,7 +231,6 @@ for (f in 1:length(mfiles)){
 #read in all pred data, then re-analyze based on se results. 
 #compare 2008-2013, test for impact of 2004-2007 years on overall distribution
 #linear model on spring vs. fall in each year
-#focus on 5 migratory species
 
 # read in predicted data
 cfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = "centroids.*.txt", full.names=TRUE)
@@ -307,9 +307,15 @@ for (f in 1:length(cfiles)){
     outcount = outcount + 1
   }
   
-  #----------- model to test variance in lat and lon across years
+  #----------- model to test variance in lat and lon across years, with year as a random effect
+
+  #what is the variation in daily location across years?
+  lon.gam <- gamm4(lon ~ s(jday, k=10), random = ~(1|year), data=preds_sub, gamma = 1.5)
+    print (paste("R2 for Longitude is:", round(summary(lon.gam$gam)$r.sq,4)))
+  lat.gam <- gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=preds_sub, gamma = 1.5)
+   print (paste("R2 for Latitude is:", round(summary(lat.gam$gam)$r.sq,4)))
   
-  
+
   #----------- plot the data ------------
   
   # compare the slope for lat and lon change in spring vs. fall
