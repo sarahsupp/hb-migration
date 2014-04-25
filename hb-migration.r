@@ -6,6 +6,8 @@ library(maptools)
 library(fields)
 library(sp)
 library(raster)
+library(maps)
+library(mapdata)
 
 #set working directory
 main = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration"
@@ -23,35 +25,20 @@ setwd(wd)
 #effort = read.table("cell_effort_new.txt", header=TRUE, as.is=TRUE)
 effort = read.table("FAL_hummingbird_data/checklist_12_2004-2013wh_grp.txt", header=TRUE, as.is=TRUE)
 
-#data = read.table("FAL_hummingbird_data/hummingbirds_12_2004-2013wh_grp.txt", header=TRUE, as.is=TRUE) #not in right format yet
-
-# read in the north america equal area hex grid map (F.A.L.) and format for use
-#hexgrid = readShapePoly("/Volumes/Elements/eBird/terr_4h6/nw_vector_grid.shp") #quad map
-#hexgrid = readShapePoly(paste(main, "/terr_4h6/terr_4h6.shp", sep="")) #hex map with land only
-hexgrid = readShapePoly(paste(main, "/data/icosahedron_land_and_sea/cell_out2.shp", sep=""))
-hexpoints = readShapePoints(paste(main, "/data/icosahedron_land_and_sea/point_out2.shp", sep=""))
-hexlonlat = data.frame(ID = hexpoints@data$global_id, LON = hexpoints@coords[,1], LAT = hexpoints@coords[,2])
-hexlonlat$POLYFID = as.integer(as.character(hexlonlat$ID))
-
-hexgrid$POLYFID = hexlonlat$POLYFID
-hexgrid$LATITUDE = hexlonlat$LAT
-hexgrid$LONGITUDE = hexlonlat$LON
-
-# crop to just North America, where the migratory species occur
-hexgrid = hexgrid[which(hexgrid$LATITUDE > 10 & hexgrid$LATITUDE <80 & 
-                          hexgrid$LONGITUDE > -178 & hexgrid$LONGITUDE < -50),]
+# read in the north america equal area hex grid map (FAL) and format for use
+# other options include a quad map (terr_4h6/nw_vector_grid.shp) or a hexmap with land only (terr_4h6/terr_4h6.shp", sep="")
+hexgrid = readShapePoly(paste(main, "/data/icosahedron.shp", sep="")) #hex with land and sea, cropped to North America
 
 # plot the hexgrid on a map of north america
-plot(NA, NA, xlim=c(-178, -50), ylim=c(10, 80), xlab = "Longitude", ylab = "Latitude")
-map("usa", add=TRUE, fill = T, col= "lightblue")
+plot(NA, NA, xlim=c(-175, -50), ylim=c(15, 75), xlab = "Longitude", ylab = "Latitude")
+map('worldHires', c("usa", "canada", "mexico"), add=TRUE, fill=T, col="lightblue")
 plot(hexgrid, add=T)
 
 # make a North America base map
 noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = "bw")
 
 # read in eBird data
-files = list.files(pattern = "*2013.txt")
-files = files[c(3,5,6,8,9)] #grab migratory species
+files = list.files(pattern = "*.txt")
 
 #for each eBird file, print the number sightings per year and per month.
 #plot the locations of sightings on a map, color coded by month
@@ -67,53 +54,23 @@ for (f in 1:length(files)){
   require(segmented)
   source(paste(gitpath, "/migration-fxns.r", sep=""))
   
-  humdat = read.table(files[f], header=TRUE, sep="\t", quote="", fill=TRUE, as.is=TRUE, comment.char="")
+  humdat = read.table(files[f], header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")
   
-  # Some records are duplicated as multiple members of a group enter identical checklists. Reduce to a single record per group.
-  humdat = GroupDuplicates(humdat) 
+  names(humdat) = c("SCI_NAME", "PRIMARY_COM_NAME","YEAR", "DAY", "TIME", "GROUP_ID", "PROTOCOL_ID",
+                    "PROJ_ID", "DURATION_HRS", "EFFORT_DISTANCE_KM", "EFFORT_AREA_HA", "NUM_OBSERVERS",
+                    "LATITUDE", "LONGITUDE", "SUB_ID", "POLYFID", "MONTH")
   
-  # make sure that only include protocols that are also in the effort data
-  humdat = humdat[which(humdat$PROTOCOL.TYPE %in% c("eBird - Casual Observation","eBird - Exhaustive Area Count",
-                                                     "eBird - Stationary Count", "eBird - Traveling Count",
-                                                     "eBird My Yard Count", "eBird--Nocturnal Flight Call Count",
-                                                     "Kiosk")),]
+  humdat$MONTH = factor(humdat$MONTH, levels=c(1:12), ordered=TRUE)
   
-  #keep only the columns that we need
-  keepcols = c("COMMON.NAME", "SCIENTIFIC.NAME", "OBSERVATION.COUNT", "AGE.SEX", "COUNTRY",
-               "COUNTRY_CODE", "STATE_PROVINCE", "COUNTY", "LATITUDE", "LONGITUDE",
-               "OBSERVATION.DATE", "TIME.OBSERVATIONS.STARTED", "PROTOCOL.TYPE", "PROJECT.CODE",
-               "DURATION.MINUTES", "EFFORT.DISTANCE.KM", "EFFORT.AREA.HA", "NUMBER.OBSERVERS")
-  humdat = humdat[,which(names(humdat) %in% keepcols)]
-  
-  species = humdat$SCIENTIFIC.NAME[1]
+  species = humdat$SCI_NAME[1]
   years = c(2004:2013)
-  
-  # separate year, month, day, and calculate julian date for later analysis and plotting
-  year <-sapply(humdat$OBSERVATION.DATE,function(x){
-    as.numeric(substring(x, 1, 4))
-  })
-  
-  month <- sapply(humdat$OBSERVATION.DATE,function(x){
-    as.numeric(substring(x, 6, 7))
-  }) 
-  
-  day <- sapply(humdat$OBSERVATION.DATE,function(x){
-    as.numeric(substring(x, 9, 10))
-  })
-  
-  julian = sapply(humdat$OBSERVATION.DATE, function(x){
-    julian(as.numeric(substring(x, 6, 7)), as.numeric(substring(x, 9, 10)), as.numeric(substring(x, 1, 4)), 
-           origin. = c(1, 1, as.numeric(substring(x, 1, 4)))) + 1
-  })
-  
-  humdat = cbind(humdat, year, month, day, julian)
-  
+
   #start a new directory
   dirpath = paste(figpath, "/", species, sep="")
   #   dir.create(dirpath, showWarnings = TRUE, recursive = FALSE) #only need if directory did not previously exist
   
   #show how many records there are for the species across the years, write to txt file
-  yeartable = PlotRecords(humdat$year, species)
+  yeartable = PlotRecords(humdat$YEAR, species)
   write.table(yeartable, file = paste(dirpath, "/", species,".txt",sep=""), row.names=FALSE)
   
   #save a figure of the geographic number of checklists for the species, over all the years

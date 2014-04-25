@@ -35,11 +35,11 @@ cahu = GroupDuplicates(agg_data[which(agg_data$SCI_NAME == "Selasphorus calliope
 #write the files to the folder for output
 writewd = "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/data/"
 
-write.table(bchu, file = paste(writewd,"bchu.txt", sep=""), row.names=FALSE)
-write.table(ruhu, file = paste(writewd,"ruhu.txt", sep=""), row.names=FALSE)
-write.table(bthu, file = paste(writewd,"bthu.txt", sep=""), row.names=FALSE)
-write.table(rthu, file = paste(writewd,"rthu.txt", sep=""), row.names=FALSE)
-write.table(cahu, file = paste(writewd,"cahu.txt", sep=""), row.names=FALSE)
+write.table(bchu, file = paste(writewd,"bchu.txt", sep=""), row.names=FALSE, sep=",")
+write.table(ruhu, file = paste(writewd,"ruhu.txt", sep=""), row.names=FALSE, sep=",")
+write.table(bthu, file = paste(writewd,"bthu.txt", sep=""), row.names=FALSE, sep=",")
+write.table(rthu, file = paste(writewd,"rthu.txt", sep=""), row.names=FALSE, sep=",")
+write.table(cahu, file = paste(writewd,"cahu.txt", sep=""), row.names=FALSE, sep=",")
 
 
 #clean up the icosahedron file so it doesn't have to be brought in globally each time
@@ -53,8 +53,8 @@ hexgrid$LATITUDE = hexlonlat$LAT
 hexgrid$LONGITUDE = hexlonlat$LON
 
 # crop to just North America, where the migratory species occur
-hexgrid = hexgrid[which(hexgrid$LATITUDE > 10 & hexgrid$LATITUDE <75 & 
-                          hexgrid$LONGITUDE > -178 & hexgrid$LONGITUDE < -50),]
+hexgrid = hexgrid[which(hexgrid$LATITUDE > 15 & hexgrid$LATITUDE <75 & 
+                          hexgrid$LONGITUDE > -175 & hexgrid$LONGITUDE < -50),]
 
 #write cropped file to the data folder
 writePolyShape(hexgrid, "icosahedron.shp")
