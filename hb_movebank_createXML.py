@@ -12,21 +12,22 @@ import os
 
 # variable names you want to extract (these are the names that will appear in the
 # output table - can name them as you wish).
-var_labels = "lwrf,swrf,t10m,u10m,v10m"
+#var_labels = "lwrf,swrf,t10m,u10m,v10m"
+var_labels = "Quality,NDVI,EVI"
 
 # Interpolation type - one of "inverse-distance-weighted", "bilinear", or "nearest-neighbor"
 int_type = "inverse-distance-weighted"
 
 # Type Name - need directory and sensor type (e.g. "modis-land/MOD13Q1.005")
-#type_name = "modis-land/MOD13Q1.005"
-type_name = "nomads.ncdc.noaa.gov/NARR"
+type_name = "modis-land/MOD13Q1.005"
+#type_name = "nomads.ncdc.noaa.gov/NARR"
 
 # Variable names - must be names listed in movebank
-#var_names = "250m 16 days NDVI,250m 16 days EVI"
-var_names = "Downward_longwave_radiation_flux_sfc,Downward_shortwave_radiation_flux_sfc,Temp._10_m_above_gnd,u_wind_10_m_above_gnd,v_wind_10_m_above_gnd"
+var_names = "250m 16 days VI Quality,250m 16 days NDVI,250m 16 days EVI"
+#var_names = "Downward_longwave_radiation_flux_sfc,Downward_shortwave_radiation_flux_sfc,Temp._10_m_above_gnd,u_wind_10_m_above_gnd,v_wind_10_m_above_gnd"
 
 # Set output directory for xml file
-outdir = "C:/Share/tcormier/hummingbirds/migration_study/movebank/request_xmls/"
+outdir = "C:/Share/tcormier/hummingbirds/migration_study/movebank/env_request_xmls/"
 
 #set output file
 #first add trailing slash if missing
