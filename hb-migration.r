@@ -106,7 +106,7 @@ for (f in 1:length(files)){
     #plot frequency of sightings per month
     #monthtable = PlotRecords(yrdat$month, species)
     
-    #get daily weighted mean location - #FIXME: Effort checklist data does not yet match perfectly
+    #get daily weighted mean location 
     meanlocs = AlternateMeanLocs(yrdat, species, hexgrid, yreffort)
     
     #use GAM model to predict daily location along a smoothing line
