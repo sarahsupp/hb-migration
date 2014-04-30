@@ -86,7 +86,7 @@ for (f in 1:length(files)){
   humdat$MONTH = factor(humdat$MONTH, levels=c(1:12), ordered=TRUE)
   
   species = humdat$SCI_NAME[1]  #FIXME: species name needs to be one word
-  years = c(2004:2013)
+  years = c(2008:2013)
 
   #start a new directory
   dirpath = paste(figpath, "/", species, sep="")
@@ -141,7 +141,36 @@ for (f in 1:length(files)){
 #     #plot occurrences with lines showing beginning and end of migration
 #     PlotOccurrences(altmeandat, species, migration[[1]], migration[[3]])
 #     ggsave(file=paste(dirpath, "/", "occurrences", species, years[y], ".pdf", sep=""))
+
+    #Subset western species by flyway data (check bias in SE US data points) Sensu La Sorte et al in press - 
+        #"The role of atmospheric conditions in the seasonal dynamics of North American migration flyways" - JOurnal of Biogeography
+    if (species %in% c("Archilochusalexandri", "Selasphorusplatycercus", "Selasphorusrufus", "Selasphoruscalliope")) {
     
+      #only use data west of the 103rd meridian (western flyway)
+      west_yrdat = yrdat[which(yrdat$LONGITUDE <= -103),]
+      
+      #get daily weighted mean location 
+      west_meanlocs = AlternateMeanLocs(west_yrdat, species, hexgrid, yreffort)
+      
+      #use GAM model to predict daily location along a smoothing line
+      west_preds = EstimateDailyLocs(west_meanlocs)
+      
+      #use gam approach to estimate rough starting points for segmentation from the mean loc latitude data
+      west_migration = round(Est3MigrationDates(west_meanlocs))
+      
+      #save a plot of the species migration route mapped onto continent with real observations
+      setEPS()
+      postscript(file = paste(dirpath, "/WEST_trimmed-route_", species, years[y], ".eps", sep=""), width = 7, height = 4.5)
+      BasePlotMigration(west_preds, west_yrdat, west_migration)
+      dev.off() 
+      
+      #save a plot of the species migration mapped onto an elevation raster
+      setEPS()
+      postscript(file = paste(dirpath, "/WEST_elev-route_", species, years[y], ".eps", sep=""), width = 7, height = 4.5)
+      ElevPlotMigration(west_preds, west_yrdat, west_migration)
+      dev.off() 
+    }
+
     #add year to preds, so we can save it to compare across years
     preds$year = years[y]
     
