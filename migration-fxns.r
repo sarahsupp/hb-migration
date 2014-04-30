@@ -547,3 +547,32 @@ BasePlotMigration = function(preds, yrdat, migration){
   legend("bottomleft", legend=vls, pch=22, pt.bg=cols4, pt.cex=1.5, cex=1.5, bty="n",
          col="black", title="", x.intersp=0.5, y.intersp=0.25)
 }
+
+
+ElevPlotMigration = function(preds, yrdat, migration) {
+  
+  predpts = preds
+  
+  predpts$month = as.factor(predpts$month)
+  cols3 = data.frame(id=c(sort(unique(predpts$month))), cols=tim.colors(length(unique(predpts$month))), stringsAsFactors=FALSE)
+  predpts = merge(predpts, cols3, by.x="month", by.y="id")
+  #set color scale
+  vls = sort(unique(round(cols3$id)))
+  vls[1] = 1
+  cols4 = tim.colors(length(vls))
+  
+  fun <- function(){
+    plot(USAborder, ext=myext, border="gray30", add=TRUE)
+    plot(Mexborder, ext=myext, border="gray30", add=TRUE)
+    plot(Canborder, ext=myext, border="gray30", add=TRUE)
+    #points(yrdat$LONGITUDE, yrdat$LATITUDE, pch=16, col = "black", cex = 0.25)
+    points(predpts$lon, predpts$lat, col=predpts$cols, pch=19, cex=1)
+  }
+  
+  plot.new()
+  
+  plot(elev, ext=myext, addfun=fun, ylab="Latitude", xlab="Longitude", main="summarized migration route", cex.lab = 2, cex.axis=2)
+  legend("bottomleft", legend=vls, pch=22, pt.bg=cols4, pt.cex=1.5, cex=1.5, bty="n",
+         col="black", title="", x.intersp=0.5, y.intersp=0.25)
+}
+

@@ -28,8 +28,9 @@ setwd(wd)
 effort = read.table("FAL_hummingbird_data/checklist_12_2004-2013wh_grp.txt", header=TRUE, as.is=TRUE)
 
 # read in country outline shp files
-USAborder = readShapePoly("USA_adm/USA_adm0.shp")
-Mexborder = readShapePoly("MEX_adm/MEX_adm0.shp")
+USAborder = readShapePoly("borders/USA_adm/USA_adm0.shp")
+Mexborder = readShapePoly("borders/MEX_adm/MEX_adm0.shp")
+Canborder = readShapePoly("borders/CAN_adm/CAN_adm0.shp")
 
 # read in the altitude layers, make rasters
 elev = raster("alt_5m_bil/alt.bil")
@@ -37,16 +38,15 @@ elev = raster("alt_5m_bil/alt.bil")
 # plot elev + map for extent
 myext <- c(-175, -50, 15, 75)
 plot.new()
-plot(elev, ext = myext, xlab="Longitude", ylab = "Latitude")
+plot(elev, ext = myext, xlab="Longitude", ylab = "Latitude", xlim = c(-175,-50), ylim = c(15,75))
 
 borders <- function(){
   plot(USAborder, ext=myext, border="black", add=TRUE)
   plot(Mexborder, ext=myext, border="black", add=TRUE)
+  plot(Canborder, ext=myext, border="black", add=TRUE)
 }
 
-plot(elev, ext=myext, addfun=borders, ylab="Latitude", xlab="Longitude") #col=gray(0:256/256)) 
-legend("bottomleft", selashp2, bty="n", col="black", bg="white", pch=c(24, 21), c("GBIF points", "HMN points"))
-
+plot(elev, ext=myext, addfun=borders, ylab="Latitude", xlab="Longitude", xlim = c(-175,-50), ylim = c(15,75)) #col=gray(0:256/256)) 
 
 # read in the north america equal area hex grid map (FAL) and format for use
 # other options include a quad map (terr_4h6/nw_vector_grid.shp) or a hexmap with land only (terr_4h6/terr_4h6.shp", sep="")
@@ -85,12 +85,12 @@ for (f in 1:length(files)){
   
   humdat$MONTH = factor(humdat$MONTH, levels=c(1:12), ordered=TRUE)
   
-  species = humdat$SCI_NAME[1]
+  species = humdat$SCI_NAME[1]  #FIXME: species name needs to be one word
   years = c(2004:2013)
 
   #start a new directory
   dirpath = paste(figpath, "/", species, sep="")
-     dir.create(dirpath, showWarnings = TRUE, recursive = FALSE) #only need if directory did not previously exist
+     #dir.create(dirpath, showWarnings = TRUE, recursive = FALSE) #only need if directory did not previously exist
   
   #show how many records there are for the species across the years, write to txt file
   yeartable = PlotRecords(humdat$YEAR, species)
@@ -116,9 +116,16 @@ for (f in 1:length(files)){
     startpoints = round(Est3MigrationDates(meanlocs))
     migration = startpoints
     
+    #save a plot of the species migration route mapped onto continent with real observations
     setEPS()
     postscript(file = paste(dirpath, "/trimmed-route_", species, years[y], ".eps", sep=""), width = 7, height = 4.5)
     BasePlotMigration(preds, yrdat, migration)
+    dev.off() 
+    
+    #save a plot of the species migration mapped onto an elevation raster
+    setEPS()
+    postscript(file = paste(dirpath, "/elev-route_", species, years[y], ".eps", sep=""), width = 7, height = 4.5)
+    ElevPlotMigration(preds, yrdat, migration)
     dev.off() 
     
     #get Great Circle distances traveled each day between predicted daily locations
