@@ -203,6 +203,7 @@ mfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = c(
 
 for (f in 1:length(mfiles)){
   dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  dates_sub = dates[which(dates$year > 2007),]
   species = dates$species[1]
   print(species)
   
@@ -222,9 +223,13 @@ for (f in 1:length(mfiles)){
   multiplot(bxp_date, bxp_date_sub, cols = 2)
   dev.off()
   
-  print(paste("spring begin:", sd(dates$spr_begin)))
-  print(paste("lat peak:", sd(dates$spr_end)))
-  print(paste("fall end:", sd(dates$fal_end)))
+  print(paste("spring begin median:", median(dates_sub$spr_begin)))
+  print(paste("spring begin sd:", sd(dates_sub$spr_begin)))
+  print(paste("lat peak median:", median(dates_sub$spr_end)))
+  print(paste("lat peak sd:", sd(dates_sub$spr_end)))
+  print(paste("fall end median:", median(dates_sub$fal_end)))
+  print(paste("fall end sd:", sd(dates_sub$fal_end)))
+  print("")
 }
 
 
@@ -309,12 +314,20 @@ for (f in 1:length(cfiles)){
   
   #----------- model to test variance in lat and lon across years, with year as a random effect
 
-  #what is the variation in daily location across years?
-  lon.gam <- gamm4(lon ~ s(jday, k=10), random = ~(1|year), data=preds_sub, gamma = 1.5)
-    print (paste("R2 for Longitude is:", round(summary(lon.gam$gam)$r.sq,4)))
-  lat.gam <- gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=preds_sub, gamma = 1.5)
-   print (paste("R2 for Latitude is:", round(summary(lat.gam$gam)$r.sq,4)))
+  #what is the variation in daily location across years using 2008: 2013 data?
+  pred_spr_sub = pred_spr[which(pred_spr$year > 2007),]
+  pred_fal_sub = pred_fal[which(pred_fal$year > 2007),]
   
+  lon.gam.spr <- gamm4(lon ~ s(jday, k=10), random = ~(1|year), data=pred_spr_sub, gamma = 1.5)
+    print (paste("R2 for spring Longitude is:", round(summary(lon.gam.spr$gam)$r.sq,4)))
+  lat.gam.spr <- gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=pred_spr_sub, gamma = 1.5)
+   print (paste("R2 for spring Latitude is:", round(summary(lat.gam.spr$gam)$r.sq,4)))
+  
+  lon.gam.fal <- gamm4(lon ~ s(jday, k=10), random = ~(1|year), data=pred_fal_sub, gamma = 1.5)
+  print (paste("R2 for fall Longitude is:", round(summary(lon.gam.fal$gam)$r.sq,4)))
+  lat.gam.fal <- gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=pred_fal_sub, gamma = 1.5)
+  print (paste("R2 for fall Latitude is:", round(summary(lat.gam.fal$gam)$r.sq,4)))
+}
 
   #----------- plot the data ------------
   
