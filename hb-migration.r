@@ -27,6 +27,27 @@ setwd(wd)
 # read in summary of effort data (Number of eBird checklists submitted per day per year)
 effort = read.table("FAL_hummingbird_data/checklist_12_2004-2013wh_grp.txt", header=TRUE, as.is=TRUE)
 
+# read in country outline shp files
+USAborder = readShapePoly("USA_adm/USA_adm0.shp")
+Mexborder = readShapePoly("MEX_adm/MEX_adm0.shp")
+
+# read in the altitude layers, make rasters
+elev = raster("alt_5m_bil/alt.bil")
+
+# plot elev + map for extent
+myext <- c(-175, -50, 15, 75)
+plot.new()
+plot(elev, ext = myext, xlab="Longitude", ylab = "Latitude")
+
+borders <- function(){
+  plot(USAborder, ext=myext, border="black", add=TRUE)
+  plot(Mexborder, ext=myext, border="black", add=TRUE)
+}
+
+plot(elev, ext=myext, addfun=borders, ylab="Latitude", xlab="Longitude") #col=gray(0:256/256)) 
+legend("bottomleft", selashp2, bty="n", col="black", bg="white", pch=c(24, 21), c("GBIF points", "HMN points"))
+
+
 # read in the north america equal area hex grid map (FAL) and format for use
 # other options include a quad map (terr_4h6/nw_vector_grid.shp) or a hexmap with land only (terr_4h6/terr_4h6.shp", sep="")
 hexgrid = readShapePoly(paste(main, "/data/icosahedron.shp", sep="")) #hex with land and sea, cropped to North America
