@@ -544,7 +544,7 @@ BasePlotMigration = function(preds, yrdat, migration){
   map("usa", add=TRUE)
   points(yrdat$LONGITUDE, yrdat$LATITUDE, pch=16, col = "grey60")
   points(predpts$lon, predpts$lat, pch=19, col = predpts$cols)
-  legend("bottomleft", legend=vls, pch=22, pt.bg=cols4, pt.cex=1.5, cex=1.5, bty="n",
+  legend("bottomleft", legend=vls, pch=22, pt.bg=cols4, pt.cex=1.25, cex=1.25, bty="n",
          col="black", title="", x.intersp=0.5, y.intersp=0.25)
 }
 
@@ -572,7 +572,7 @@ ElevPlotMigration = function(preds, yrdat, migration) {
   plot.new()
   
   plot(elev, ext=myext, addfun=fun, ylab="Latitude", xlab="Longitude", main="summarized migration route", cex.lab = 2, cex.axis=2)
-  legend("bottomleft", legend=vls, pch=22, pt.bg=cols4, pt.cex=1.5, cex=1.5, bty="n",
+  legend("bottomleft", legend=vls, pch=22, pt.bg=cols4, pt.cex=1.25, cex=1.25, bty="n",
          col="black", title="", x.intersp=0.5, y.intersp=0.25)
 }
 

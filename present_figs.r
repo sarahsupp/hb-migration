@@ -97,3 +97,5 @@ points(preds$lon, preds$lat, pch=19, col = preds$cols)
 legend("bottomleft", legend=vls, pch=22, pt.bg=cols4, pt.cex=1.5, cex=1.5, bty="n",
        col="black", title="", x.intersp=0.5, y.intersp=0.25)
 
+
+
