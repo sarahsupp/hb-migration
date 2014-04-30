@@ -34,11 +34,11 @@ url <- "http://www.bioinfo.mpg.de/orn-gateway/request-annotation-xml.jsp"
 #Text file of xy locations of points to be annotated. Must have the following columns
 #with no spaces: Timestamp, location-long, location-lat, height-above-ellipsoid (optional)
 #xy <- "/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/test_calliope.csv"
-xy <- "/Volumes/Share/tcormier/hummingbirds/migration_study/movebank/track_csvs/ebd_rfuhum_2004_201312_relNove-2013_albers_tracks.csv"
+xy <- "/Volumes/Share/tcormier/hummingbirds/migration_study/movebank/track_csvs/ebd_rfuhum_2012_springMigration_albers_tracks.csv"
 
 #XML containing movebank request details (see hb_movebank_createXML.py)
-#xml <- "/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/NDVI_EVI.xml"
-xml <- "/Volumes/Share/tcormier/hummingbirds/migration_study/movebank/request_xmls/lwrf_swrf_t10m_u10m_v10m.xml"
+xml <- "/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/env_request_xmls/Quality_NDVI_EVI.xml"
+#xml <- "/Volumes/Share/tcormier/hummingbirds/migration_study/movebank/request_xmls/lwrf_swrf_t10m_u10m_v10m.xml"
 
 #user name
 un <- "tcormier"
@@ -64,7 +64,7 @@ curl.cmd <- paste("curl -o ", ret.xml, " -F \"request=@", xml, "\" -F \"tracks=@
 system(curl.cmd)
 
 #check to see if ret.xml exists (it should if the curl system call did not produce an error).
-#If it exists, write accesskey to db
+#If it exists, write access key to db
 if (file.exists(ret.xml)) {
   #parse returned xml file
   doc <- xmlTreeParse(ret.xml)
@@ -76,7 +76,8 @@ if (file.exists(ret.xml)) {
   akl.query <- paste("INSERT INTO test_access_key_list (access_key) VALUES (", ak, ");", sep="")
   insert.ak <- dbGetQuery(con, akl.query)
   
-  #talk to Jesse about making this a real date-time
+  #talk to Jesse about making this a real date-time; also look up how to more easily write a query to avoid
+  #tedious issues with quotes
   status.query <- paste("INSERT INTO test_access_key_lut (access_key, date_time, tracks, xml, status) VALUES (", ak, ",", now, ",", xy, ",", xml, ",", ak.status, ");", sep="")
   insert.ak <- dbGetQuery(con, status.query)
 }

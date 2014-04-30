@@ -9,8 +9,8 @@ grid.poly <- "C:/Share/tcormier/hummingbirds/migration_study/gridded_references/
 grid.points <- "C:/Share/tcormier/hummingbirds/migration_study/gridded_references/na_p3deg_albers_32k_unique_points.shp"
 
 #ebird daily observation data
-ebd.shp <- "C:/Share/tcormier/hummingbirds/migration_study/data/ebird/ebd_rfuhum_2004_201312_relNove-2013_albers.shp"
-
+#ebd.shp <- "C:/Share/tcormier/hummingbirds/migration_study/data/ebird/ebd_rfuhum_2004_201312_relNove-2013_albers.shp"
+ebd.shp <- "C:/Share/tcormier/hummingbirds/migration_study/data/ebird/test/ebd_rfuhum_2012_springMigration_albers.shp"
 #Output movebank tracks file (directory):
 trackdir <- "C:/Share/tcormier/hummingbirds/migration_study/movebank/track_csvs/"
 
@@ -46,20 +46,39 @@ polyebd2012 <- over(ebd2012, poly)
 #format as text file to submit to movebank
 ebd.names <- c("timestamp", "location-long", "location-lat", "height-above-ellipsoid")
 ebd.2012.csv <- as.data.frame(matrix(data=NA, nrow=length(polyebd2012$GRIDCODE),ncol=length(ebd.names),))
-
+lag <- ebd.2012.csv
 #head(ebd.2012.csv)
 timestamp <- paste(ebd2012$OBSERVAT_1, "12:00:00.000")
+timestamp_7lag <- paste((ebd2012$OBSERVAT_1-7), "12:00:00.000")
+
 ebd.2012.csv[,1] <- timestamp
 ebd.2012.csv[,2] <- ebd2012$LONGITUDE
 ebd.2012.csv[,3] <- ebd2012$LATITUDE
 ebd.2012.csv[,4] <- ""
+#everything the same for lag except timestamp
+lag[,1] <- timestamp_7lag
+lag[,2] <- ebd2012$LONGITUDE
+lag[,3] <- ebd2012$LATITUDE
+lag[,4] <- ""
+
 
 #Assign names last bc R doesn't like dashes in column names, so after I'm done
 #fiddling with the columns, assign the names.
 names(ebd.2012.csv) <- ebd.names
+names(lag) <- ebd.names
+
+#write ids and lat lon to file so we can join back up after annotation
+ids <- as.data.frame(cbind(polyebd2012$GRIDCODE, ebd2012$LONGITUDE, ebd2012$LATITUDE, timestamp, ebd2012$NEAR_DIST, ebd2012$OPP_ANGLE))
+names(ids) <- c("gridcode", "longitude", "latitude", "timestamp","distance", "direction")
+ids.lag <- as.data.frame(cbind(polyebd2012$GRIDCODE, ebd2012$LONGITUDE, ebd2012$LATITUDE, timestamp_7lag, ebd2012$NEAR_DIST, ebd2012$OPP_ANGLE))
+names(ids.lag) <- c("gridcode", "longitude", "latitude", "timestamp_7lag", "distance", "direction")
 
 #write out tracks csv as well as an ID csv that I can use to join back to the grid after annotation.
 out.tracks <- paste0(trackdir, unlist(strsplit(basename(ebd.shp), "\\."))[1], "_tracks.csv")
+out.tracks.lag <- paste0(trackdir, unlist(strsplit(basename(ebd.shp), "\\."))[1], "_tracks_7day_lag.csv")
 out.ids <- paste0(trackdir, unlist(strsplit(basename(ebd.shp), "\\."))[1], "_ids.csv")
+out.ids.lag <- paste0(trackdir, unlist(strsplit(basename(ebd.shp), "\\."))[1], "_ids_7day_lag.csv")
 write.csv(ebd.2012.csv, file=out.tracks, quote=F, row.names=F)
-write.csv(polyebd2012$GRIDCODE, file=out.ids, quote=F, row.names=F)
+write.csv(lag, file=out.tracks.lag, quote=F, row.names=F)
+write.csv(ids, file=out.ids, quote=F, row.names=F)
+write.csv(ids.lag, file=out.ids.lag, quote=F, row.names=F)
