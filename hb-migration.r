@@ -85,7 +85,12 @@ for (f in 1:length(files)){
   
   humdat$MONTH = factor(humdat$MONTH, levels=c(1:12), ordered=TRUE)
   
-  species = humdat$SCI_NAME[1]  #FIXME: species name needs to be one word
+  #grab species name for setting directory paths and naming figures
+  species = humdat$SCI_NAME[1] 
+  species = gsub(" ","", species, fixed=TRUE)
+  species = gsub("\"", "", species, fixed=TRUE)
+  
+  # set years of data to use - data after 2007 is more reliable
   years = c(2008:2013)
 
   #start a new directory
@@ -158,6 +163,12 @@ for (f in 1:length(files)){
       #use gam approach to estimate rough starting points for segmentation from the mean loc latitude data
       west_migration = round(Est3MigrationDates(west_meanlocs))
       
+      #get Great Circle distances traveled each day between predicted daily locations
+      west_dist = DailyTravel(west_preds, 4, 5, species, years[y], west_migration)
+      
+      #estimate migration speed for spring and fall
+      west_speed = MigrationSpeed(west_dist, west_migration)
+      
       #save a plot of the species migration route mapped onto continent with real observations
       setEPS()
       postscript(file = paste(dirpath, "/WEST_trimmed-route_", species, years[y], ".eps", sep=""), width = 7, height = 4.5)
@@ -167,12 +178,13 @@ for (f in 1:length(files)){
       #save a plot of the species migration mapped onto an elevation raster
       setEPS()
       postscript(file = paste(dirpath, "/WEST_elev-route_", species, years[y], ".eps", sep=""), width = 7, height = 4.5)
-      ElevPlotMigration(west_preds, west_yrdat, west_migration)
+      ElevPlotMigration(west_preds, west_yrdat, west_migration, elev, USAborder, Mexborder, Canborder, myext)
       dev.off() 
     }
 
     #add year to preds, so we can save it to compare across years
     preds$year = years[y]
+    west_preds$year = years[y]
     
     if (y == 1){
       pred_data = preds
@@ -180,6 +192,12 @@ for (f in 1:length(files)){
                             "fal_begin" = migration[[2]], "fal_end" = migration[[3]],
                             "species" = species, "year" = years[y])
       migspeed = data.frame("spr" = speed[1], "fal" = speed[2], "species" = species, "year" = years[y])
+      
+      west_pred_data = west_preds
+      west_migdates = data.frame("spr_begin" = west_migration[1], "spr_end" = west_migration[2], 
+                                 "fal_begin" = west_migration[2], "fal_end" = west_migration[3],
+                                 "species" = species, "year" = years[y])
+      west_migspeed = data.frame("spr" = west_speed[1], "fal" = west_speed[2], "species" = species, "year" = years[y])
     }
     else{
       pred_data = rbind(pred_data, preds)
@@ -187,6 +205,12 @@ for (f in 1:length(files)){
       speed = c(speed, species, years[y])
       migdates = rbind(migdates, dates)
       migspeed = rbind(migspeed, speed)
+      
+      west_pred_data = rbind(west_pred_data, west_preds)
+      west_dates = c(west_migration[[1]], west_migration[[2]], west_migration[[2]], west_migration[[3]], "species" = species, year = years[y])
+      speed = c(west_speed, species, years[y])
+      west_migdates = rbind(west_migdates, west_dates)
+      west_migspeed = rbind(west_migspeed, west_speed)
     }
     
     if (y == length(years)){
@@ -197,11 +221,21 @@ for (f in 1:length(files)){
                   append=FALSE, row.names=FALSE)
       write.table(pred_data, file = paste(getwd(), "/output_data/centroids", species, ".txt", sep=""), 
                   append=FALSE,row.names=FALSE)
+      
+      #write western flyway migration timing and speed data to file
+      write.table(west_migdates, file = paste(getwd(), "/output_data/west_migration", species, ".txt", sep=""), 
+                  append=FALSE, row.names=FALSE)
+      write.table(west_migspeed, file = paste(getwd(), "/output_data/west_speed", species, ".txt", sep=""), 
+                  append=FALSE, row.names=FALSE)
+      write.table(west_pred_data, file = paste(getwd(), "/output_data/west_centroids", species, ".txt", sep=""), 
+                  append=FALSE,row.names=FALSE)
     }
     
-    rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat", "meanlocs", "migration", "preds", "dist", "mig_path")])   # clears the memory of the map and year-level data
+    rm(list=ls()[ls() %in% c("sitemap", "meanmap", "yrdat", "meanlocs", "migration", "preds", "dist", "mig_path", "speed",
+                             "west_migration", "west_preds", "west_dist", "west_speed")])   # clears the memory of the map and year-level data
   }
-  rm(list=ls()[!ls() %in% c("f", "files", "noam", "hexgrid", "effort", "pred_data", "migdates", "wd", "main", "gitpath","figpath")])   # clears the memory of everything except the file list, iterator, and base map
+  rm(list=ls()[!ls() %in% c("f", "files", "noam", "hexgrid", "effort", "pred_data", "migdates", 
+                            "wd", "main", "gitpath","figpath", "USAborder", "Mexborder", "Canborder", "elev", "myext")])   # clears the memory of everything except the file list, iterator, and base map
 }
 
 
