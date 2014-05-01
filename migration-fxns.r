@@ -527,7 +527,7 @@ Est4MigrationDates = function(dat){
 
 
 #Base plot migration route, trimmed by migration dates
-BasePlotMigration = function(preds, yrdat, migration){
+BasePlotMigration = function(preds, yrdat, migration, elev, USAborder, Mexborder, Canborder, myext){
   
   predpts = preds[which(preds$jday > migration[1] & preds$jday < migration[3]),]
   
@@ -568,44 +568,15 @@ ElevPlotMigration = function(preds, yrdat, migration, elev, USAborder, Mexborder
     plot(Mexborder, ext=myext, border="gray30", add=TRUE)
     plot(Canborder, ext=myext, border="gray30", add=TRUE)
     #points(yrdat$LONGITUDE, yrdat$LATITUDE, pch=16, col = "black", cex = 0.25)
-    points(predpts$lon, predpts$lat, col=predpts$cols, pch=19, cex=1)
+    points(predpts$lon, predpts$lat, col=predpts$cols, pch=19, cex=0.5)
   }
   
   plot.new()
   
   plot(elev, ext=myext, addfun=fun, ylab="Latitude", xlab="Longitude", main="summarized migration route", 
        cex.lab = 2, cex.axis=2, col=gray(10:256/256))
-  legend("bottomleft", legend=vls, pch=22, pt.bg=cols4, pt.cex=1.25, cex=1.25, bty="n",
-         col="black", title="", x.intersp=0.5, y.intersp=0.25)
+  #legend("bottomleft", legend=vls, pch=22, pt.bg=cols4, pt.cex=1.25, cex=1.25, bty="n",
+   #      col="black", title="", x.intersp=0.5, y.intersp=0.25)
 }
 
-
-
-PlainPlotMigration = function(preds, yrdat, migration) {
-  
-  predpts = preds
-  
-  predpts$month = as.factor(predpts$month)
-  cols3 = data.frame(id=c(sort(unique(predpts$month))), cols=tim.colors(length(unique(predpts$month))), stringsAsFactors=FALSE)
-  predpts = merge(predpts, cols3, by.x="month", by.y="id")
-  #set color scale
-  vls = sort(unique(round(cols3$id)))
-  vls[1] = 1
-  cols4 = tim.colors(length(vls))
-  
-  fun <- function(){
-    plot(USAborder, ext=myext, border="gray30", add=TRUE)
-    plot(Mexborder, ext=myext, border="gray30", add=TRUE)
-    plot(Canborder, ext=myext, border="gray30", add=TRUE)
-    points(predpts$lon, predpts$lat, col=predpts$cols, pch=19, cex=1)
-  }
-  
-  plot.new()
-  
-  plot(elev, ext=myext, addfun=fun, ylab="Latitude", xlab="Longitude", main="summarized migration route", 
-       cex.lab = 2, cex.axis=2, col=gray(10:256/256))
-  legend("bottomleft", legend=vls, pch=22, pt.bg=cols4, pt.cex=1.25, cex=1.25, bty="n",
-         col="black", title="", x.intersp=0.5, y.intersp=0.25)
-  dev.off()
-}
 

@@ -50,7 +50,7 @@ plot(elev, ext=myext, addfun=borders, ylab="Latitude", xlab="Longitude", xlim = 
 
 # read in the north america equal area hex grid map (FAL) and format for use
 # other options include a quad map (terr_4h6/nw_vector_grid.shp) or a hexmap with land only (terr_4h6/terr_4h6.shp", sep="")
-hexgrid = readShapePoly(paste(main, "/data/icosahedron.shp", sep="")) #hex with land and sea, cropped to North America
+hexgrid = readShapePoly(paste(main, "/data/icosahedron_land_and_sea/icosahedron.shp", sep="")) #hex with land and sea, cropped to North America
 
 # plot the hexgrid on a map of north america
 plot(NA, NA, xlim=c(-175, -50), ylim=c(15, 75), xlab = "Longitude", ylab = "Latitude")
@@ -122,15 +122,13 @@ for (f in 1:length(files)){
     migration = startpoints
     
     #save a plot of the species migration route mapped onto continent with real observations
-    setEPS()
-    postscript(file = paste(dirpath, "/trimmed-route_", species, years[y], ".eps", sep=""), width = 7, height = 4.5)
-    BasePlotMigration(preds, yrdat, migration)
+    pdf(file = paste(dirpath, "/trimmed-route_", species, years[y], ".pdf", sep=""), width = 7, height = 4.5)
+    BasePlotMigration(preds, yrdat, migration, elev, USAborder, Mexborder, Canborder, myext)
     dev.off() 
     
     #save a plot of the species migration mapped onto an elevation raster
-    setEPS()
-    postscript(file = paste(dirpath, "/elev-route_", species, years[y], ".eps", sep=""), width = 7, height = 4.5)
-    ElevPlotMigration(preds, yrdat, migration)
+    pdf(file = paste(dirpath, "/elev-route_", species, years[y], ".pdf", sep=""), width = 7, height = 4.5)
+    ElevPlotMigration(preds, yrdat, migration, elev, USAborder, Mexborder, Canborder, myext)
     dev.off() 
     
     #get Great Circle distances traveled each day between predicted daily locations
@@ -140,8 +138,8 @@ for (f in 1:length(files)){
     speed = MigrationSpeed(dist, migration)
     
     #plot smoothed migration trajectory for the species and year
-    mig_path = PlotMigrationPath(preds, noam, species, years[y])
-    ggsave(mig_path, file=paste(dirpath, "/", "migration", species, years[y], ".pdf", sep=""))
+    #mig_path = PlotMigrationPath(preds, noam, species, years[y])
+    #ggsave(mig_path, file=paste(dirpath, "/", "migration", species, years[y], ".pdf", sep=""))
     
 #     #plot occurrences with lines showing beginning and end of migration
 #     PlotOccurrences(altmeandat, species, migration[[1]], migration[[3]])
@@ -151,6 +149,8 @@ for (f in 1:length(files)){
         #"The role of atmospheric conditions in the seasonal dynamics of North American migration flyways" - JOurnal of Biogeography
     if (species %in% c("Archilochusalexandri", "Selasphorusplatycercus", "Selasphorusrufus", "Selasphoruscalliope")) {
     
+      #FIXME: What to do with RT - use data EAST of 103 meridian? Write second loop.
+      
       #only use data west of the 103rd meridian (western flyway)
       west_yrdat = yrdat[which(yrdat$LONGITUDE <= -103),]
       
@@ -170,14 +170,12 @@ for (f in 1:length(files)){
       west_speed = MigrationSpeed(west_dist, west_migration)
       
       #save a plot of the species migration route mapped onto continent with real observations
-      setEPS()
-      postscript(file = paste(dirpath, "/WEST_trimmed-route_", species, years[y], ".eps", sep=""), width = 7, height = 4.5)
-      BasePlotMigration(west_preds, west_yrdat, west_migration)
+      pdf(file = paste(dirpath, "/WEST_trimmed-route_", species, years[y], ".eps", sep=""), width = 7, height = 4.5)
+      BasePlotMigration(west_preds, west_yrdat, west_migration, elev, USAborder, Mexborder, Canborder, myext)
       dev.off() 
       
       #save a plot of the species migration mapped onto an elevation raster
-      setEPS()
-      postscript(file = paste(dirpath, "/WEST_elev-route_", species, years[y], ".eps", sep=""), width = 7, height = 4.5)
+      pdf(file = paste(dirpath, "/WEST_elev-route_", species, years[y], ".eps", sep=""), width = 7, height = 4.5)
       ElevPlotMigration(west_preds, west_yrdat, west_migration, elev, USAborder, Mexborder, Canborder, myext)
       dev.off() 
     }
@@ -243,7 +241,7 @@ for (f in 1:length(files)){
 #---------------------------------------------------------------------------------------
 #                   compare migration rates and dates across species
 #---------------------------------------------------------------------------------------
-
+                                  #FIXME: Analyze data using flyways
 require(ggmap)
 require(ggplot2)
 require(plyr)
