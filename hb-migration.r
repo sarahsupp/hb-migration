@@ -206,7 +206,7 @@ for (f in 1:length(files)){
       
       west_pred_data = rbind(west_pred_data, west_preds)
       west_dates = c(west_migration[[1]], west_migration[[2]], west_migration[[2]], west_migration[[3]], "species" = species, year = years[y])
-      speed = c(west_speed, species, years[y])
+      west_speed = c(west_speed, species, years[y])
       west_migdates = rbind(west_migdates, west_dates)
       west_migspeed = rbind(west_migspeed, west_speed)
     }
@@ -241,7 +241,7 @@ for (f in 1:length(files)){
 #---------------------------------------------------------------------------------------
 #                   compare migration rates and dates across species
 #---------------------------------------------------------------------------------------
-                                  #FIXME: Analyze data using flyways
+                                  #FIXME: Also analyze data using flyways
 require(ggmap)
 require(ggplot2)
 require(plyr)
@@ -288,7 +288,7 @@ for (f in 1:length(rfiles)){
 }
 
 
-mfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = c("migration.*txt"), full.names=TRUE)
+mfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = c("west_migration.*txt"), full.names=TRUE)
 
 for (f in 1:length(mfiles)){
   dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
@@ -327,7 +327,7 @@ for (f in 1:length(mfiles)){
 #linear model on spring vs. fall in each year
 
 # read in predicted data
-cfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = "centroids.*.txt", full.names=TRUE)
+cfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = "west_centroids.*.txt", full.names=TRUE)
 
 for (f in 1:length(cfiles)){
   preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
@@ -403,6 +403,11 @@ for (f in 1:length(cfiles)){
   
   #----------- model to test variance in lat and lon across years, with year as a random effect
 
+  lon.gam <- gamm4(lon ~ s(jday, k=10), random = ~(1|year), data = preds_sub, gamma = 1.5)
+  print (paste("R2 for spring Longitude is:", round(summary(lon.gam$gam)$r.sq,4)))
+  lat.gam <- gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=preds_sub, gamma = 1.5)
+  print (paste("R2 for spring Latitude is:", round(summary(lat.gam$gam)$r.sq,4)))
+  
   #what is the variation in daily location across years using 2008: 2013 data?
   pred_spr_sub = pred_spr[which(pred_spr$year > 2007),]
   pred_fal_sub = pred_fal[which(pred_fal$year > 2007),]
