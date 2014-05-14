@@ -38,7 +38,7 @@ elev = raster("alt_5m_bil/alt.bil")
 # plot elev + map for extent
 myext <- c(-175, -50, 15, 75)
 plot.new()
-plot(elev, ext = myext, xlab="Longitude", ylab = "Latitude", xlim = c(-175,-50), ylim = c(15,75))
+#plot(elev, ext = myext, xlab="Longitude", ylab = "Latitude", xlim = c(-175,-50), ylim = c(15,75), col=gray(0:256/256))
 
 borders <- function(){
   plot(USAborder, ext=myext, border="black", add=TRUE)
@@ -46,7 +46,7 @@ borders <- function(){
   plot(Canborder, ext=myext, border="black", add=TRUE)
 }
 
-plot(elev, ext=myext, addfun=borders, ylab="Latitude", xlab="Longitude", xlim = c(-175,-50), ylim = c(15,75)) #col=gray(0:256/256)) 
+plot(elev, ext=myext, addfun=borders, ylab="Latitude", xlab="Longitude", xlim = c(-175,-50), ylim = c(15,75), col=gray(0:256/256)) 
 
 # read in the north america equal area hex grid map (FAL) and format for use
 # other options include a quad map (terr_4h6/nw_vector_grid.shp) or a hexmap with land only (terr_4h6/terr_4h6.shp", sep="")
@@ -59,6 +59,10 @@ plot(hexgrid, add=T)
 
 # make a North America base map
 noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = "bw")
+
+# map total birder effort 2004:2013
+eft = PlotChecklistMap(effort, hexgrid, wd)
+rm(eft)
 
 # read in eBird data
 files = list.files(pattern = "*.txt")
@@ -91,18 +95,20 @@ for (f in 1:length(files)){
   species = gsub("\"", "", species, fixed=TRUE)
   
   # set years of data to use - data after 2007 is more reliable
-  years = c(2008:2013)
+  years = c(2004:2013)
 
   #start a new directory
   dirpath = paste(figpath, "/", species, sep="")
      #dir.create(dirpath, showWarnings = TRUE, recursive = FALSE) #only need if directory did not previously exist
   
   #show how many records there are for the species across the years, write to txt file
-  yeartable = PlotRecords(humdat$YEAR, species)
+  #yeartable = PlotRecords(humdat$YEAR, species)
+  #ggsave(file=paste(dirpath, "/", "years", species, ".pdf", sep=""))
+  
   write.table(yeartable, file = paste(dirpath, "/", species,".txt",sep=""), row.names=FALSE)
   
   #save a figure of the geographic number of checklists for the species, over all the years
-  count = PlotChecklistMap(humdat, hexgrid, dirpath)
+  #count = PlotChecklistMap(humdat, hexgrid, dirpath)
   
   for (y in 1:length(years)){
     yrdat = humdat[which(humdat$YEAR == years[y]),]
@@ -142,8 +148,8 @@ for (f in 1:length(files)){
     #ggsave(mig_path, file=paste(dirpath, "/", "migration", species, years[y], ".pdf", sep=""))
     
 #     #plot occurrences with lines showing beginning and end of migration
-#     PlotOccurrences(altmeandat, species, migration[[1]], migration[[3]])
-#     ggsave(file=paste(dirpath, "/", "occurrences", species, years[y], ".pdf", sep=""))
+     PlotOccurrences(meanlocs, species, years[y], migration)
+     ggsave(file=paste(dirpath, "/", "occurrences", species, years[y], ".tiff", sep=""), dpi=600)
 
     #Subset western species by flyway data (check bias in SE US data points) Sensu La Sorte et al in press - 
         #"The role of atmospheric conditions in the seasonal dynamics of North American migration flyways" - JOurnal of Biogeography
@@ -250,6 +256,7 @@ require(Rmisc)
 require(sp)
 require(raster)
 require(gamm4)
+require(chron)
 
 setwd(wd)
 
@@ -288,7 +295,7 @@ for (f in 1:length(rfiles)){
 }
 
 
-mfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = c("west_migration.*txt"), full.names=TRUE)
+mfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = c("migration.*txt"), full.names=TRUE)
 
 for (f in 1:length(mfiles)){
   dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
@@ -327,7 +334,7 @@ for (f in 1:length(mfiles)){
 #linear model on spring vs. fall in each year
 
 # read in predicted data
-cfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = "west_centroids.*.txt", full.names=TRUE)
+cfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = "centroids.*.txt", full.names=TRUE)
 
 for (f in 1:length(cfiles)){
   preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
@@ -425,6 +432,12 @@ for (f in 1:length(cfiles)){
 
   #----------- plot the data ------------
   
+  # plot all the routes onto a single map
+  #save a plot of the species migration mapped onto an elevation raster
+  pdf(file = paste(dirpath, "/elev-route_summary_", species, ".pdf", sep=""), width = 7, height = 4.5)
+  AllMigration(preds_sub, elev, myext, species)
+  dev.off() 
+
   # compare the slope for lat and lon change in spring vs. fall
   pdf(file = paste(dirpath, "/slope_lon-lat", species, ".pdf", sep=""), width = 10, height = 4)
   
@@ -483,8 +496,8 @@ for (f in 1:length(cfiles)){
   
   ymax = max(c(migpreds$lat_se, migpreds$lon_se))
   latlon = ggplot(migpreds, aes(lon_se, lat_se)) + ggtitle(species) +
-    geom_point(aes(col = as.factor(month)), alpha = 0.5) + theme_classic() + facet_wrap(~year) +
-    theme(text = element_text(size=20)) +
+    geom_point(alpha = 0.5) + theme_classic() + facet_wrap(~year) +
+    theme(text = element_text(size=12)) +
     scale_y_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax)) +
     scale_x_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax))
   multiplot(latlon, cols = 1)
@@ -516,11 +529,11 @@ for (f in 1:length(cfiles)){
   # save plots comparing spring vs fall migration routes across the years
   pdf(file = paste(dirpath, "/AllYears_sprVSfal", species, ".pdf", sep=""), width = 10, height = 4)
   
-  sprplot = ggplot(pred_spr, aes(lon, lat, col=year, group=year)) + geom_line(size=1) + theme_classic() +
+  sprplot = ggplot(pred_spr, aes(lon, lat, col=year, group=year)) + geom_point(size=1) + theme_classic() +
     theme(text = element_text(size=20)) + ggtitle(paste("spring-", species))
   
   falplot = ggplot(pred_fal, aes(lon, lat, col=year, group=year)) + geom_point(size=1) + theme_classic() +
-    theme(text = element_text(size=20)) + ggtitle(paste("fall-", species)) + 
+    theme(text = element_text(size=20)) + ggtitle(paste("fall-", species))  
   
   multiplot(sprplot, falplot, cols = 2)
   dev.off()
