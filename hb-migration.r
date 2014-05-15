@@ -257,6 +257,7 @@ require(sp)
 require(raster)
 require(gamm4)
 require(chron)
+require(fields)
 
 setwd(wd)
 
@@ -295,7 +296,7 @@ for (f in 1:length(rfiles)){
 }
 
 
-mfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = c("migration.*txt"), full.names=TRUE)
+mfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = c("west_migration.*txt"), full.names=TRUE)
 
 for (f in 1:length(mfiles)){
   dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
@@ -334,7 +335,7 @@ for (f in 1:length(mfiles)){
 #linear model on spring vs. fall in each year
 
 # read in predicted data
-cfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = "centroids.*.txt", full.names=TRUE)
+cfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = "west_centroids.*.txt", full.names=TRUE)
 
 for (f in 1:length(cfiles)){
   preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
@@ -360,22 +361,22 @@ for (f in 1:length(cfiles)){
     fall = preds[which(preds$year == years[y] & preds$jday > fal_begin & preds$jday <= fal_end),]
     
     #get slope & r2 of spring and fall latitudinal migration
-    spr_lm = LinearMigration(spring, years[y])
-    fal_lm = LinearMigration(fall, years[y])
+    #spr_lm = LinearMigration(spring, years[y])
+    #fal_lm = LinearMigration(fall, years[y])
     
     if (y == 1){
       migpreds = between
       pred_spr = spring
       pred_fal = fall
-      lm_spr = spr_lm
-      lm_fal = fal_lm
+      #lm_spr = spr_lm
+      #lm_fal = fal_lm
     }
     else{
       migpreds = rbind(migpreds, between)
       pred_spr = rbind(pred_spr, spring)
       pred_fal = rbind(pred_fal, fall)
-      lm_spr = rbind(lm_spr, spr_lm)
-      lm_fal = rbind(lm_fal, fal_lm)
+      #lm_spr = rbind(lm_spr, spr_lm)
+      #lm_fal = rbind(lm_fal, fal_lm)
     }
   }
   
@@ -474,6 +475,24 @@ for (f in 1:length(cfiles)){
   multiplot(yrlylon, yrlylat, cols = 1)
   dev.off()
   
+# save plots comparing daily LAT ONLY and migration date across the years
+pdf(file = paste(dirpath, "/West_Years_lat", species, ".pdf", sep=""), width = 8, height = 5)
+
+latmin = ((min(preds_sub$lat)%/%5+1)*5)-5
+latmax = ((max(preds_sub$lat)%/%5+1)*5) + 5
+
+yrlylat = ggplot(preds_sub, aes(jday, lat, col=year)) + geom_point(size=1) + theme_classic() +
+  geom_vline(xintercept = c(dates_sub$spr_begin), col = "cadetblue") +
+  geom_vline(xintercept = c(dates_sub$spr_end), col = "olivedrab3") +
+  geom_vline(xintercept = c(dates_sub$fal_end), col = "orange") +
+  scale_x_continuous(breaks = seq(0, 365, by = 30)) + 
+  scale_y_continuous(breaks = seq(latmin, latmax, by = 5)) +
+  theme(text = element_text(size=12)) #+ ggtitle(species)
+
+yrlylat
+
+dev.off()
+
   #compare standard error in predicted centroids across years
   pdf(file = paste(dirpath, "/Error_selon-lat", species, ".pdf", sep=""), width = 10, height = 4)
   
@@ -539,3 +558,105 @@ for (f in 1:length(cfiles)){
   dev.off()
 }
 
+
+
+
+#--------------------------------- Make synthetic panel figure for paper draft --------------------------
+#get all the pathnames for the 5 species data, ordered by species so you can use the same iterator
+cfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = "west_centroids.*.txt", full.names=TRUE)
+mfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = c("west_migration.*txt"), full.names=TRUE)
+rtfiles = list.files(path = paste(getwd(), "/output_data/", sep = ""), 
+                     pattern = "Archilochuscolubris*.txt",full.names=TRUE)
+files = list.files(pattern = "*.txt")
+files = files[c(1,3,2,5,4)]
+cfiles = c(cfiles, rtfiles[1]) #centroid data
+mfiles = c(mfiles, rtfiles[2]) #migration data
+
+
+#Open pdf plotting window
+setEPS()
+postscript(file = paste(wd, "/Panel_figure.eps", sep=""), width = 7.5, height = 10)
+par(mfrow=c(5,3), mai=c(0.2,0.5,0.2,0.5), oma = c(0, 2, 2, 2))
+
+for (f in 1:length(files)) {
+  
+  #read in raw data
+  humdat = read.table(files[f], header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")
+  
+  names(humdat) = c("SCI_NAME", "PRIMARY_COM_NAME","YEAR", "DAY", "TIME", "GROUP_ID", "PROTOCOL_ID",
+                    "PROJ_ID", "DURATION_HRS", "EFFORT_DISTANCE_KM", "EFFORT_AREA_HA", "NUM_OBSERVERS",
+                    "LATITUDE", "LONGITUDE", "SUB_ID", "POLYFID", "MONTH")
+  
+  humdat$MONTH = factor(humdat$MONTH, levels=c(1:12), ordered=TRUE)
+  
+  #read in the centroid and migration data (by western flyway), use data for years 2008-2013
+  preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  preds_sub = preds[which(preds$year > 2007),]
+  dates_sub = dates[which(dates$year > 2007),]
+  species = preds[1,1]
+  years = c(2008:2013)
+   
+  #plot the geographic number of checklists for the species, over all the years  
+  #find the number of obs in each cell
+  t = table(as.factor(humdat$POLYFID))
+  
+  #Merge the count data for the hexes with all the hexes in the map
+  df = data.frame(POLYFID = names(t), count=as.numeric(t))
+  df2 = data.frame(POLYFID = unique(hexgrid$POLYFID))
+  df3 = merge(df2, df, all.x=TRUE)
+  
+  #matches colors with the number of observations
+  cols = data.frame(id=c(NA,sort(unique(df3$count))), cols=tim.colors(length(unique(df3$count))), stringsAsFactors=FALSE)
+  df4 = merge(df3, cols, by.x="count", by.y="id")
+  df5 = merge(hexgrid, df4, by.x="POLYFID", by.y="POLYFID", all.x=TRUE)
+  df5$cols = ifelse(is.na(df5$count), "white", df5$cols)  #hexes with no counts are white
+  df5 = df5[order(df5$POLYFID),]
+  
+  #set scale for legend
+  vls = sort(unique(round(cols$id/500)*500))
+  vls[1] = 1
+  cols2 = tim.colors(length(vls))
+  
+  #make a map with hexes colored by the number of times the species was observed in a given hex
+  plot(hexgrid, col=df5$cols, border="gray50", lwd=0.25, xlim=c(-170,-50), ylim=c(15,75), las=1)
+  axis(side=1)
+  axis(side=2, las=1)
+  mtext(side=2,line=2, species)
+  box()
+  ## legend
+  #legend("bottomleft", legend=vls, pch=22, pt.bg=cols2, pt.cex=1, cex=0.75, bty="",
+  #       col="black", title="Number of checklists", x.intersp=1, y.intersp=0.5, bg="white")
+  map("worldHires", c("usa", "canada", "mexico"), add=TRUE, cex = 0.5)
+
+  
+# plot the migration routes in the next figure
+myext <- c(-175, -50, 15, 75) #extent for maps
+preds_sub$month = as.factor(preds_sub$month)
+cols3 = data.frame(id=c(sort(unique(preds_sub$month))), cols=tim.colors(length(unique(preds_sub$month))), stringsAsFactors=FALSE)
+preds_sub = merge(preds_sub, cols3, by.x="month", by.y="id")
+#set color scale
+vls = sort(unique(round(cols3$id)))
+vls[1] = 1
+cols4 = tim.colors(length(vls))
+
+plot(elev, ext=myext, ylab="", xlab="", xlim = c(-175, -50), ylim = c(15, 75),
+     cex.lab = 1, cex.axis=1, col=gray(200:0/256))
+points(preds_sub$lon, preds_sub$lat, col=preds_sub$cols, pch=19, cex=0.25)
+#map("worldHires", c("usa", "canada", "mexico"), add=TRUE)
+#legend("bottomleft", legend=vls, pch=22, pt.bg=cols4, pt.cex=0.75, cex=0.75, bty="n",
+#       col="black", title="", x.intersp=0.5, y.intersp=0.75)  
+  
+# plot the latitudinal patterns with estimated dates of migration
+latmin = ((min(preds_sub$lat)%/%5+1)*5)-5
+latmax = ((max(preds_sub$lat)%/%5+1)*5) + 5 
+
+plot(preds_sub$jday, preds_sub$lat, pch = 19, xlab = "", ylab = "", 
+     cex.axis = 1, col = "grey20", cex = 0.5)
+  abline(v=dates_sub$spr_begin, col="cadetblue")
+  abline(v=dates_sub$spr_end, col = "olivedrab3")
+  abline(v=dates_sub$fal_end, col = "orange")
+
+}
+
+dev.off()
