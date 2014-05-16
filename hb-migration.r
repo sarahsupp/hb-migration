@@ -154,9 +154,7 @@ for (f in 1:length(files)){
     #Subset western species by flyway data (check bias in SE US data points) Sensu La Sorte et al in press - 
         #"The role of atmospheric conditions in the seasonal dynamics of North American migration flyways" - JOurnal of Biogeography
     if (species %in% c("Archilochusalexandri", "Selasphorusplatycercus", "Selasphorusrufus", "Selasphoruscalliope")) {
-    
-      #FIXME: What to do with RT - use data EAST of 103 meridian? Write second loop.
-      
+          
       #only use data west of the 103rd meridian (western flyway)
       west_yrdat = yrdat[which(yrdat$LONGITUDE <= -103),]
       
@@ -254,7 +252,7 @@ for (f in 1:length(files)){
 #---------------------------------------------------------------------------------------
 #                   compare migration rates and dates across species
 #---------------------------------------------------------------------------------------
-                                  #FIXME: Also analyze data using flyways
+                                  #FIXME: Also analyze data using flyways, break into smaller chunks
 require(ggmap)
 require(ggplot2)
 require(plyr)
@@ -268,72 +266,83 @@ require(fields)
 
 setwd(wd)
 
-# read in eBird data for migration speed
+# read in eBird data for migration speed, dates, and predicted path (should be in same order for species)
 rfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = "west_speed", full.names=TRUE)
+mfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = c("west_migration.*txt"), full.names=TRUE)
+cfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = "west_centroids.*.txt", full.names=TRUE)
 
+
+#--------------------------- generate figures and table data for migration speed
+#--------------------------- boxplots of migration speed for spring vs. fall for each species
+rate = data.frame("spr" =1, "fal" = 1, "species" = "none", "year" = 1)
 for (f in 1:length(rfiles)){
-  rate = read.table(rfiles[f], header=TRUE, sep=" ", fill=TRUE, comment.char="")
-  species = rate$species[1]
-  print(species)
+  sp_rate = read.table(rfiles[f], header=TRUE, sep=" ", fill=TRUE, comment.char="")
+  rate = rbind(rate, sp_rate)
   
-  dirpath = paste(figpath, "/", species, sep="")
-  
-  rate_sub = rate[which(rate$year > 2007),]
-  
-  #plot the variance in estimated migration speed for all and for recent years
-  pdf(file = paste(figpath, "/speed_", species, ".pdf", sep=""), width = 10, height = 4)
-  
-  r = melt(rate[,c(1,2,4)], id.vars = "year")
-  names(r) = c("year", "season", "rate")
-  bxp_speed = ggplot(r, aes(season, rate, fill=season)) + geom_boxplot() + theme_classic() + 
-    scale_fill_manual(values=c("cadetblue", "orange")) + ylab("km/day")
-  
-  r_sub = r[which(r$year>2007),]
-  bxp_speed_sub = ggplot(r_sub, aes(season, rate, fill=season)) + geom_boxplot() + theme_classic() + 
-    scale_fill_manual(values=c("cadetblue", "orange")) + ylab("km/day")
-  
-  multiplot(bxp_speed, bxp_speed_sub, cols = 2)
-  dev.off()
-  
-  #print the mean and standard deviation of speed
-  print(paste("spring sd:", sd(rate_sub$spr)))
-  print(paste("spring mean:", mean(rate_sub$spr)))
-  print(paste("fall sd:", sd(rate_sub$fal)))
-  print(paste("fall mean:", mean(rate_sub$fal)))
+  #print the mean and standard deviation of speed for each species
+  print(sp_rate$species[1])
+  print(paste("spring sd:", sd(sp_rate$spr)))
+  print(paste("spring mean:", mean(sp_rate$spr)))
+  print(paste("fall sd:", sd(sp_rate$fal)))
+  print(paste("fall mean:", mean(sp_rate$fal)))
+  print("")
 }
 
+rate = subset(rate, year > 2007) #subset to better-sampled years
+r = melt(rate[,c(1,2,3,4)], id.vars = c("year", "species"))
+names(r) = c("year", "species", "season", "rate")
 
-mfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = c("west_migration.*txt"), full.names=TRUE)
+#plot the variance in estimated migration speed for all and for recent years
+pdf(file = paste(figpath, "/speed_all_species.pdf", sep=""), width = 6, height = 5)
+  
+bxp_speed = ggplot(r, aes(season, rate, fill=season)) + geom_boxplot() + theme_classic() + 
+    scale_fill_manual(values=c("cadetblue", "orange"), guide="none") + ylab("km/day") + facet_wrap(~species)
+  
+multiplot(bxp_speed, cols = 1)
+dev.off() 
+
+
+#--------------------------generate figures and table data for migration dates
+# ------------------------ Boxplots of the number of days +/- mean migration date, by species
+dates = data.frame("spr_begin" = 1, "mid" = 1, "fal_end" = 1, "species" = "none", "year" = 1)
 
 for (f in 1:length(mfiles)){
-  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
-  dates_sub = dates[which(dates$year > 2007),]
-  species = dates$species[1]
-  print(species)
+  sp_dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+
+  #Print species table data
+  print(sp_dates$species[1])
+  print(paste("spring begin median:", median(sp_dates$spr_begin)))
+  print(paste("spring begin sd:", sd(sp_dates$spr_begin)))
+  print(paste("lat peak median:", median(sp_dates$spr_end)))
+  print(paste("lat peak sd:", sd(sp_dates$spr_end)))
+  print(paste("fall end median:", median(sp_dates$fal_end)))
+  print(paste("fall end sd:", sd(sp_dates$fal_end)))
+  print("")
   
-  #plot the variance in estimated migration begin and end for all and for recent years
-  pdf(file = paste(figpath, "/migdates_", species, ".pdf", sep=""), width = 10, height = 4)
+  #standardize dates, to get number of days +/- mean
+  sp_dates = subset(sp_dates, year > 2007)
+  sp_dates$spr_begin = sp_dates$spr_begin - mean(sp_dates$spr_begin)
+  sp_dates$mid = sp_dates$spr_end - mean(sp_dates$spr_end)
+  sp_dates$fal_end = sp_dates$fal_end - mean(sp_dates$fal_end)
   
-  d = melt(dates[,c(1,2,4,6)], id.vars = "year")
-  names(d) = c("year", "season", "date")
-  d_sub = d[which(d$year>2007),]  
+  dates = rbind(dates, sp_dates[,c(1,7,4,5,6)])
+}
+
   
-  bxp_date = ggplot(d, aes(season, date, fill=season)) + geom_boxplot() + theme_classic() + 
-    scale_fill_manual(values=c("cadetblue", "olivedrab3", "orange"))
+d = melt(dates, id.vars = c("species", "year"))
+names(d) = c("species", "year", "season", "date")
   
-  bxp_date_sub = ggplot(d_sub, aes(season, date, fill=season)) + geom_boxplot() + theme_classic() + 
-    scale_fill_manual(values=c("cadetblue", "olivedrab3", "orange"))
+#plot the variance in estimated migration begin and end for all and for recent years
+pdf(file = paste(figpath, "/migdates_all_species.pdf", sep=""), width = 10, height = 4)
   
-  multiplot(bxp_date, bxp_date_sub, cols = 2)
+bxp_date = ggplot(d, aes(season, date, fill=season)) + geom_boxplot() + theme_classic() + 
+  scale_fill_manual(values=c("cadetblue", "olivedrab3", "orange"), guide = "none") + 
+  ylab("days from mean date") + theme(text = element_text(size=12)) + facet_wrap(~species)
+  
+  multiplot(bxp_date, cols = 1)
   dev.off()
   
-  print(paste("spring begin median:", median(dates_sub$spr_begin)))
-  print(paste("spring begin sd:", sd(dates_sub$spr_begin)))
-  print(paste("lat peak median:", median(dates_sub$spr_end)))
-  print(paste("lat peak sd:", sd(dates_sub$spr_end)))
-  print(paste("fall end median:", median(dates_sub$fal_end)))
-  print(paste("fall end sd:", sd(dates_sub$fal_end)))
-  print("")
+
 }
 
 
@@ -341,8 +350,6 @@ for (f in 1:length(mfiles)){
 #compare 2008-2013, test for impact of 2004-2007 years on overall distribution
 #linear model on spring vs. fall in each year
 
-# read in predicted data
-cfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = "west_centroids.*.txt", full.names=TRUE)
 
 for (f in 1:length(cfiles)){
   preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
