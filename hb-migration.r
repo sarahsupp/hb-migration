@@ -248,11 +248,9 @@ for (f in 1:length(files)){
 }
 
 
-
 #---------------------------------------------------------------------------------------
 #                   compare migration rates and dates across species
 #---------------------------------------------------------------------------------------
-                                  #FIXME: Also analyze data using flyways, break into smaller chunks
 require(ggmap)
 require(ggplot2)
 require(plyr)
@@ -272,7 +270,100 @@ mfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = c(
 cfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = "west_centroids.*.txt", full.names=TRUE)
 
 
-#--------------------------- generate figures and table data for migration speed
+#------------------------------------------ ANALYZE THE DATA -------------------------------------
+
+
+#-------------------- 
+#       model to test variance in lat and lon across years, with year as a random effect
+#-------------------- get gamm4 results using all years (2004-2013) and later years (2008-2013)
+for (f in 1:length(cfiles)){
+  preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  preds_sub = preds[which(preds$year > 2007),]
+  print(preds[1,1]) #species name
+  
+  #grab only the predicted daily centroids from between the migration dates
+  for (y in 1:length(years)){
+    between = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday <= dates[y,4]),]
+    spring = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday < dates[y,2]),]
+    fall = preds[which(preds$year == years[y] & preds$jday > dates[y,2] & preds$jday <= dates[y,4]),]
+    
+    if (y == 1){
+      migpreds = between
+      pred_spr = spring
+      pred_fal = fall
+    }
+    else{
+      migpreds = rbind(migpreds, between)
+      pred_spr = rbind(pred_spr, spring)
+      pred_fal = rbind(pred_fal, fall)
+    }
+  }
+  
+  # subset the seasonal data by the recent years (2008-2013)
+  pred_spr_sub = pred_spr[which(pred_spr$year > 2007),]
+  pred_fal_sub = pred_fal[which(pred_fal$year > 2007),]
+  
+  lon_gam = gamm4(lon ~ s(jday, k=10), random = ~(1|year), data = preds_sub, gamma = 1.5)
+  print (paste("R2 for spring Longitude is:", round(summary(lon_gam$gam)$r.sq,4)))
+  lat_gam = gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=preds_sub, gamma = 1.5)
+  print (paste("R2 for spring Latitude is:", round(summary(lat_gam$gam)$r.sq,4)))
+  
+  lon_gam_spr = gamm4(lon ~ s(jday, k=10), random = ~(1|year), data=pred_spr_sub, gamma = 1.5)
+  print (paste("R2 for spring Longitude is:", round(summary(lon_gam_spr$gam)$r.sq,4)))
+  lat_gam_spr = gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=pred_spr_sub, gamma = 1.5)
+  print (paste("R2 for spring Latitude is:", round(summary(lat_gam_spr$gam)$r.sq,4)))
+  
+  lon_gam_fal = gamm4(lon ~ s(jday, k=10), random = ~(1|year), data=pred_fal_sub, gamma = 1.5)
+  print (paste("R2 for fall Longitude is:", round(summary(lon_gam_fal$gam)$r.sq,4)))
+  lat_gam_fal = gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=pred_fal_sub, gamma = 1.5)
+  print (paste("R2 for fall Latitude is:", round(summary(lat_gam_fal$gam)$r.sq,4)))
+}
+
+
+#--------------------
+#       get linear model results using years (2008-2013) and plot as barplot
+#-------------------- 
+lm_mig = data.frame("species"="Archilochusalexandri", "season" = "spring", "year" = 1, "lat_slope" = 1, "lat_r2" = 1, "lon_slope" = 1, "lon_r2" = 1)
+
+for (f in 1:length(cfiles)){
+  preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  species = preds[1,1] #species name
+  years = c(2008:2013)
+  
+  #grab only the predicted daily centroids from between the migration dates
+  for (y in 1:length(years)){
+    between = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday <= dates[y,4]),]
+    spring = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday < dates[y,2]),]
+    fall = preds[which(preds$year == years[y] & preds$jday > dates[y,2] & preds$jday <= dates[y,4]),]
+    
+    #get slope & r2 of spring and fall latitudinal migration
+    spr_lm = LinearMigration(spring, years[y])
+    spr_lm = data.frame("species" = species, "season"= "spring", spr_lm)
+    fal_lm = LinearMigration(fall, years[y])
+    fal_lm = data.frame("species" = species, "season"= "fall", fal_lm)
+    lm_mig = rbind(lm_mig, spr_lm)
+    lm_mig = rbind(lm_mig, fal_lm)
+  }
+}
+lm_mig = lm_mig[-1,] #delete first row of dummy data
+
+#plot the variance in estimated migration begin and end for all and for recent years
+pdf(file = paste(figpath, "/linearslope_all_species.pdf", sep=""), width = 6, height = 5)
+
+bxp_rate = ggplot(lm_mig, aes(season, abs(lat_slope), fill=season)) + geom_boxplot() + theme_classic() + 
+  scale_fill_manual(values=c("cadetblue", "orange"), guide = "none") + 
+  ylab("linear slope of seasonal migration") + theme(text = element_text(size=12)) + 
+  scale_y_continuous(breaks = seq(0, 0.40, by = 0.10), limits = c(0,0.40)) + theme(text = element_text(size=12)) +
+  facet_wrap(~species)
+
+multiplot(bxp_rate, cols = 1)
+dev.off()
+
+
+#--------------------------- 
+#       generate figures and table data for migration speed
 #--------------------------- boxplots of migration speed for spring vs. fall for each species
 rate = data.frame("spr" =1, "fal" = 1, "species" = "none", "year" = 1)
 for (f in 1:length(rfiles)){
@@ -302,7 +393,8 @@ multiplot(bxp_speed, cols = 1)
 dev.off() 
 
 
-#--------------------------generate figures and table data for migration dates
+#--------------------------
+#         generate figures and table data for migration dates
 # ------------------------ Boxplots of the number of days +/- mean migration date, by species
 dates = data.frame("spr_begin" = 1, "mid" = 1, "fal_end" = 1, "species" = "none", "year" = 1)
 
@@ -343,140 +435,31 @@ bxp_date = ggplot(d, aes(season, date, fill=season)) + geom_boxplot() + theme_cl
   dev.off()
 
 
-#-------------------- model to test variance in lat and lon across years, with year as a random effect
-#-------------------- get gamm4 results using all years (2004-2013) and later years (2008-2013)
+#------------------------------------------ PLOT THE DATA -------------------------------------
+
+
+#---------------------------------
+#       plot standard deviation in the daily centroid estimates across years 2008-2013
+#---------------------------------
 for (f in 1:length(cfiles)){
   preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
   dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
-  preds_sub = preds[which(preds$year > 2007),]
-  print(preds[1,1]) #species name
-  
-  #grab only the predicted daily centroids from between the migration dates
-  for (y in 1:length(years)){
-    between = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday <= dates[y,4]),]
-    spring = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday < dates[y,2]),]
-    fall = preds[which(preds$year == years[y] & preds$jday > dates[y,2] & preds$jday <= dates[y,4]),]
-    
-    if (y == 1){
-      migpreds = between
-      pred_spr = spring
-      pred_fal = fall
-    }
-    else{
-      migpreds = rbind(migpreds, between)
-      pred_spr = rbind(pred_spr, spring)
-      pred_fal = rbind(pred_fal, fall)
-    }
-  }
-  
-  # subset the seasonal data by the recent years (2008-2013)
-  pred_spr_sub = pred_spr[which(pred_spr$year > 2007),]
-  pred_fal_sub = pred_fal[which(pred_fal$year > 2007),]
-  
-  lon_gam = gamm4(lon ~ s(jday, k=10), random = ~(1|year), data = preds_sub, gamma = 1.5)
-  print (paste("R2 for spring Longitude is:", round(summary(lon_gam$gam)$r.sq,4)))
-  lat_gam = gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=preds_sub, gamma = 1.5)
-  print (paste("R2 for spring Latitude is:", round(summary(lat_gam$gam)$r.sq,4)))
-
-  lon_gam_spr = gamm4(lon ~ s(jday, k=10), random = ~(1|year), data=pred_spr_sub, gamma = 1.5)
-  print (paste("R2 for spring Longitude is:", round(summary(lon_gam_spr$gam)$r.sq,4)))
-  lat_gam_spr = gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=pred_spr_sub, gamma = 1.5)
-  print (paste("R2 for spring Latitude is:", round(summary(lat_gam_spr$gam)$r.sq,4)))
-
-  lon_gam_fal = gamm4(lon ~ s(jday, k=10), random = ~(1|year), data=pred_fal_sub, gamma = 1.5)
-  print (paste("R2 for fall Longitude is:", round(summary(lon_gam_fal$gam)$r.sq,4)))
-  lat_gam_fal = gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=pred_fal_sub, gamma = 1.5)
-  print (paste("R2 for fall Latitude is:", round(summary(lat_gam_fal$gam)$r.sq,4)))
-}
-
-
-#-------------------- model to test variance in lat and lon across years, with year as a random effect
-#-------------------- get linear model results using years (2008-2013) and plot as barplot
-lm_mig = data.frame("species"="Archilochusalexandri", "season" = "spring", "year" = 1, "lat_slope" = 1, "lat_r2" = 1, "lon_slope" = 1, "lon_r2" = 1)
-
-for (f in 1:length(cfiles)){
-  preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
-  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
-  preds_sub = preds[which(preds$year > 2007),]
   species = preds[1,1] #species name
   years = c(2008:2013)
   
   #grab only the predicted daily centroids from between the migration dates
   for (y in 1:length(years)){
     between = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday <= dates[y,4]),]
-    spring = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday < dates[y,2]),]
-    fall = preds[which(preds$year == years[y] & preds$jday > dates[y,2] & preds$jday <= dates[y,4]),]
-    
-    #get slope & r2 of spring and fall latitudinal migration
-    spr_lm = LinearMigration(spring, years[y])
-      spr_lm = data.frame("species" = species, "season"= "spring", spr_lm)
-    fal_lm = LinearMigration(fall, years[y])
-      fal_lm = data.frame("species" = species, "season"= "fall", fal_lm)
-    lm_mig = rbind(lm_mig, spr_lm)
-    lm_mig = rbind(lm_mig, fal_lm)
-  }
-}
-lm_mig = lm_mig[-1,] #delete first row of dummy data
 
-#plot the variance in estimated migration begin and end for all and for recent years
-pdf(file = paste(figpath, "/linearslope_all_species.pdf", sep=""), width = 6, height = 5)
-
-bxp_rate = ggplot(lm_mig, aes(season, abs(lat_slope), fill=season)) + geom_boxplot() + theme_classic() + 
-  scale_fill_manual(values=c("cadetblue", "orange"), guide = "none") + 
-  ylab("linear slope of seasonal migration") + theme(text = element_text(size=12)) + 
- scale_y_continuous(breaks = seq(0, 0.40, by = 0.10), limits = c(0,0.40)) + theme(text = element_text(size=12)) +
-  facet_wrap(~species)
-
-multiplot(bxp_rate, cols = 1)
-dev.off()
-
-
-#---------------------------------
-#read in all pred data, then re-analyze based on se results. 
-#compare 2008-2013, test for impact of 2004-2007 years on overall distribution
-#linear model on spring vs. fall in each year
-for (f in 1:length(cfiles)){
-  preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
-  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
-  species = preds[1,1]
-  years = c(2004:2013)
-  preds_sub = preds[which(preds$year > 2007),]
-  dates_sub = dates[which(dates$year > 2007),]
-  
-  #set species-specific directory path for figures
-  dirpath = paste(figpath, "/", species, sep="")
-  
-  #grab only the predicted daily centroids from between the migration dates
-  for (y in 1:length(years)){
-    spr_begin = dates[y,1]
-    spr_end = dates[y,2]
-    fal_begin = dates[y,2]
-    fal_end = dates[y,4]
-    
-    between = preds[which(preds$year == years[y] & preds$jday >= spr_begin & preds$jday <= fal_end),]
-    #split spring and fall on estimated breeding bounds
-    spring = preds[which(preds$year == years[y] & preds$jday >= spr_begin & preds$jday < spr_end),]
-    fall = preds[which(preds$year == years[y] & preds$jday > fal_begin & preds$jday <= fal_end),]
-    
-
-    
     if (y == 1){
       migpreds = between
-      pred_spr = spring
-      pred_fal = fall
-      #lm_spr = spr_lm
-      #lm_fal = fal_lm
     }
     else{
       migpreds = rbind(migpreds, between)
-      pred_spr = rbind(pred_spr, spring)
-      pred_fal = rbind(pred_fal, fall)
-      #lm_spr = rbind(lm_spr, spr_lm)
-      #lm_fal = rbind(lm_fal, fal_lm)
     }
   }
   
-  #compare location across the years using mean and sd for ALL years
+  #compare location across the years using mean and sd for 2008:2013
   jdays = sort(unique(migpreds$jday))
   patherr = data.frame("jday"=1,"meanlat"=1, "sdlat"=1, "meanlon"=1, "sdlon"=1)
   outcount = 1
@@ -489,164 +472,166 @@ for (f in 1:length(cfiles)){
     patherr[outcount,] = c(j, meanlat, sdlat, meanlon, sdlon)
     outcount = outcount + 1
   }
-  
-  #compare location across the years using mean and sd for 2008:2013
-  migpreds_sub = migpreds[which(migpreds$year > 2007),]
-  jdays = sort(unique(migpreds_sub$jday))
-  patherr_sub = data.frame("jday"=1,"meanlat"=1, "sdlat"=1, "meanlon"=1, "sdlon"=1)
-  outcount = 1
-  for (j in min(jdays):max(jdays)){
-    tmp = migpreds_sub[which(migpreds_sub$jday == j),]
-    meanlat = mean(tmp$lat)
-    sdlat = sd(tmp$lat)
-    meanlon = mean(tmp$lon)
-    sdlon = sd(tmp$lon)
-    patherr_sub[outcount,] = c(j, meanlat, sdlat, meanlon, sdlon)
-    outcount = outcount + 1
-  }
-
-  #----------- plot the data ------------
-  
-  # plot all the routes onto a single map
-  #save a plot of the species migration mapped onto an elevation raster
-  pdf(file = paste(dirpath, "/elev-route_summary_", species, ".pdf", sep=""), width = 7, height = 4.5)
-  AllMigration(preds_sub, elev, myext, species)
-  dev.off() 
-
-  # compare the slope for lat and lon change in spring vs. fall
-  pdf(file = paste(dirpath, "/slope_lon-lat", species, ".pdf", sep=""), width = 10, height = 4)
-  
-  lat_compare = ggplot(lm_spr, aes(year, abs(lat_slope))) +  geom_line() +
-    geom_point(col="cadetblue", aes(size=lat_r2)) + geom_line(data=lm_fal,aes(year, abs(lat_slope))) + 
-    geom_point(data=lm_fal, aes(year, abs(lat_slope), size=lat_r2), col="orange") + 
-    theme_classic() + ylab("slope") + ggtitle("Latitude spring vs. fall")
-  
-  lon_compare = ggplot(lm_spr, aes(year, abs(lon_slope))) +  geom_line() +
-    geom_point(col="cadetblue", aes(size=lon_r2)) + geom_line(data=lm_fal,aes(year, abs(lon_slope))) + 
-    geom_point(data=lm_fal, aes(year, abs(lon_slope), size=lon_r2), col="orange") + 
-    theme_classic() + ylab("slope") + ggtitle("Longitude spring vs. fall")
-  
-  multiplot(lat_compare, lon_compare, cols = 2)
-  dev.off()
-  
-  # save plots comparing daily lat and long and migration date across the years
-  pdf(file = paste(dirpath, "/AllYears_lon-lat", species, ".pdf", sep=""), width = 8, height = 10)
-  
-  yrlylon = ggplot(preds_sub, aes(jday, lon, col=year)) + geom_point(size=1) + theme_classic() +
-    geom_vline(xintercept = c(dates_sub$spr_begin), col = "cadetblue") +
-    geom_vline(xintercept = c(dates_sub$spr_end), col = "olivedrab3") +
-    geom_vline(xintercept = c(dates_sub$fal_end), col = "orange") +
-    scale_x_continuous(breaks = seq(0, 365, by = 30)) + 
-    theme(text = element_text(size=20)) + ggtitle(species)
-  
-  yrlylat = ggplot(preds_sub, aes(jday, lat, col=year)) + geom_point(size=1) + theme_classic() +
-    geom_vline(xintercept = c(dates_sub$spr_begin), col = "cadetblue") +
-    geom_vline(xintercept = c(dates_sub$spr_end), col = "olivedrab3") +
-    geom_vline(xintercept = c(dates_sub$fal_end), col = "orange") +
-    scale_x_continuous(breaks = seq(0, 365, by = 30)) + 
-    theme(text = element_text(size=20)) + ggtitle(species)
-  
-  multiplot(yrlylon, yrlylat, cols = 1)
-  dev.off()
-  
-# save plots comparing daily LAT ONLY and migration date across the years
-pdf(file = paste(dirpath, "/West_Years_lat", species, ".pdf", sep=""), width = 8, height = 5)
-
-latmin = ((min(preds_sub$lat)%/%5+1)*5)-5
-latmax = ((max(preds_sub$lat)%/%5+1)*5) + 5
-
-yrlylat = ggplot(preds_sub, aes(jday, lat, col=year)) + geom_point(size=1) + theme_classic() +
-  geom_vline(xintercept = c(dates_sub$spr_begin), col = "cadetblue") +
-  geom_vline(xintercept = c(dates_sub$spr_end), col = "olivedrab3") +
-  geom_vline(xintercept = c(dates_sub$fal_end), col = "orange") +
-  scale_x_continuous(breaks = seq(0, 365, by = 30)) + 
-  scale_y_continuous(breaks = seq(latmin, latmax, by = 5)) +
-  theme(text = element_text(size=12)) #+ ggtitle(species)
-
-yrlylat
-
-dev.off()
-
-  #compare standard error in predicted centroids across years
-  pdf(file = paste(dirpath, "/Error_selon-lat", species, ".pdf", sep=""), width = 10, height = 4)
-  
-  ymax = max(c(migpreds$lat_se, migpreds$lon_se)) 
-  lat = ggplot(migpreds, aes(jday, lat_se, col=as.factor(year))) + geom_point(size=1) + theme_classic() +
-    geom_vline(xintercept = c(dates$spr_begin), col = "cadetblue") +
-    geom_vline(xintercept = c(dates$fal_end), col = "orange") + ggtitle(paste(species, "Latitude")) +
-    scale_y_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax))
-  
-  lon = ggplot(migpreds, aes(jday, lon_se, col=as.factor(year))) + geom_point(size=1) + theme_classic() +
-    geom_vline(xintercept = c(dates$spr_begin), col = "cadetblue") +
-    geom_vline(xintercept = c(dates$fal_end), col = "orange") + ggtitle(paste(species, "Longitude")) +
-    scale_y_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax))
-  
-  multiplot(lat, lon, cols = 2)
-  dev.off()
-  
-  # plot the relationship between lon se and lat se for each year
-  pdf(file = paste(dirpath, "/Error_corlon-lat", species, ".pdf", sep=""), width = 10, height = 7)
-  
-  ymax = max(c(migpreds$lat_se, migpreds$lon_se))
-  latlon = ggplot(migpreds, aes(lon_se, lat_se)) + ggtitle(species) +
-    geom_point(alpha = 0.5) + theme_classic() + facet_wrap(~year) +
-    theme(text = element_text(size=12)) +
-    scale_y_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax)) +
-    scale_x_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax))
-  multiplot(latlon, cols = 1)
-  dev.off()
-  
+    
   # plot the standard deviation in daily lat and lon across the 10 years, and across 6 most recent years
-  pdf(file = paste(dirpath, "/ErrorinDailyLocs", species, ".pdf", sep=""), width = 10, height = 8)
+  pdf(file = paste(dirpath, "/ErrorinDailyLocs", species, ".pdf", sep=""), width = 5, height = 8)
   
   ymax = max(c(patherr$sdlat, patherr$sdlon),na.rm=TRUE) 
-  sdlocs = ggplot(patherr, aes(jday, sdlat)) + geom_point(size=1) + theme_classic() + ggtitle(paste(species, "sd in daily locs, 04-13")) +
+  sdlocs = ggplot(patherr, aes(jday, sdlat)) + geom_point(size=1) + theme_classic() + 
+    ggtitle(paste(species, "sd in daily locs", min(years), "-", max(years))) +
     scale_y_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax)) + 
     scale_x_continuous(breaks = seq(0, 366, by = 25), limits = c(0, 366)) + 
     geom_point(aes(jday, sdlon), col = "indianred", size=1) + ylab("stdev daily lat (black) and lon (red)")
-  sdlocs_sub = ggplot(patherr_sub, aes(jday, sdlat)) + geom_point(size=1) + theme_classic() + ggtitle(paste(species, "sd in daily locs, 08-13")) +
-    scale_y_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax)) + 
-    scale_x_continuous(breaks = seq(0, 366, by = 25), limits = c(0, 366)) + 
-    geom_point(aes(jday, sdlon), col = "indianred", size=1) + ylab("stdev daily lat (black) and lon (red)")
-  
+
   lonlatday = ggplot(patherr, aes(sdlon, sdlat, col=jday)) + geom_point(size=1) + theme_classic() +
     scale_y_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax))  +
     scale_x_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax)) 
-  lonlatday_sub = ggplot(patherr_sub, aes(sdlon, sdlat, col=jday)) + geom_point(size=1) + theme_classic() +
-    scale_y_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax))  +
-    scale_x_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax)) 
-  
-  multiplot(sdlocs, lonlatday, sdlocs_sub, lonlatday_sub, cols = 2)
-  dev.off()
-  
-  # save plots comparing spring vs fall migration routes across the years
-  pdf(file = paste(dirpath, "/AllYears_sprVSfal", species, ".pdf", sep=""), width = 10, height = 4)
-  
-  sprplot = ggplot(pred_spr, aes(lon, lat, col=year, group=year)) + geom_point(size=1) + theme_classic() +
-    theme(text = element_text(size=20)) + ggtitle(paste("spring-", species))
-  
-  falplot = ggplot(pred_fal, aes(lon, lat, col=year, group=year)) + geom_point(size=1) + theme_classic() +
-    theme(text = element_text(size=20)) + ggtitle(paste("fall-", species))  
-  
-  multiplot(sprplot, falplot, cols = 2)
+ 
+  multiplot(sdlocs, lonlatday, cols = 1)
   dev.off()
 }
+  
+  
+#---------------------------------
+#       plot all migration routes for a species on a map with elevation raster
+#---------------------------------
+pdf(file = paste(figpath, "/elev-route_summary_all_species.pdf", sep=""), width = 7, height = 4.5)
+
+for (f in 1:length(cfiles)){
+  preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  preds = subset(preds, year > 2007)
+  elev = raster("alt_5m_bil/alt.bil")  #elevation layers
+  myext = c(-175, -50, 15, 75) #set extent to North America
+  species = preds[1,1] #species name
+  
+  AllMigration(preds, elev, myext, species)
+}
+dev.off() 
+
+
+#---------------------------------
+#       plot standard error in predicted centroids across years
+#---------------------------------
+pdf(file = paste(figpath, "/se_corlon-lat_all_species.pdf", sep=""), width = 10, height = 7)
+
+for (f in 1:length(cfiles)){
+  preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  species = preds[1,1] #species name
+  years = c(2004:2013)
+
+  #grab only the predicted daily centroids from between the migration dates
+  for (y in 1:length(years)){
+    between = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday <= dates[y,4]),]
+  
+    if (y == 1){ migpreds = between }
+    else{ migpreds = rbind(migpreds, between) }
+  }
+  
+  ymax = max(c(migpreds$lat_se, migpreds$lon_se))
+  latlon = ggplot(migpreds, aes(lon_se, lat_se)) + ggtitle(species) +
+  geom_point(alpha = 0.5) + theme_classic() + facet_wrap(~year) +
+  theme(text = element_text(size=12)) +
+  scale_y_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax)) +
+  scale_x_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax))
+  multiplot(latlon, cols = 1)
+}
+dev.off()
+
+
+#---------------------------------
+#       plot standard error in predicted centroids across years, by julian date
+#---------------------------------
+pdf(file = paste(figpath, "/error_se-latlon_all_species.pdf", sep=""), width = 10, height = 4)
+
+for (f in 1:length(cfiles)){
+  preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  dates = subset(dates, year > 2007)
+  species = preds[1,1] #species name
+  years = c(2008:2013)
+  
+  #grab only the predicted daily centroids from between the migration dates
+  for (y in 1:length(years)){
+    between = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday <= dates[y,4]),]
+    
+    if (y == 1){ migpreds = between }
+    else{ migpreds = rbind(migpreds, between) }
+  }
+
+  ymax = max(c(migpreds$lat_se, migpreds$lon_se)) 
+  lat = ggplot(migpreds, aes(jday, lat_se, col=as.factor(year))) + geom_point(size=1) + theme_classic() +
+  geom_vline(xintercept = c(dates$spr_begin), col = "cadetblue") +
+  geom_vline(xintercept = c(dates$fal_end), col = "orange") + ggtitle(species) +
+  xlab("Julian Day") + ylab("latitude centroid standard error") +
+  scale_y_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax))+
+  theme(text = element_text(size=12))
+
+  lon = ggplot(migpreds, aes(jday, lon_se, col=as.factor(year))) + geom_point(size=1) + theme_classic() +
+  geom_vline(xintercept = c(dates$spr_begin), col = "cadetblue") +
+  geom_vline(xintercept = c(dates$fal_end), col = "orange") + ggtitle(species) +
+  xlab("Julian Day") + ylab("longitude centroid standard error") +
+  scale_y_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax))+
+  theme(text = element_text(size=12))
+
+  multiplot(lat, lon, cols = 2)
+}
+dev.off()
+
+
+#---------------------------------
+#       plot predicted latitude and longitude as distribution across the years for all species
+#---------------------------------
+# save plots comparing daily lat and long and migration date across the years
+pdf(file = paste(figpath, "/AllYears_lon-lat_all_species.pdf", sep=""), width = 8, height = 5)
+
+for (f in 1:length(cfiles)){
+  preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  preds = subset(preds, year > 2007)
+  dates = subset(dates, year > 2007)
+  species = preds[1,1] #species name
+  
+  yrlylat = ggplot(preds, aes(jday, lat, col=year)) + geom_point(size=1) + theme_classic() +
+    geom_vline(xintercept = c(dates$spr_begin), col = "cadetblue") +
+    geom_vline(xintercept = c(dates$spr_end), col = "olivedrab3") +
+    geom_vline(xintercept = c(dates$fal_end), col = "orange") +
+    scale_x_continuous(breaks = seq(0, 365, by = 30)) + 
+    theme(text = element_text(size=20)) + ggtitle(species)
+  
+  yrlylon = ggplot(preds, aes(jday, lon, col=year)) + geom_point(size=1) + theme_classic() +
+    geom_vline(xintercept = c(dates$spr_begin), col = "cadetblue") +
+    geom_vline(xintercept = c(dates$spr_end), col = "olivedrab3") +
+    geom_vline(xintercept = c(dates$fal_end), col = "orange") +
+    scale_x_continuous(breaks = seq(0, 365, by = 30)) + 
+    theme(text = element_text(size=20))
+
+  multiplot(yrlylat, cols = 1)
+  multiplot(yrlylon, cols = 1)
+}
+dev.off()
 
 
 
 
-#--------------------------------- Make synthetic panel figure for paper draft --------------------------
-#get all the pathnames for the 5 species data, ordered by species so you can use the same iterator
-cfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = "west_centroids.*.txt", full.names=TRUE)
-mfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = c("west_migration.*txt"), full.names=TRUE)
-rtfiles = list.files(path = paste(getwd(), "/output_data/", sep = ""), 
-                     pattern = "Archilochuscolubris*.txt",full.names=TRUE)
-files = list.files(pattern = "*.txt")
-files = files[c(1,3,2,5,4)]
-cfiles = c(cfiles, rtfiles[1]) #centroid data
-mfiles = c(mfiles, rtfiles[2]) #migration data
+#read in all pred data, then re-analyze based on se results. 
+#compare 2008-2013, test for impact of 2004-2007 years on overall distribution
+#linear model on spring vs. fall in each year
+for (f in 1:length(cfiles)){
+  preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  species = preds[1,1]
+  years = c(2004:2013)
+  preds_sub = preds[which(preds$year > 2007),]
+  dates_sub = dates[which(dates$year > 2007),]
+  
+  #set species-specific directory path for figures
+  dirpath = paste(figpath, "/", species, sep=""
 
 
+#-----------------------------------------------------------
+#       Make synthetic panel figure for paper draft 
+#-----------------------------------------------------------
 #Open pdf plotting window
 setEPS()
 postscript(file = paste(wd, "/Panel_figure.eps", sep=""), width = 7.5, height = 10)
@@ -734,3 +719,5 @@ plot(preds_sub$jday, preds_sub$lat, pch = 19, xlab = "", ylab = "",
 }
 
 dev.off()
+
+
