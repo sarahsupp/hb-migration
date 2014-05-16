@@ -324,33 +324,76 @@ for (f in 1:length(mfiles)){
   sp_dates$spr_begin = sp_dates$spr_begin - mean(sp_dates$spr_begin)
   sp_dates$mid = sp_dates$spr_end - mean(sp_dates$spr_end)
   sp_dates$fal_end = sp_dates$fal_end - mean(sp_dates$fal_end)
-  
   dates = rbind(dates, sp_dates[,c(1,7,4,5,6)])
 }
-
   
 d = melt(dates, id.vars = c("species", "year"))
 names(d) = c("species", "year", "season", "date")
   
 #plot the variance in estimated migration begin and end for all and for recent years
-pdf(file = paste(figpath, "/migdates_all_species.pdf", sep=""), width = 10, height = 4)
+pdf(file = paste(figpath, "/migdates_all_species.pdf", sep=""), width = 6, height = 5)
   
 bxp_date = ggplot(d, aes(season, date, fill=season)) + geom_boxplot() + theme_classic() + 
   scale_fill_manual(values=c("cadetblue", "olivedrab3", "orange"), guide = "none") + 
-  ylab("days from mean date") + theme(text = element_text(size=12)) + facet_wrap(~species)
+  ylab("number of days +/- mean date") + theme(text = element_text(size=12)) + 
+  scale_y_continuous(breaks = seq(-40, 40, by = 20), limits = c(-40,40)) + theme(text = element_text(size=12)) +
+  facet_wrap(~species)
   
   multiplot(bxp_date, cols = 1)
   dev.off()
-  
 
+
+#-------------------- model to test variance in lat and lon across years, with year as a random effect
+#-------------------- get gamm4 results using all years (2004-2013) and later years (2008-2013)
+for (f in 1:length(cfiles)){
+  preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  preds_sub = preds[which(preds$year > 2007),]
+  print(preds[1,1]) #species name
+  
+  #grab only the predicted daily centroids from between the migration dates
+  for (y in 1:length(years)){
+
+    between = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday <= dates[y,4]),]
+    spring = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday < dates[y,2]),]
+    fall = preds[which(preds$year == years[y] & preds$jday > dates[y,2] & preds$jday <= dates[y,4]),]
+    
+    if (y == 1){
+      migpreds = between
+      pred_spr = spring
+      pred_fal = fall
+    }
+    else{
+      migpreds = rbind(migpreds, between)
+      pred_spr = rbind(pred_spr, spring)
+      pred_fal = rbind(pred_fal, fall)
+    }
+  }
+  
+  # subset the seasonal data by the recent years (2008-2013)
+  pred_spr_sub = pred_spr[which(pred_spr$year > 2007),]
+  pred_fal_sub = pred_fal[which(pred_fal$year > 2007),]
+  
+  lon_gam = gamm4(lon ~ s(jday, k=10), random = ~(1|year), data = preds_sub, gamma = 1.5)
+  print (paste("R2 for spring Longitude is:", round(summary(lon_gam$gam)$r.sq,4)))
+  lat_gam = gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=preds_sub, gamma = 1.5)
+  print (paste("R2 for spring Latitude is:", round(summary(lat_gam$gam)$r.sq,4)))
+
+  lon_gam_spr = gamm4(lon ~ s(jday, k=10), random = ~(1|year), data=pred_spr_sub, gamma = 1.5)
+  print (paste("R2 for spring Longitude is:", round(summary(lon_gam_spr$gam)$r.sq,4)))
+  lat_gam_spr = gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=pred_spr_sub, gamma = 1.5)
+  print (paste("R2 for spring Latitude is:", round(summary(lat_gam_spr$gam)$r.sq,4)))
+
+  lon_gam_fal = gamm4(lon ~ s(jday, k=10), random = ~(1|year), data=pred_fal_sub, gamma = 1.5)
+  print (paste("R2 for fall Longitude is:", round(summary(lon_gam_fal$gam)$r.sq,4)))
+  lat_gam_fal = gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=pred_fal_sub, gamma = 1.5)
+  print (paste("R2 for fall Latitude is:", round(summary(lat_gam_fal$gam)$r.sq,4)))
 }
 
 
 #read in all pred data, then re-analyze based on se results. 
 #compare 2008-2013, test for impact of 2004-2007 years on overall distribution
 #linear model on spring vs. fall in each year
-
-
 for (f in 1:length(cfiles)){
   preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
   dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
@@ -422,28 +465,6 @@ for (f in 1:length(cfiles)){
     patherr_sub[outcount,] = c(j, meanlat, sdlat, meanlon, sdlon)
     outcount = outcount + 1
   }
-  
-  #----------- model to test variance in lat and lon across years, with year as a random effect
-
-  lon.gam <- gamm4(lon ~ s(jday, k=10), random = ~(1|year), data = preds_sub, gamma = 1.5)
-  print (paste("R2 for spring Longitude is:", round(summary(lon.gam$gam)$r.sq,4)))
-  lat.gam <- gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=preds_sub, gamma = 1.5)
-  print (paste("R2 for spring Latitude is:", round(summary(lat.gam$gam)$r.sq,4)))
-  
-  #what is the variation in daily location across years using 2008: 2013 data?
-  pred_spr_sub = pred_spr[which(pred_spr$year > 2007),]
-  pred_fal_sub = pred_fal[which(pred_fal$year > 2007),]
-  
-  lon.gam.spr <- gamm4(lon ~ s(jday, k=10), random = ~(1|year), data=pred_spr_sub, gamma = 1.5)
-    print (paste("R2 for spring Longitude is:", round(summary(lon.gam.spr$gam)$r.sq,4)))
-  lat.gam.spr <- gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=pred_spr_sub, gamma = 1.5)
-   print (paste("R2 for spring Latitude is:", round(summary(lat.gam.spr$gam)$r.sq,4)))
-  
-  lon.gam.fal <- gamm4(lon ~ s(jday, k=10), random = ~(1|year), data=pred_fal_sub, gamma = 1.5)
-  print (paste("R2 for fall Longitude is:", round(summary(lon.gam.fal$gam)$r.sq,4)))
-  lat.gam.fal <- gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=pred_fal_sub, gamma = 1.5)
-  print (paste("R2 for fall Latitude is:", round(summary(lat.gam.fal$gam)$r.sq,4)))
-}
 
   #----------- plot the data ------------
   
