@@ -336,7 +336,7 @@ pdf(file = paste(figpath, "/migdates_all_species.pdf", sep=""), width = 6, heigh
 bxp_date = ggplot(d, aes(season, date, fill=season)) + geom_boxplot() + theme_classic() + 
   scale_fill_manual(values=c("cadetblue", "olivedrab3", "orange"), guide = "none") + 
   ylab("number of days +/- mean date") + theme(text = element_text(size=12)) + 
-  scale_y_continuous(breaks = seq(-40, 40, by = 20), limits = c(-40,40)) + theme(text = element_text(size=12)) +
+  scale_y_continuous(breaks = seq(-40, 40, by = 20), limits = c(-40,40)) +
   facet_wrap(~species)
   
   multiplot(bxp_date, cols = 1)
@@ -353,7 +353,6 @@ for (f in 1:length(cfiles)){
   
   #grab only the predicted daily centroids from between the migration dates
   for (y in 1:length(years)){
-
     between = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday <= dates[y,4]),]
     spring = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday < dates[y,2]),]
     fall = preds[which(preds$year == years[y] & preds$jday > dates[y,2] & preds$jday <= dates[y,4]),]
@@ -391,6 +390,48 @@ for (f in 1:length(cfiles)){
 }
 
 
+#-------------------- model to test variance in lat and lon across years, with year as a random effect
+#-------------------- get linear model results using years (2008-2013) and plot as barplot
+lm_mig = data.frame("species"="Archilochusalexandri", "season" = "spring", "year" = 1, "lat_slope" = 1, "lat_r2" = 1, "lon_slope" = 1, "lon_r2" = 1)
+
+for (f in 1:length(cfiles)){
+  preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  preds_sub = preds[which(preds$year > 2007),]
+  species = preds[1,1] #species name
+  years = c(2008:2013)
+  
+  #grab only the predicted daily centroids from between the migration dates
+  for (y in 1:length(years)){
+    between = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday <= dates[y,4]),]
+    spring = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday < dates[y,2]),]
+    fall = preds[which(preds$year == years[y] & preds$jday > dates[y,2] & preds$jday <= dates[y,4]),]
+    
+    #get slope & r2 of spring and fall latitudinal migration
+    spr_lm = LinearMigration(spring, years[y])
+      spr_lm = data.frame("species" = species, "season"= "spring", spr_lm)
+    fal_lm = LinearMigration(fall, years[y])
+      fal_lm = data.frame("species" = species, "season"= "fall", fal_lm)
+    lm_mig = rbind(lm_mig, spr_lm)
+    lm_mig = rbind(lm_mig, fal_lm)
+  }
+}
+lm_mig = lm_mig[-1,] #delete first row of dummy data
+
+#plot the variance in estimated migration begin and end for all and for recent years
+pdf(file = paste(figpath, "/linearslope_all_species.pdf", sep=""), width = 6, height = 5)
+
+bxp_rate = ggplot(lm_mig, aes(season, abs(lat_slope), fill=season)) + geom_boxplot() + theme_classic() + 
+  scale_fill_manual(values=c("cadetblue", "orange"), guide = "none") + 
+  ylab("linear slope of seasonal migration") + theme(text = element_text(size=12)) + 
+ scale_y_continuous(breaks = seq(0, 0.40, by = 0.10), limits = c(0,0.40)) + theme(text = element_text(size=12)) +
+  facet_wrap(~species)
+
+multiplot(bxp_rate, cols = 1)
+dev.off()
+
+
+#---------------------------------
 #read in all pred data, then re-analyze based on se results. 
 #compare 2008-2013, test for impact of 2004-2007 years on overall distribution
 #linear model on spring vs. fall in each year
@@ -417,9 +458,7 @@ for (f in 1:length(cfiles)){
     spring = preds[which(preds$year == years[y] & preds$jday >= spr_begin & preds$jday < spr_end),]
     fall = preds[which(preds$year == years[y] & preds$jday > fal_begin & preds$jday <= fal_end),]
     
-    #get slope & r2 of spring and fall latitudinal migration
-    #spr_lm = LinearMigration(spring, years[y])
-    #fal_lm = LinearMigration(fall, years[y])
+
     
     if (y == 1){
       migpreds = between
