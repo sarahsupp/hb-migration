@@ -176,14 +176,21 @@ for (f in 1:length(files)){
       west_speed = MigrationSpeed(west_dist, west_migration)
       
       #save a plot of the species migration route mapped onto continent with real observations
-      pdf(file = paste(dirpath, "/WEST_trimmed-route_", species, years[y], ".eps", sep=""), width = 7, height = 4.5)
+      pdf(file = paste(dirpath, "/WEST_trimmed-route_", species, years[y], ".pdf", sep=""), width = 7, height = 4.5)
       BasePlotMigration(west_preds, west_yrdat, west_migration, elev, USAborder, Mexborder, Canborder, myext)
       dev.off() 
       
       #save a plot of the species migration mapped onto an elevation raster
-      pdf(file = paste(dirpath, "/WEST_elev-route_", species, years[y], ".eps", sep=""), width = 7, height = 4.5)
+      pdf(file = paste(dirpath, "/WEST_elev-route_", species, years[y], ".pdf", sep=""), width = 7, height = 4.5)
       ElevPlotMigration(west_preds, west_yrdat, west_migration, elev, USAborder, Mexborder, Canborder, myext)
       dev.off() 
+    }
+
+    else {
+      #create dummy variables for the eastern species. In this case, west == all variables
+      west_preds = preds
+      west_migration = migration
+      west_speed = speed
     }
 
     #add year to preds, so we can save it to compare across years
@@ -262,7 +269,7 @@ require(fields)
 setwd(wd)
 
 # read in eBird data for migration speed
-rfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = "speed", full.names=TRUE)
+rfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = "west_speed", full.names=TRUE)
 
 for (f in 1:length(rfiles)){
   rate = read.table(rfiles[f], header=TRUE, sep=" ", fill=TRUE, comment.char="")
