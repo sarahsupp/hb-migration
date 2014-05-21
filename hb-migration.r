@@ -261,6 +261,7 @@ require(raster)
 require(gamm4)
 require(chron)
 require(fields)
+source(paste(gitpath, "/migration-fxns.r", sep=""))
 
 setwd(wd)
 
@@ -269,9 +270,15 @@ rfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = "w
 mfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = c("west_migration.*txt"), full.names=TRUE)
 cfiles = list.files(path = paste(getwd(), "/output_data/", sep=""), pattern = "west_centroids.*.txt", full.names=TRUE)
 
+# species ordered by data files, body sizes from Dunning 2008, migration distance from Nature Serve centroids
+species = c("Black-chinned", "Ruby-throated", "Calliope", "Broad-tailed", "Rufous")
+mass = c(3.4, 3.1, 2.65, 3.55, 3.5)
+distance = c(1721.49, 2765.86, 3252.82, 1737.89, 4102.58)
+spdata = data.frame(species, mass, distance, "lat_r2"= NA, "lon_r2" = NA, "spr_speed" = NA,
+                    "fal_speed" = NA, "spr_date" = NA, "fal_date" = NA)
+
 
 #------------------------------------------ ANALYZE THE DATA -------------------------------------
-
 
 #-------------------- 
 #       model to test variance in lat and lon across years, with year as a random effect
@@ -281,6 +288,7 @@ for (f in 1:length(cfiles)){
   dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
   preds_sub = preds[which(preds$year > 2007),]
   print(preds[1,1]) #species name
+  years = c(2004:2013)
   
   #grab only the predicted daily centroids from between the migration dates
   for (y in 1:length(years)){
@@ -305,9 +313,9 @@ for (f in 1:length(cfiles)){
   pred_fal_sub = pred_fal[which(pred_fal$year > 2007),]
   
   lon_gam = gamm4(lon ~ s(jday, k=10), random = ~(1|year), data = preds_sub, gamma = 1.5)
-  print (paste("R2 for spring Longitude is:", round(summary(lon_gam$gam)$r.sq,4)))
+  print (paste("R2 for Longitude is:", round(summary(lon_gam$gam)$r.sq,4)))
   lat_gam = gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=preds_sub, gamma = 1.5)
-  print (paste("R2 for spring Latitude is:", round(summary(lat_gam$gam)$r.sq,4)))
+  print (paste("R2 for Latitude is:", round(summary(lat_gam$gam)$r.sq,4)))
   
   lon_gam_spr = gamm4(lon ~ s(jday, k=10), random = ~(1|year), data=pred_spr_sub, gamma = 1.5)
   print (paste("R2 for spring Longitude is:", round(summary(lon_gam_spr$gam)$r.sq,4)))
@@ -318,6 +326,9 @@ for (f in 1:length(cfiles)){
   print (paste("R2 for fall Longitude is:", round(summary(lon_gam_fal$gam)$r.sq,4)))
   lat_gam_fal = gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=pred_fal_sub, gamma = 1.5)
   print (paste("R2 for fall Latitude is:", round(summary(lat_gam_fal$gam)$r.sq,4)))
+  
+  spdata[f,4] = summary(lat_gam$gam)$r.sq
+  spdata[f,5] = summary(lon_gam$gam)$r.sq
 }
 
 
@@ -377,6 +388,9 @@ for (f in 1:length(rfiles)){
   print(paste("fall sd:", sd(sp_rate$fal)))
   print(paste("fall mean:", mean(sp_rate$fal)))
   print("")
+  
+  spdata[f,6] = mean(sp_rate$spr)
+  spdata[f,7] = mean(sp_rate$fal)
 }
 
 rate = subset(rate, year > 2007) #subset to better-sampled years
@@ -413,12 +427,18 @@ for (f in 1:length(mfiles)){
   
   #standardize dates, to get number of days +/- mean
   sp_dates = subset(sp_dates, year > 2007)
+  
+  spdata[f,8] = round(sd(sp_dates$spr_begin),4)
+  spdata[f,9] = round(sd(sp_dates$fal_end), 4)
+  
   sp_dates$spr_begin = sp_dates$spr_begin - mean(sp_dates$spr_begin)
   sp_dates$mid = sp_dates$spr_end - mean(sp_dates$spr_end)
   sp_dates$fal_end = sp_dates$fal_end - mean(sp_dates$fal_end)
   dates = rbind(dates, sp_dates[,c(1,7,4,5,6)])
+
 }
-  
+
+dates = dates[-1,]
 d = melt(dates, id.vars = c("species", "year"))
 names(d) = c("species", "year", "season", "date")
   
@@ -436,6 +456,34 @@ bxp_date = ggplot(d, aes(season, date, fill=season)) + geom_boxplot() + theme_cl
 
 
 #------------------------------------------ PLOT THE DATA -------------------------------------
+
+
+#------------------------------------
+#       plot the data for species comparisons
+#------------------------------------
+
+ggplot(spdata, aes(distance, lat_r2)) + geom_point(size = mass) + xlab("total migration distance") +
+  ylab("Latitude R2 by date") + stat_smooth(method = "lm") + theme_classic()
+
+ggplot(spdata, aes(distance, lon_r2)) + geom_point(size = mass) + xlab("total migration distance") +
+  ylab("Longitude R2 by date") + stat_smooth(method = "lm") + theme_classic()
+
+ggplot(spdata, aes(distance, spr_sped)) + geom_point(size = mass) + xlab("total migration distance") +
+  ylab("Population spring migration speed (km/day)") + 
+  stat_smooth(method = "lm", col = "cadetblue", fill = "cadetblue", alpha = 0.2) + 
+  theme_classic() 
+
+ggplot(spdata, aes(distance, fal_speed)) + geom_point(size = mass) + xlab("total migration distance") +
+  ylab("Population fall migration speed (km/day)") + stat_smooth(method = "lm", col = "orange", fill = "orange", alpha = 0.2) +
+  theme_classic() + geom_text(label=species)
+
+ggplot(spdata, aes(distance, spr_date)) + geom_point(size = mass) + xlab("total migration distance") +
+  ylab("sd in spring onset") + stat_smooth(method = "lm", col = "cadetblue", fill = "cadetblue", alpha = 0.2) +
+  theme_classic()
+
+ggplot(spdata, aes(distance, fal_dat)) + geom_point(size = mass) + xlab("total migration distance") +
+  ylab("sd in fall arrival") + stat_smooth(method = "lm", col = "orange", fill = "orange", alpha = 0.2) +
+  theme_classic()
 
 
 #---------------------------------
@@ -612,21 +660,62 @@ for (f in 1:length(cfiles)){
 dev.off()
 
 
+#---------------------------------
+#       plot predicted latitude with 95% confidence intervals
+#---------------------------------
+# save plots comparing daily lat and long and migration date across the years
+pdf(file = paste(figpath, "/CI_lon-lat_all_species.pdf", sep=""), width = 10, height = 5)
 
-
-#read in all pred data, then re-analyze based on se results. 
-#compare 2008-2013, test for impact of 2004-2007 years on overall distribution
-#linear model on spring vs. fall in each year
 for (f in 1:length(cfiles)){
   preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
   dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
-  species = preds[1,1]
-  years = c(2004:2013)
-  preds_sub = preds[which(preds$year > 2007),]
-  dates_sub = dates[which(dates$year > 2007),]
+  preds = subset(preds, year > 2007)
+  dates = subset(dates, year > 2007)
+  species = preds[1,1] #species name
   
-  #set species-specific directory path for figures
-  dirpath = paste(figpath, "/", species, sep=""
+  #calculate 95% CI
+  preds$lat_ucl = preds$lat + 1.96 * preds$lat_se
+  preds$lat_lcl = preds$lat - 1.96 * preds$lat_se
+  preds$lon_ucl = preds$lon + 1.96 * preds$lon_se
+  preds$lon_lcl = preds$lon - 1.96 * preds$lon_se
+
+years = c(2008:2013)
+#grab only the predicted daily centroids from between the migration dates
+for (y in 1:length(years)){
+  between = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday <= dates[y,4]),]
+  spring = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday < dates[y,2]),]
+  fall = preds[which(preds$year == years[y] & preds$jday > dates[y,2] & preds$jday <= dates[y,4]),]
+  
+  if (y == 1){
+    migpreds = between
+    pred_spr = spring
+    pred_fal = fall
+  }
+  else{
+    migpreds = rbind(migpreds, between)
+    pred_spr = rbind(pred_spr, spring)
+    pred_fal = rbind(pred_fal, fall)
+  }
+}
+
+#plot all the points with confidence intervals for latitude
+lat = ggplot(migpreds, aes(jday, lat, col=factor(year))) + geom_point(size=1) + theme_classic() +
+  geom_smooth(aes(ymin=lat_lcl, ymax = lat_ucl, fill = factor(year)), stat="identity", alpha = 0.2) +
+  scale_x_continuous(breaks = seq(0, 365, by = 30)) + 
+  theme(text = element_text(size=20)) + ggtitle(species)
+
+# plot spring and fall separately, color-coded to compare overlap
+seasons = ggplot(pred_spr, aes(lon, lat), col = year, group=year) + theme_classic() +
+  geom_smooth(aes(ymin=lat_lcl, ymax = lat_ucl, group = year), stat="identity", col = "cadetblue", fill = "cadetblue", alpha = 0.2) +
+  geom_smooth(data=pred_fal, aes(ymin=lat_lcl, ymax = lat_ucl, group = year), col = "orange", stat="identity", fill = "orange", alpha = 0.2) +
+  theme(text = element_text(size=20)) + ggtitle(species)
+
+multiplot(lat, seasons, cols = 2)
+
+}
+dev.off()
+
+
 
 
 #-----------------------------------------------------------
