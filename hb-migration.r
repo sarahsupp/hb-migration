@@ -619,7 +619,7 @@ for (f in 1:length(cfiles)){
   geom_vline(xintercept = c(dates$spr_begin), col = "cadetblue") +
   geom_vline(xintercept = c(dates$fal_end), col = "orange") + ggtitle(species) +
   xlab("Julian Day") + ylab("longitude centroid standard error") +
-  scale_y_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax))+
+  scale_y_continuous(breaks = seq(0, ymax, by = 0.25), limits = c(0, ymax)) +
   theme(text = element_text(size=12))
 
   multiplot(lat, lon, cols = 2)
