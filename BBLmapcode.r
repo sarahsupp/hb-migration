@@ -107,6 +107,46 @@ for(j in 1:nrow(eastern)){
 map("worldHires", c("usa", "canada", "mexico"), add=TRUE, cex = 0.5)
 
 
+#-------------------------- 
+#       plot black-chinned that are captured east of 103 (outside western flyway)
+#--------------------------
+bc <- BBLdat4[BBLdat4$B_SPECIES_NAME == "Black-chinned Hummingbird", ]
+bands <- unique(bc$BAND_NUM)
+eastern <- bc[bc$B_LON_DECIMAL_DEGREES > -103,]
+western <- bc[bc$B_LON_DECIMAL_DEGREES <= -103,]
+alleast <- bc[bc$B_LON_DECIMAL_DEGREES > -103 & bc$E_LON_DECIMAL_DEGREES > -103,]
+
+#-------------- plot histogram of months bc captured outside of Western Flyway
+ggplot(alleast, aes(ENCOUNTER_MONTH)) + xlab("encounter month") + 
+  geom_histogram(fill = "grey40", col="black", binwidth=1) +
+  theme_classic() + theme(text=element_text(size=20)) + 
+  scale_x_continuous(breaks = seq(1, 12, 2), limits = c(1,12))
+
+#-------------- plot histogram of bc captured outside of Western Flyway
+ggplot(eastern, aes(BANDING_YEAR)) + ylab("Number birds banded") +
+  xlab("Banding Year") + geom_histogram(fill = "grey40", col = "black", binwidth=1) + 
+  theme_classic() + theme(text=element_text(size=20), axis.text.x = element_text(angle = 60, hjust=1)) + 
+  scale_x_continuous(breaks = seq(1980, 2013, 5), limits = c(1980,2013))
+
+#-------------- plot where these eastern captures went
+plot(NA, NA, xlim=c(-130,-60), ylim=c(15,50), xlab="", ylab="", main = "Black-chinned Hummingbird recaptures")
+for(k in 1:nrow(western)){
+  if(western[k,]$E_LON_DECIMAL_DEGREES <= -103) { color = "black"}
+  else { color = "indianred" }
+  inter <- gcIntermediate(c(western[k,]$B_LON_DECIMAL_DEGREES, western[k,]$B_LAT_DECIMAL_DEGREES),
+                          c(western[k,]$E_LON_DECIMAL_DEGREES, western[k,]$E_LAT_DECIMAL_DEGREES),
+                          n=50, addStartEnd=TRUE,)
+  lines(inter, col=color, lwd=2)
+}
+for(j in 1:nrow(eastern)){
+  if(eastern[j,]$E_LON_DECIMAL_DEGREES > -103) { color = "cadetblue"}
+  else { color = "indianred" }
+  inter <- gcIntermediate(c(eastern[j,]$B_LON_DECIMAL_DEGREES, eastern[j,]$B_LAT_DECIMAL_DEGREES),
+                          c(eastern[j,]$E_LON_DECIMAL_DEGREES, eastern[j,]$E_LAT_DECIMAL_DEGREES),
+                          n=50, addStartEnd=TRUE,)
+  lines(inter, col=color, lwd=2)
+}
+map("worldHires", c("usa", "mexico"), add=TRUE, cex = 0.5)
 
 
 
@@ -114,6 +154,7 @@ map("worldHires", c("usa", "canada", "mexico"), add=TRUE, cex = 0.5)
 
 
 
+#--------------------------------------------------------------------------------------
 
 
 ################# Test data with time, connections, sex, and age #################
