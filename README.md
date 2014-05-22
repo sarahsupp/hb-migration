@@ -1,10 +1,10 @@
 hb-migration
 ============
 
-This repository is to collect the code for a project to describe and predict the migration of North American hummingbird species for 2004-2013 and into the future. Species include: anna's, allen's, black-chinned, broad-billed, broad-tailed, calliope, costa's, rufous, and ruby-throated hummingbird. Contains code for cleaning eBird data, describing and analyzing species migration paths and timing, exploring environmental and climate correlations with migration, hummingbird physiology, and predicting response to climate change. Generates all results and figures for the paper(s) related to the project. We are working with movebank to automate data annotation with movebank for "non-track" data points. Collaborators on this project include S. R. Supp, F. A. La Sorte, T. Cormier, M. Lim, G. Bohrer, D. Powers, S. Wethington, and C. H. Graham.
-Code was written by SRS, TC, and FAL.
+This repository is to collect the code for projects to describe and predict the migration of North American hummingbird species for 2004-2013 and into the future. Species include: anna's, allen's, black-chinned, broad-billed, broad-tailed, calliope, costa's, rufous, and ruby-throated hummingbird. Contains code for cleaning eBird data, describing and analyzing species migration paths and timing, exploring environmental and climate correlations with migration, hummingbird physiology, and predicting response to climate change. Generates all results and figures for the paper(s) related to the project. We are working with movebank to automate data annotation with movebank for "non-track" data points. Collaborators on this project include S. R. Supp, F. A. La Sorte, T. Cormier, M. Lim, G. Bohrer, D. Powers, S. Wethington, and C. H. Graham.
+Code was written by SRS, TC, and modified from FAL.
 
-The code and data in this repository allow for the analyses and figures to be fully replicated using eBird data, icosahedron map of North America, and remote sensing products.
+The code and data in this repository allow for the analyses and figures to be fully replicated using eBird data, BBL data, icosahedron map of North America, and remote sensing products.
 
 The project and code in this repository are still under development.
 
@@ -24,6 +24,7 @@ Data is currently privately housed, but may be requested for the purposes of rep
 * icosahedron cell data
 * mapdata
 * environmental rasters and data from movebank, interpolated to daily values
+* Bird Banding Laboratory encounter and recovery dataset
 
 
 **Included Files:**
