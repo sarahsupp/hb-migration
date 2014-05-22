@@ -664,7 +664,7 @@ dev.off()
 #       plot predicted latitude with 95% confidence intervals
 #---------------------------------
 # save plots comparing daily lat and long and migration date across the years
-pdf(file = paste(figpath, "/CI_lon-lat_all_species.pdf", sep=""), width = 11, height = 5)
+pdf(file = paste(figpath, "/CI_lon-lat_all_species.pdf", sep=""), width = 12, height = 5)
 
 for (f in 1:length(cfiles)){
   preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
@@ -703,22 +703,20 @@ lat = ggplot(migpreds, aes(jday, lat, col=factor(year))) + geom_point(size=1) + 
   geom_smooth(aes(ymin=lat_lcl, ymax = lat_ucl, fill = factor(year)), stat="identity", alpha = 0.2) +
   scale_x_continuous(breaks = seq(0, 365, by = 60)) +
   theme(axis.text.x = element_text(angle = 60, hjust=1)) +
-  theme(text = element_text(size=20)) + ggtitle(species)
+  theme(text = element_text(size=20), legend.title=element_blank()) + ggtitle(species)
 
 # plot spring and fall separately, color-coded to compare overlap
 seasons = ggplot(pred_spr, aes(lon, lat), col = year, group=year, order.by=jday) + theme_classic() + 
-  geom_path(col="cadetblue") +
-  #geom_smooth(data=pred_spr, aes(ymin=lat_lcl, ymax=lat_ucl, group = year), stat="identity", col = "cadetblue", fill = "cadetblue", alpha = 0.2) +
-  #geom_smooth(data=pred_fal, aes(ymin=lat_lcl, ymax = lat_ucl, group = year), col = "orange", stat="identity", fill = "orange", alpha = 0.2) +
-  geom_path(data=pred_fal, aes(lon, lat), col="orange") + 
+  geom_rect(data=pred_spr, aes(xmin=lon_lcl,ymin=lat_lcl,xmax=lon_ucl,ymax=lat_ucl, group=year), fill="cadetblue", alpha=0.02) +
+  geom_path(aes(group=year)) + 
+  geom_rect(data=pred_fal, aes(xmin=lon_lcl,ymin=lat_lcl,xmax=lon_ucl,ymax=lat_ucl, group=year), fill="orange", alpha=0.02) +
+  geom_path(data=pred_fal, aes(lon, lat, group=year)) + 
   theme(text = element_text(size=20)) + ggtitle(species)
 
 multiplot(lat, seasons, cols = 2)
 
 }
 dev.off()
-
-
 
 
 #-----------------------------------------------------------
