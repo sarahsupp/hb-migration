@@ -468,20 +468,20 @@ ggplot(spdata, aes(distance, lat_r2)) + geom_point(size = mass) + xlab("total mi
 ggplot(spdata, aes(distance, lon_r2)) + geom_point(size = mass) + xlab("total migration distance") +
   ylab("Longitude R2 by date") + stat_smooth(method = "lm") + theme_classic()
 
-ggplot(spdata, aes(distance, spr_sped)) + geom_point(size = mass) + xlab("total migration distance") +
+ggplot(spdata, aes(distance, spr_speed)) + geom_point(size = mass) + xlab("total migration distance") +
   ylab("Population spring migration speed (km/day)") + 
   stat_smooth(method = "lm", col = "cadetblue", fill = "cadetblue", alpha = 0.2) + 
-  theme_classic() 
+  theme_classic() #+ geom_text(label=species)
 
 ggplot(spdata, aes(distance, fal_speed)) + geom_point(size = mass) + xlab("total migration distance") +
   ylab("Population fall migration speed (km/day)") + stat_smooth(method = "lm", col = "orange", fill = "orange", alpha = 0.2) +
-  theme_classic() + geom_text(label=species)
+  theme_classic() #+ geom_text(label=species)
 
 ggplot(spdata, aes(distance, spr_date)) + geom_point(size = mass) + xlab("total migration distance") +
   ylab("sd in spring onset") + stat_smooth(method = "lm", col = "cadetblue", fill = "cadetblue", alpha = 0.2) +
   theme_classic()
 
-ggplot(spdata, aes(distance, fal_dat)) + geom_point(size = mass) + xlab("total migration distance") +
+ggplot(spdata, aes(distance, fal_date)) + geom_point(size = mass) + xlab("total migration distance") +
   ylab("sd in fall arrival") + stat_smooth(method = "lm", col = "orange", fill = "orange", alpha = 0.2) +
   theme_classic()
 
