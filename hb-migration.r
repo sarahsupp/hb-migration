@@ -660,72 +660,19 @@ for (f in 1:length(cfiles)){
 dev.off()
 
 
-#---------------------------------
-#       plot predicted latitude with 95% confidence intervals
-#---------------------------------
-# save plots comparing daily lat and long and migration date across the years
-pdf(file = paste(figpath, "/CI_lon-lat_all_species.pdf", sep=""), width = 12, height = 5)
-
-for (f in 1:length(cfiles)){
-  preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
-  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
-  preds = subset(preds, year > 2007)
-  dates = subset(dates, year > 2007)
-  species = preds[1,1] #species name
-  
-  #calculate 95% CI
-  preds$lat_ucl = preds$lat + 1.96 * preds$lat_se
-  preds$lat_lcl = preds$lat - 1.96 * preds$lat_se
-  preds$lon_ucl = preds$lon + 1.96 * preds$lon_se
-  preds$lon_lcl = preds$lon - 1.96 * preds$lon_se
-
-years = c(2008:2013)
-#grab only the predicted daily centroids from between the migration dates
-for (y in 1:length(years)){
-  between = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday <= dates[y,4]),]
-  spring = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday < dates[y,2]),]
-  fall = preds[which(preds$year == years[y] & preds$jday > dates[y,2] & preds$jday <= dates[y,4]),]
-  
-  if (y == 1){
-    migpreds = between
-    pred_spr = spring
-    pred_fal = fall
-  }
-  else{
-    migpreds = rbind(migpreds, between)
-    pred_spr = rbind(pred_spr, spring)
-    pred_fal = rbind(pred_fal, fall)
-  }
-}
-
-#plot all the points with confidence intervals for latitude
-lat = ggplot(migpreds, aes(jday, lat, col=factor(year))) + geom_point(size=1) + theme_classic() +
-  geom_smooth(aes(ymin=lat_lcl, ymax = lat_ucl, fill = factor(year)), stat="identity", alpha = 0.2) +
-  scale_x_continuous(breaks = seq(0, 365, by = 60)) +
-  theme(axis.text.x = element_text(angle = 60, hjust=1)) +
-  theme(text = element_text(size=20), legend.title=element_blank()) + ggtitle(species)
-
-# plot spring and fall separately, color-coded to compare overlap
-seasons = ggplot(pred_spr, aes(lon, lat), col = year, group=year, order.by=jday) + theme_classic() + 
-  geom_rect(data=pred_spr, aes(xmin=lon_lcl,ymin=lat_lcl,xmax=lon_ucl,ymax=lat_ucl, group=year), fill="cadetblue", alpha=0.02) +
-  geom_path(aes(group=year)) + 
-  geom_rect(data=pred_fal, aes(xmin=lon_lcl,ymin=lat_lcl,xmax=lon_ucl,ymax=lat_ucl, group=year), fill="orange", alpha=0.02) +
-  geom_path(data=pred_fal, aes(lon, lat, group=year)) + 
-  theme(text = element_text(size=20)) + ggtitle(species)
-
-multiplot(lat, seasons, cols = 2)
-
-}
-dev.off()
-
-
 #-----------------------------------------------------------
 #       Make synthetic panel figure for paper draft 
 #-----------------------------------------------------------
+#reorder files to match manuscript ordering
+files = c(files[4],files[1],files[2],files[3],files[5])
+cfiles = c(cfiles[2],cfiles[1],cfiles[4],cfiles[3],cfiles[5])
+mfiles = c(mfiles[2],mfiles[1],mfiles[4],mfiles[3],mfiles[5])
+
 #Open pdf plotting window
 setEPS()
-postscript(file = paste(wd, "/Panel_figure.eps", sep=""), width = 7.5, height = 10)
-par(mfrow=c(5,3), mai=c(0.2,0.5,0.2,0.5), oma = c(0, 2, 2, 2))
+postscript(file = paste(figpath, "/Panel_figure1.eps", sep=""), width = 7.5, height = 8)
+#pdf(file ="Panel_figure_2.pdf", sep=""), width = 7.5, height = 10)
+par(mfrow=c(5,4), mai=c(0.2,0.5,0.2,0.5), oma = c(0, 2, 2, 2))
 
 for (f in 1:length(files)) {
   
@@ -768,9 +715,11 @@ for (f in 1:length(files)) {
   cols2 = tim.colors(length(vls))
   
   #make a map with hexes colored by the number of times the species was observed in a given hex
-  plot(hexgrid, col=df5$cols, border="gray50", lwd=0.25, xlim=c(-170,-50), ylim=c(15,75), las=1)
-  axis(side=1)
-  axis(side=2, las=1)
+  # plot(hexgrid, col=df5$cols, border="white", lwd=0.25, xlim=c(-170,-50), ylim=c(15,75), las=1)
+  plot(NA, NA, xlim = c(-140,-60), ylim=c(15,55),xlab="", ylab="")
+    plot(hexgrid, col=df5$cols, border = "white", lwd = 0.25, las=1, add=TRUE)
+  #axis(side=1, xaxp=c(round(-140),round(-60),4), las=1)
+  #axis(side=2, yaxp=c(15,55,4), las=1)
   mtext(side=2,line=2, species)
   box()
   ## legend
@@ -780,7 +729,7 @@ for (f in 1:length(files)) {
 
   
 # plot the migration routes in the next figure
-myext <- c(-175, -50, 15, 75) #extent for maps
+#myext <- c(-175, -50, 15, 75) #extent for maps
 preds_sub$month = as.factor(preds_sub$month)
 cols3 = data.frame(id=c(sort(unique(preds_sub$month))), cols=tim.colors(length(unique(preds_sub$month))), stringsAsFactors=FALSE)
 preds_sub = merge(preds_sub, cols3, by.x="month", by.y="id")
@@ -789,10 +738,11 @@ vls = sort(unique(round(cols3$id)))
 vls[1] = 1
 cols4 = tim.colors(length(vls))
 
-plot(elev, ext=myext, ylab="", xlab="", xlim = c(-175, -50), ylim = c(15, 75),
-     cex.lab = 1, cex.axis=1, col=gray(200:0/256))
+#plot(elev, ext=myext, ylab="", xlab="", xlim = c(-175, -50), ylim = c(15, 75), cex.lab = 1, cex.axis=1, col=gray(200:0/256))
+plot(preds_sub$lon, preds_sub$lat, col=preds_sub$cols, pch=19, cex=0.25, ylab="", xlab="", xlim = c(-140, -60), ylim = c(15, 55),
+     cex.lab = 1, cex.axis=1)
+map("worldHires", c("usa", "canada", "mexico"), add=TRUE)
 points(preds_sub$lon, preds_sub$lat, col=preds_sub$cols, pch=19, cex=0.25)
-#map("worldHires", c("usa", "canada", "mexico"), add=TRUE)
 #legend("bottomleft", legend=vls, pch=22, pt.bg=cols4, pt.cex=0.75, cex=0.75, bty="n",
 #       col="black", title="", x.intersp=0.5, y.intersp=0.75)  
   
@@ -801,13 +751,69 @@ latmin = ((min(preds_sub$lat)%/%5+1)*5)-5
 latmax = ((max(preds_sub$lat)%/%5+1)*5) + 5 
 
 plot(preds_sub$jday, preds_sub$lat, pch = 19, xlab = "", ylab = "", 
-     cex.axis = 1, col = "grey20", cex = 0.5)
+     cex.axis = 1, col = "grey20", cex = 0.25)
   abline(v=dates_sub$spr_begin, col="cadetblue")
   abline(v=dates_sub$spr_end, col = "olivedrab3")
   abline(v=dates_sub$fal_end, col = "orange")
-
 }
 
 dev.off()
 
 
+#---------------------------------
+#       plot predicted latitude with 95% confidence intervals
+#---------------------------------
+# save plots comparing daily lat and long and migration date across the years
+pdf(file = paste(figpath, "/CI_lon-lat_all_species.pdf", sep=""), width = 6, height = 5)
+
+for (f in 1:length(cfiles)){
+  preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  preds = subset(preds, year > 2007)
+  dates = subset(dates, year > 2007)
+  species = preds[1,1] #species name
+  
+  #calculate 95% CI
+  preds$lat_ucl = preds$lat + 1.96 * preds$lat_se
+  preds$lat_lcl = preds$lat - 1.96 * preds$lat_se
+  preds$lon_ucl = preds$lon + 1.96 * preds$lon_se
+  preds$lon_lcl = preds$lon - 1.96 * preds$lon_se
+  
+  years = c(2008:2013)
+  #grab only the predicted daily centroids from between the migration dates
+  for (y in 1:length(years)){
+    between = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday <= dates[y,4]),]
+    spring = preds[which(preds$year == years[y] & preds$jday >= dates[y,1] & preds$jday < dates[y,2]),]
+    fall = preds[which(preds$year == years[y] & preds$jday > dates[y,2] & preds$jday <= dates[y,4]),]
+    
+    if (y == 1){
+      migpreds = between
+      pred_spr = spring
+      pred_fal = fall
+    }
+    else{
+      migpreds = rbind(migpreds, between)
+      pred_spr = rbind(pred_spr, spring)
+      pred_fal = rbind(pred_fal, fall)
+    }
+  }
+  
+#   #plot all the points with confidence intervals for latitude
+#   lat = ggplot(migpreds, aes(jday, lat, col=factor(year))) + geom_point(size=1) + theme_classic() +
+#     geom_smooth(aes(ymin=lat_lcl, ymax = lat_ucl, fill = factor(year)), stat="identity", alpha = 0.2) +
+#     scale_x_continuous(breaks = seq(0, 365, by = 60)) +
+#     theme(axis.text.x = element_text(angle = 60, hjust=1)) +
+#     theme(text = element_text(size=20), legend.title=element_blank()) + ggtitle(species)
+#   
+  # plot spring and fall separately, color-coded to compare overlap
+  seasons = ggplot(pred_spr, aes(lon, lat), col = year, group=year, order.by=jday) + theme_classic() + 
+    geom_rect(data=pred_spr, aes(xmin=lon_lcl,ymin=lat_lcl,xmax=lon_ucl,ymax=lat_ucl, group=year), fill="cadetblue", alpha=0.02) +
+    geom_path(aes(group=year)) + 
+    geom_rect(data=pred_fal, aes(xmin=lon_lcl,ymin=lat_lcl,xmax=lon_ucl,ymax=lat_ucl, group=year), fill="orange", alpha=0.02) +
+    geom_path(data=pred_fal, aes(lon, lat, group=year)) + 
+    theme(text = element_text(size=20)) + ggtitle(species)
+  
+  multiplot(seasons, cols = 1)
+  
+}
+dev.off()
