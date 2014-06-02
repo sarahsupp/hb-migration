@@ -672,7 +672,7 @@ mfiles = c(mfiles[2],mfiles[1],mfiles[4],mfiles[3],mfiles[5])
 setEPS()
 postscript(file = paste(figpath, "/Panel_figure1.eps", sep=""), width = 7.5, height = 8)
 #pdf(file ="Panel_figure_2.pdf", sep=""), width = 7.5, height = 10)
-par(mfrow=c(5,4), mai=c(0.2,0.5,0.2,0.5), oma = c(0, 2, 2, 2))
+par(mfrow=c(5,3), mai=c(0.4,0.2,0.2,0.2), oma = c(0, 2, 0, 0))
 
 for (f in 1:length(files)) {
   
