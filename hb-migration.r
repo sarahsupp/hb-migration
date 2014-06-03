@@ -379,9 +379,10 @@ dev.off()
 rate = data.frame("spr" =1, "fal" = 1, "species" = "none", "year" = 1)
 for (f in 1:length(rfiles)){
   sp_rate = read.table(rfiles[f], header=TRUE, sep=" ", fill=TRUE, comment.char="")
+#  sp_rate = subset(sp_rate, year>2007) #use only years 2008-2013
   rate = rbind(rate, sp_rate)
   
-  #print the mean and standard deviation of speed for each species
+  #print the mean and standard deviation of speed for each species (note: this includes all years, unless uncomment above line)
   print(sp_rate$species[1])
   print(paste("spring sd:", sd(sp_rate$spr)))
   print(paste("spring mean:", mean(sp_rate$spr)))
@@ -414,8 +415,9 @@ dates = data.frame("spr_begin" = 1, "mid" = 1, "fal_end" = 1, "species" = "none"
 
 for (f in 1:length(mfiles)){
   sp_dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
-
-  #Print species table data
+# sp_dates = subset(sp_dates, year>2007)
+  
+  #Print species table data (note: this includes all years, unless uncomment above line)
   print(sp_dates$species[1])
   print(paste("spring begin median:", median(sp_dates$spr_begin)))
   print(paste("spring begin sd:", sd(sp_dates$spr_begin)))
@@ -560,7 +562,7 @@ dev.off()
 #---------------------------------
 #       plot standard error in predicted centroids across years
 #---------------------------------
-pdf(file = paste(figpath, "/se_corlon-lat_all_species.pdf", sep=""), width = 10, height = 7)
+pdf(file=paste(figpath, "/se_corlon-lat_all_species.pdf", sep=""), width = 10, height = 7)
 
 for (f in 1:length(cfiles)){
   preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
@@ -576,12 +578,16 @@ for (f in 1:length(cfiles)){
     else{ migpreds = rbind(migpreds, between) }
   }
   
+  if (species == "Selasphoruscalliope") {by = 1}
+  else {by = 0.5}
+  
   ymax = max(c(migpreds$lat_se, migpreds$lon_se))
   latlon = ggplot(migpreds, aes(lon_se, lat_se)) + ggtitle(species) +
+    xlab("estimated longitude standard error") + ylab("estimated latitude standard error") +
   geom_point(alpha = 0.5) + theme_classic() + facet_wrap(~year) +
   theme(text = element_text(size=12)) +
-  scale_y_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax)) +
-  scale_x_continuous(breaks = seq(0, ymax, by = 0.5), limits = c(0, ymax))
+  scale_y_continuous(breaks = seq(0, ymax, by = by), limits = c(0, ymax)) +
+  scale_x_continuous(breaks = seq(0, ymax, by = by), limits = c(0, ymax))
   multiplot(latlon, cols = 1)
 }
 dev.off()
@@ -670,7 +676,7 @@ mfiles = c(mfiles[2],mfiles[1],mfiles[4],mfiles[3],mfiles[5])
 
 #Open pdf plotting window
 setEPS()
-postscript(file = paste(figpath, "/Panel_figure1.eps", sep=""), width = 7.5, height = 8)
+postscript(file = paste(figpath, "/Panel_figure1_allobs.eps", sep=""), width = 7.5, height = 8)
 #pdf(file ="Panel_figure_2.pdf", sep=""), width = 7.5, height = 10)
 par(mfrow=c(5,3), mai=c(0.4,0.2,0.2,0.2), oma = c(0, 2, 0, 0))
 
