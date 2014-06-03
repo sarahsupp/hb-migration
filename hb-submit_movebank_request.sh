@@ -28,27 +28,27 @@ un=${4}
 pw=${5}
 outdir=${6}
 ###############################
-# #hardcoded for testing:
+#hardcoded for testing:
 #
-# #address to submit request
-# url=http://www.bioinfo.mpg.de/orn-gateway/request-annotation-xml.jsp
+#address to submit request
+url=http://www.bioinfo.mpg.de/orn-gateway/request-annotation-xml.jsp
 #
-# #Text file of xy locations of points to be annotated. Must have the following columns
-# #with no spaces: Timestamp, location-long, location-lat, height-above-ellipsoid (optional)
-# xy=/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/test_calliope.csv
-# 
-# #XML containing movebank request details (see hb_movebank_createXML.py)
-# xml=/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/NDVI_EVI.xml
-# 
-# #user name
-# un=tcormier
-# 
-# #password
-# pw=nohg3ITh
-# 
-# #outdir
-# outdir=/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/submitted_requests/
-# outfile=/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/submitted_requests/test.xml
+#Text file of xy locations of points to be annotated. Must have the following columns
+#with no spaces: Timestamp, location-long, location-lat, height-above-ellipsoid (optional)
+xy=/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/test_calliope.csv
+
+#XML containing movebank request details (see hb_movebank_createXML.py)
+xml=/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/NDVI_EVI.xml
+
+#user name
+un=tcormier
+
+#password
+pw=nohg3ITh
+
+#outdir
+outdir=/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/submitted_requests/
+outfile=/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/submitted_requests/test.xml
 ###############################
 
 #output file naming

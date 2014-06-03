@@ -29,7 +29,7 @@ outdir <- args[6]
 # #hardcoded for testing:
 #
 #address to submit request
-url <- "http://www.bioinfo.mpg.de/orn-gateway/request-annotation-xml.jsp"
+url <- 
 
 #Text file of xy locations of points to be annotated. Must have the following columns
 #with no spaces: Timestamp, location-long, location-lat, height-above-ellipsoid (optional)
@@ -41,10 +41,10 @@ xml <- "/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto
 #xml <- "/Volumes/Share/tcormier/hummingbirds/migration_study/movebank/request_xmls/lwrf_swrf_t10m_u10m_v10m.xml"
 
 #user name
-un <- "tcormier"
+un <- ""
 
 #password
-pw <- "nohg3ITh"
+pw <- ""
 
 #outdir
 outdir <- "/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/submitted_requests/"
@@ -80,7 +80,7 @@ if (file.exists(ret.xml)) {
   #tedious issues with quotes
   status.query <- paste("INSERT INTO test_access_key_lut (access_key, date_time, tracks, xml, status) VALUES (", ak, ",", now, ",", xy, ",", xml, ",", ak.status, ");", sep="")
   insert.ak <- dbGetQuery(con, status.query)
-}
+}# end ret.xml if
 
 
 outfile <- 
