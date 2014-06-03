@@ -15,7 +15,7 @@
 if [ "$#" -ne 6 ]; then
     echo "usage: hb-submit_movebank_request.sh <url> <xy> <xml> <un> <pw> <outdir>"
     echo
-    echo "example: hb-submit_movebank_request.sh http://www.bioinfo.mpg.de/orn-gateway/request-annotation-xml.jsp /Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/test_calliope.csv /Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/NDVI_EVI.xml tcormier nohg3ITh /Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/submitted_requests/"
+    
     exit
 fi
 
@@ -31,7 +31,7 @@ outdir=${6}
 #hardcoded for testing:
 #
 #address to submit request
-url=http://www.bioinfo.mpg.de/orn-gateway/request-annotation-xml.jsp
+url=
 #
 #Text file of xy locations of points to be annotated. Must have the following columns
 #with no spaces: Timestamp, location-long, location-lat, height-above-ellipsoid (optional)
@@ -41,10 +41,10 @@ xy=/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_subm
 xml=/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/NDVI_EVI.xml
 
 #user name
-un=tcormier
+un=
 
 #password
-pw=nohg3ITh
+pw=
 
 #outdir
 outdir=/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/submitted_requests/
