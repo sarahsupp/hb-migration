@@ -33,8 +33,8 @@ url <-
 
 #Text file of xy locations of points to be annotated. Must have the following columns
 #with no spaces: Timestamp, location-long, location-lat, height-above-ellipsoid (optional)
-#xy <- "/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/test_calliope.csv"
-xy <- "/Volumes/Share/tcormier/hummingbirds/migration_study/movebank/track_csvs/ebd_rfuhum_2012_springMigration_albers_tracks.csv"
+xy <- "/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/test_calliope.csv"
+#xy <- "/Volumes/Share/tcormier/hummingbirds/migration_study/movebank/track_csvs/ebd_rfuhum_2012_springMigration_albers_tracks.csv"
 
 #XML containing movebank request details (see hb_movebank_createXML.py)
 xml <- "/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/env_request_xmls/Quality_NDVI_EVI.xml"
@@ -73,14 +73,12 @@ if (file.exists(ret.xml)) {
   ak.status <- xmlAttrs(r)[names(xmlAttrs(r))=="status"]
   
   #FIX this to non-test table when script is stable and production-ready
-  akl.query <- paste("INSERT INTO test_access_key_list (access_key) VALUES (", ak, ");", sep="")
+  akl.query <- sprintf("INSERT INTO test_access_key_list (access_key) VALUES (%s)", ak)
   insert.ak <- dbGetQuery(con, akl.query)
   
   #talk to Jesse about making this a real date-time; also look up how to more easily write a query to avoid
-  #tedious issues with quotes
-  status.query <- paste("INSERT INTO test_access_key_lut (access_key, date_time, tracks, xml, status) VALUES (", ak, ",", now, ",", xy, ",", xml, ",", ak.status, ");", sep="")
+  #tedious issues with quotes fixed by using sprintf (can use this to convert python xml generator code over to R?)
+  status.query <- sprintf("INSERT INTO test_access_key_lut (access_key, date_time, tracks, xml, status) VALUES (%s,'%s','%s','%s','%s')", ak,now,xy,xml,ak.status)
   insert.ak <- dbGetQuery(con, status.query)
 }# end ret.xml if
 
-
-outfile <- 
