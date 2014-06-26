@@ -9,8 +9,6 @@
 # Date: April 21, 2014
 # Status: In Progress
 
-
-
 library(RPostgreSQL)
 library(XML)
 
@@ -29,22 +27,22 @@ library(XML)
 # #hardcoded for testing:
 #
 #address to submit request
-url <- "http://www.bioinfo.mpg.de/orn-gateway/request-annotation-xml.jsp"
+url <- ""
 
 #CSV file list of track csvs that contain xy locations of points to be annotated. Each track csv must 
 #have the following columns with no spaces: Timestamp, location-long, location-lat, height-above-ellipsoid (optional)
-xy.csv <- "C:/Share/tcormier/hummingbirds/migration_study/movebank/track_csvs/submit_lists/bchu_lag0_allyrs.csv"
-
+#xy.csv <- "C:/Share/tcormier/hummingbirds/migration_study/movebank/track_csvs/submit_lists/bchu_lag0_allyrs.csv"
+xy.csv <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/track_csvs/submit_lists/bchu_lag0_allyrs.csv"
 
 #CSV file list of XMLs containing movebank request details (see hb_movebank_createXML.py)
-#xml <- "/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/env_request_xmls/Quality_NDVI_EVI.xml"
-xml.csv <- "C:/Share/tcormier/hummingbirds/migration_study/movebank/env_request_xmls/submit_lists/submit_vars_20140626.csv"
-
+#xml.csv <- "C:/Share/tcormier/hummingbirds/migration_study/movebank/env_request_xmls/submit_lists/submit_vars_20140626.csv"
+xml.csv <- ""
+  
 #user name
-un <- "tcormier"
+un <- ""
 
 #password
-pw <- "nohg3ITh"
+pw <- ""
 
 #outdir
 outdir <- "C:/Share/tcormier/hummingbirds/migration_study/movebank/submitted_requests/"
