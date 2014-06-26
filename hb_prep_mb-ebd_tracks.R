@@ -1,84 +1,125 @@
-library(raster)
-library(maptools)
-library(rgdal)
-
-##########################
-# User input variables
-#shapefiles associated with North America grid
-grid.poly <- "C:/Share/tcormier/hummingbirds/migration_study/gridded_references/na_p3deg_albers_32k_unique_poly.shp"
-grid.points <- "C:/Share/tcormier/hummingbirds/migration_study/gridded_references/na_p3deg_albers_32k_unique_points.shp"
-
+#Purpose: Formats eBird data "tracks" for submission to Movebank.
+#This script can format both present and absent data based on the format we 
+#are using as of 6/25/14.
+#
+#Author: Tina Cormier
+#
+#Date: 06/25/2014
+#
+#Status: Runs but needs to be cleaned up!
+###################################################
 #ebird daily observation data
-#ebd.shp <- "C:/Share/tcormier/hummingbirds/migration_study/data/ebird/ebd_rfuhum_2004_201312_relNove-2013_albers.shp"
-ebd.shp <- "C:/Share/tcormier/hummingbirds/migration_study/data/ebird/test/ebd_rfuhum_2012_springMigration_albers.shp"
+ebd.presfiles <- "C:/Share/tcormier/hummingbirds/migration_study/data/ebird/present_points/"
+ebd.absfiles <- "C:/Share/tcormier/hummingbirds/migration_study/data/ebird/absent_points/"
+
 #Output movebank tracks file (directory):
 trackdir <- "C:/Share/tcormier/hummingbirds/migration_study/movebank/track_csvs/"
 
+#lag in days
+lag=0
 
-##########################
-#read in shapefiles (try first with maptools)
-poly <- readShapePoly(grid.poly)
-pts <- readShapePoints(grid.points)
-ebd <- readShapePoints(ebd.shp)
+#spp.list <- c("bchu", "bthu","cahu","rthu","ruhu")
+spp.list <- c("bchu", "bthu","cahu","ruhu")
+###################################################
+ 
 
-#Intersect ebd with poly, which will give me the IDs of the points I need to submit to movebank.
-#This is for model building, as we are only looking at areas (grid cells) in which the hb
-#was observed. Later, for temporal prediction, we'll have to use the whole envelope, within which
-#hbs were observed and not observed.
-
-#in fact, when I do this "for real" later (soon?), I will just request the whole area (need to figure out
-#how to determine what the "whole area" is) for every day and extract from that the ebird observations.  That way,
-#I get all of the data in one swoop and don't ask for the same thing multiple times from movebank. But before that 
-#happens, I need to tile this probably.  Also, haven't settled on a resoltion..though this res (32km) is finer
-#than the hex analysis. 250m might be an unweildy amount of data.
-
-#But I digress...this gives me a list of grid IDs that intersect all ebird obs (all years)
-polyebd <- over(ebd, poly)
-
-#Now get unique values
-polyebd.un <- unique(polyebd$GRIDCODE)
-
-#Pull out just 2012 for now
-ebd2012 <- ebd[ebd$OBSERVAT_1 > "2011-12-31" & ebd$OBSERVAT_1 < "2013-01-01",] 
-polyebd2012 <- over(ebd2012, poly)
-
-
-#format as text file to submit to movebank
-ebd.names <- c("timestamp", "location-long", "location-lat", "height-above-ellipsoid")
-ebd.2012.csv <- as.data.frame(matrix(data=NA, nrow=length(polyebd2012$GRIDCODE),ncol=length(ebd.names),))
-lag <- ebd.2012.csv
-#head(ebd.2012.csv)
-timestamp <- paste(ebd2012$OBSERVAT_1, "12:00:00.000")
-timestamp_7lag <- paste((ebd2012$OBSERVAT_1-7), "12:00:00.000")
-
-ebd.2012.csv[,1] <- timestamp
-ebd.2012.csv[,2] <- ebd2012$LONGITUDE
-ebd.2012.csv[,3] <- ebd2012$LATITUDE
-ebd.2012.csv[,4] <- ""
-#everything the same for lag except timestamp
-lag[,1] <- timestamp_7lag
-lag[,2] <- ebd2012$LONGITUDE
-lag[,3] <- ebd2012$LATITUDE
-lag[,4] <- ""
+#function to prep present data
+#lag is in days - 0 if no lag.
+prepPres <- function(spp, spp_tbl, lag, outdir) {
+  #format as text file to submit to movebank
+  ebd_names <- c("timestamp", "location-long", "location-lat", "height-above-ellipsoid")
+  
+  #Break down tbl by yr for pres data (already done for abs data)
+  for (yr in c(2008:2013)) {
+    ebd_yr <- spp_tbl[spp_tbl$YEAR == yr,]
+    ebd <- as.data.frame(matrix(data=NA, nrow=nrow(ebd_yr),ncol=length(ebd_names),))
+    
+    #format date
+    d <- paste(ebd_yr$DAY, ebd_yr$YEAR, sep="_")
+    d2 <- as.Date(d, "%j_%Y")
+    
+    #incorporate lag if requested
+    d2 <- d2-lag
+    ts <- paste0(ebd_yr$TIME, ".000")
+    dt <- paste(d2, ts)
+    
+    #fill in ebd df
+    ebd[,1] <- dt
+    ebd[,2] <- ebd_yr$LONGITUDE
+    ebd[,3] <- ebd_yr$LATITUDE
+    ebd[,4] <- ""
+    
+    #Assign names last bc R doesn't like dashes in column names, so after I'm done
+    #fiddling with the columns, assign the names.
+    names(ebd) <- ebd_names
+    
+    #write table
+    outpres <- paste0(outdir,"/", spp, "_pres_", yr, "_lag",lag, ".csv") 
+    write.csv(ebd, file=outpres, quote=F, row.names=F)
+  }#end yr loop
+}#end prepPres
 
 
-#Assign names last bc R doesn't like dashes in column names, so after I'm done
-#fiddling with the columns, assign the names.
-names(ebd.2012.csv) <- ebd.names
-names(lag) <- ebd.names
+#function to prep Absent data
+#lag is in days - 0 if no lag.
+#could consolidate pres and abs function into one with some logic. 
+#Just rushing right now!
+prepAbs <- function(spp, abs_tbl, lag, outdir, year) {
+  #format as text file to submit to movebank
+  ebd_names <- c("timestamp", "location-long", "location-lat", "height-above-ellipsoid")
+  ebd <- as.data.frame(matrix(data=NA, nrow=nrow(abs_tbl),ncol=length(ebd_names),))
+  
+  #format date - 
+  d <- paste(abs_tbl$DAY, abs_tbl$YEAR, sep="_")
+  d2 <- as.Date(d, "%j_%Y")
+  
+  #incorporate lag if requested
+  d2 <- d2-lag
+  #Frank did not provide time with the absent points. Prob not important in this analysis.
+  ts <- "12:00:00.000"
+  dt <- paste(d2, ts)
+  
+  #fill in ebd df
+  ebd[,1] <- dt
+  ebd[,2] <- abs_tbl$LONGITUDE
+  ebd[,3] <- abs_tbl$LATITUDE
+  ebd[,4] <- ""
+  
+  #Assign names last bc R doesn't like dashes in column names, so after I'm done
+  #fiddling with the columns, assign the names.
+  names(ebd) <- ebd_names
+  
+  #write table
+  outAbs <- paste0(outdir,"/", spp, "_abs_", year,"_lag",lag, ".csv") 
+  write.csv(ebd, file=outAbs, quote=F, row.names=F)
+}#end Abs function
 
-#write ids and lat lon to file so we can join back up after annotation
-ids <- as.data.frame(cbind(polyebd2012$GRIDCODE, ebd2012$LONGITUDE, ebd2012$LATITUDE, timestamp, ebd2012$NEAR_DIST, ebd2012$OPP_ANGLE))
-names(ids) <- c("gridcode", "longitude", "latitude", "timestamp","distance", "direction")
-ids.lag <- as.data.frame(cbind(polyebd2012$GRIDCODE, ebd2012$LONGITUDE, ebd2012$LATITUDE, timestamp_7lag, ebd2012$NEAR_DIST, ebd2012$OPP_ANGLE))
-names(ids.lag) <- c("gridcode", "longitude", "latitude", "timestamp_7lag", "distance", "direction")
+#This can be a loop over multiple spp in spp.list
+#spp <- spp.list[1]
 
-#write out tracks csv as well as an ID csv that I can use to join back to the grid after annotation.
-out.tracks <- paste0(trackdir, unlist(strsplit(basename(ebd.shp), "\\."))[1], "_tracks.csv")
-out.tracks.lag <- paste0(trackdir, unlist(strsplit(basename(ebd.shp), "\\."))[1], "_tracks_7day_lag.csv")
-out.ids <- paste0(trackdir, unlist(strsplit(basename(ebd.shp), "\\."))[1], "_ids.csv")
-out.ids.lag <- paste0(trackdir, unlist(strsplit(basename(ebd.shp), "\\."))[1], "_ids_7day_lag.csv")
-write.csv(ebd.2012.csv, file=out.tracks, quote=F, row.names=F)
-write.csv(lag, file=out.tracks.lag, quote=F, row.names=F)
-write.csv(ids, file=out.ids, quote=F, row.names=F)
-write.csv(ids.lag, file=out.ids.lag, quote=F, row.names=F)
+for (spp in spp.list) {#######
+  #prep and write out pres files
+  pfile <- paste0(ebd.presfiles, spp, ".txt")
+  tbl <- read.table(pfile, header=TRUE, sep=",", quote='"', fill=TRUE, as.is=TRUE, comment.char="")
+  
+  #write out pres track files
+  prepPres(spp, tbl, 0, trackdir)
+  
+  #prep and write out Abs files
+  pattern=paste0(spp, "_[0-9]{4}_sub\\.csv")
+  afiles <- list.files(path=ebd.absfiles, pattern=pattern, full.names=T)
+  
+  for (abs_y in afiles) {
+    abs_tbl <- read.table(abs_y, header=TRUE, sep=",", quote='"', fill=TRUE, as.is=TRUE, comment.char="")
+    year <- regexpr(pattern="[0-9]{4}", text=abs_y)
+    year <- regmatches(abs_y, year)
+    
+    #Write out Abs track files
+    prepAbs(spp, abs_tbl, 0, trackdir, year)
+  }
+  
+  #write out pres track files
+  prepPres(spp,tbl,0,trackdir)
+}#end spp loop  
+
+
