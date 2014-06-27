@@ -676,12 +676,6 @@ files = c(files[4],files[1],files[2],files[3],files[5])
 cfiles = c(cfiles[2],cfiles[1],cfiles[4],cfiles[3],cfiles[5])
 mfiles = c(mfiles[2],mfiles[1],mfiles[4],mfiles[3],mfiles[5])
 
-#Open pdf plotting window
-setEPS()
-postscript(file = paste(figpath, "/Panel_figure1_allobs_heat.eps", sep=""), width = 7.5, height = 8)
-#pdf(file ="Panel_figure_2.pdf", sep=""), width = 7.5, height = 10)
-par(mfrow=c(5,3), mai=c(0.4,0.2,0.2,0.2), oma = c(0, 2, 0, 0))
-
 for (f in 1:length(files)) {
   
   #read in raw data
@@ -736,32 +730,20 @@ for (s in 1:length(splist)){
   df5 = df5[order(df5$POLYFID),]
 
   #make a map with hexes colored by the number of times the species was observed in a given hex
-  pdf(file = paste(figpath, "/fig1_col1_", splist[s], ".pdf", sep=""), width = 3, height = 2.5)
+  setEPS()
+  postscript(file = paste(figpath, "/fig1_col1_", splist[s], ".eps", sep=""), width = 3, height = 3)
   plot(NA, NA, xlim = c(-140,-60), ylim=c(15,55),xlab="", ylab="", axes=FALSE)
     plot(hexgrid, col=df5$cols, border = "white", lwd = 0.25, las=1, add=TRUE)
     mtext(side=2,line=2, splist[s])
-    map("worldHires", c("usa", "canada", "mexico"), add=TRUE, cex = 0.5)
+    map("worldHires", c("usa", "canada", "mexico"), add=TRUE, cex = 0.25)
   dev.off()
   
   #plot the legend separately
-  pdf(file = "/fig1_col1_legend.pdf", width = 3, height = 2.5)
-  
+  setEPS()
+  postscript(file = "/fig1_col1_legend.eps", width = 3, height = 3)
   plot(NA, NA, xlim = c(0,5), ylim=c(0,5), axes=FALSE, xlab = "", ylab="")
   legend.col(col = cols[,2], lev = sort(unique(df4$count)))
-  
-  r=raster(volcano)
-  obs = df5$count
-  obs[is.na(obs)] <- 0
-  range = c(min(obs), max(obs))
-  plot(r, legend.only=TRUE, col = rev(heat.colors(length(unique(df3.1$count)))), horiz=TRUE, legend.width=1, legend.shrink=0.75,
-    axis.args=list(at=seq(range[1], range[2], 500), labels=seq(range[1], range[2], 500), cex.axis=0.6),
-       legend.args=list(text="Number of observations", side = 1, font = 2, line = 0.5, cex=0.8), 
-       bty="n")
-
-  
-    legend("bottomleft", legend=vls, pch=22, pt.bg=cols2, pt.cex=1, cex=0.75, bty="n",
-         col="black", title="Number of checklists", x.intersp=1, y.intersp=0.5, bg="white")
-
+  dev.off()
 }
 
 for (f in 1:length(files)) {
@@ -782,18 +764,25 @@ vls = sort(unique(round(cols3$id)))
 vls[1] = 1
 cols4 = tim.colors(length(vls))
 
-#plot(elev, ext=myext, ylab="", xlab="", xlim = c(-175, -50), ylim = c(15, 75), cex.lab = 1, cex.axis=1, col=gray(200:0/256))
+setEPS()
+postscript(file = paste(figpath, "/fig1_col2_", splist[s], ".eps", sep=""), width = 3, height = 3)
 plot(preds_sub$lon, preds_sub$lat, col=preds_sub$cols, pch=19, cex=0.25, ylab="", xlab="", xlim = c(-140, -60), ylim = c(15, 55),
      cex.lab = 1, cex.axis=1, axes=FALSE)
-map("worldHires", c("usa", "canada", "mexico"), add=TRUE)
-points(preds_sub$lon, preds_sub$lat, col=preds_sub$cols, pch=19, cex=0.25)
+  map("worldHires", c("usa", "canada", "mexico"), add=TRUE)
+  points(preds_sub$lon, preds_sub$lat, col=preds_sub$cols, pch=19, cex=0.25)
+dev.off()
 
-#plot legend separately
-#plot(NA, NA)
-#legend("bottomleft", legend=vls, pch=22, pt.bg=cols4, pt.cex=0.75, cex=0.75, bty="n",
-#       col="black", title="month", x.intersp=1, y.intersp=0.5)  
-  
+#plot legend separately  
+setEPS()
+postscript(file = "/fig1_col2_legend.eps", width = 3, height = 3)
+plot(NA, NA, xlim = c(0,5), ylim=c(0,5), axes=FALSE, xlab = "", ylab="")
+  legend("bottomleft", legend=vls, pch=22, pt.bg=cols4, pt.cex=0.75, cex=0.75, bty="n",
+       col="black", title="month", x.intersp=1, y.intersp=0.5)  
+dev.off()
+
 # plot the latitudinal patterns with estimated dates of migration
+setEPS()
+postscript(file = paste(figpath, "/fig1_col4_", splist[s], ".eps", sep=""), width = 3, height = 3)
 latmin = ((min(preds_sub$lat)%/%5+1)*5)-5
 latmax = ((max(preds_sub$lat)%/%5+1)*5) + 5 
 
@@ -803,16 +792,17 @@ plot(preds_sub$jday, preds_sub$lat, pch = 19, xlab = "", ylab = "",
   abline(v=dates_sub$spr_begin, col="cadetblue")
   abline(v=dates_sub$spr_end, col = "olivedrab3")
   abline(v=dates_sub$fal_end, col = "orange")
+dev.off()
+
 }
 
-dev.off()
+
 
 
 #---------------------------------
 #       plot predicted latitude with 95% confidence intervals
 #---------------------------------
 # save plots comparing daily lat and long and migration date across the years
-pdf(file = paste(figpath, "/CI_lon-lat_all_species.pdf", sep=""), width = 6, height = 5)
 
 for (f in 1:length(cfiles)){
   preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
@@ -845,14 +835,7 @@ for (f in 1:length(cfiles)){
       pred_fal = rbind(pred_fal, fall)
     }
   }
-  
-#   #plot all the points with confidence intervals for latitude
-#   lat = ggplot(migpreds, aes(jday, lat, col=factor(year))) + geom_point(size=1) + theme_classic() +
-#     geom_smooth(aes(ymin=lat_lcl, ymax = lat_ucl, fill = factor(year)), stat="identity", alpha = 0.2) +
-#     scale_x_continuous(breaks = seq(0, 365, by = 60)) +
-#     theme(axis.text.x = element_text(angle = 60, hjust=1)) +
-#     theme(text = element_text(size=20), legend.title=element_blank()) + ggtitle(species)
-#   
+     
   # plot spring and fall separately, color-coded to compare overlap
   seasons = ggplot(pred_spr, aes(lon, lat), col = year, group=year, order.by=jday) + theme_classic() + 
     geom_rect(data=pred_spr, aes(xmin=lon_lcl,ymin=lat_lcl,xmax=lon_ucl,ymax=lat_ucl, group=year), fill="cadetblue", alpha=0.02) +
@@ -861,7 +844,8 @@ for (f in 1:length(cfiles)){
     geom_path(data=pred_fal, aes(lon, lat, group=year)) + 
     theme(text = element_text(size=20)) + ggtitle(species)
   
+  setEPS()
+  postcript(file = paste(figpath, file = paste("/fig1_col3_", species, ".eps", sep=""), width = 3, height = 3)
   multiplot(seasons, cols = 1)
-  
+  dev.off()
 }
-dev.off()
