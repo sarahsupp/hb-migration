@@ -665,6 +665,56 @@ for (f in 1:length(cfiles)){
 }
 dev.off()
 
+#----------------------------------------------------------
+#       Makes Figure B3. Observations across the years (2004-2013)
+#       For Appendix B
+#----------------------------------------------------------
+
+#NOTE!!: For this to work, make sure files and mfiles is in the same species-order!!
+for (f in 1:length(files)) {
+  
+  #read in raw data
+  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  dates = subset(dates, year > 2007)
+  
+  humdat = read.table(files[f], header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")
+  
+  names(humdat) = c("SCI_NAME", "PRIMARY_COM_NAME","YEAR", "DAY", "TIME", "GROUP_ID", "PROTOCOL_ID",
+                    "PROJ_ID", "DURATION_HRS", "EFFORT_DISTANCE_KM", "EFFORT_AREA_HA", "NUM_OBSERVERS",
+                    "LATITUDE", "LONGITUDE", "SUB_ID", "POLYFID", "MONTH")
+  
+  humdat$MONTH = factor(humdat$MONTH, levels=c(1:12), ordered=TRUE)
+  
+  #grab species name for later identification
+  species = humdat$SCI_NAME[1]
+  species = gsub("\"", "", species, fixed=TRUE)
+  years = c(2004:2013)
+  
+  for (y in 1:length(years)){
+    dat = subset(humdat, YEAR==years[y])
+    yrobs = data.frame(table(dat$DAY))
+    yrobs$year = years[y]
+    
+    if(y == 1) { obs = yrobs}
+    else{ obs = rbind(obs, yrobs)}
+  }
+    names(obs) = c("jday", "freq")
+    obs$jday = as.numeric(obs$jday)
+    obs$freq = as.numeric(obs$freq)
+  ymax = max(obs$freq) + 25
+  
+  ggplot(obs, aes(jday, freq)) + geom_point(alpha=0.4) + xlab("Julian day of Year") + ylab("Number of Checklists") + 
+    theme_classic() + theme(text = element_text(size=12)) +     
+    geom_smooth(se=T, method='gam', formula=y~s(x, k=40), gamma=1.5) +
+    scale_x_continuous(breaks = seq(0, 365, by = 50), limits = c(0,365)) + 
+    scale_y_continuous(breaks = seq(0, ymax, by = 50)) +
+    geom_vline(xintercept = dates[,1], col = "cadetblue", size = 0.5) +
+    geom_vline(xintercept = dates[,4], col = "orange", size = 0.5) +
+    geom_vline(xintercept = dates[,2], col = "olivedrab3", size = 0.5) 
+
+  ggsave(file=paste(figpath, "/B3_occurrences", species, years[y], ".tiff", sep=""), dpi=600, height=3, width=4)
+}
+
 
 #-----------------------------------------------------------
 #       Make synthetic panel figure for paper draft
@@ -740,7 +790,7 @@ for (s in 1:length(splist)){
   
   #plot the legend separately
   setEPS()
-  postscript(file = "/fig1_col1_legend.eps", width = 3, height = 3)
+  postscript(file = paste(figpath, "/fig1_col1_legend.eps", sep=""), width = 3, height = 3)
   plot(NA, NA, xlim = c(0,5), ylim=c(0,5), axes=FALSE, xlab = "", ylab="")
   legend.col(col = cols[,2], lev = sort(unique(df4$count)))
   dev.off()
@@ -765,7 +815,7 @@ vls[1] = 1
 cols4 = tim.colors(length(vls))
 
 setEPS()
-postscript(file = paste(figpath, "/fig1_col2_", splist[s], ".eps", sep=""), width = 3, height = 3)
+postscript(file = paste(figpath, "/fig1_col2_", species, ".eps", sep=""), width = 3, height = 3)
 plot(preds_sub$lon, preds_sub$lat, col=preds_sub$cols, pch=19, cex=0.25, ylab="", xlab="", xlim = c(-140, -60), ylim = c(15, 55),
      cex.lab = 1, cex.axis=1, axes=FALSE)
   map("worldHires", c("usa", "canada", "mexico"), add=TRUE)
@@ -774,7 +824,7 @@ dev.off()
 
 #plot legend separately  
 setEPS()
-postscript(file = "/fig1_col2_legend.eps", width = 3, height = 3)
+postscript(file = paste(figpath, "/fig1_col2_legend.eps", sep=""), width = 3, height = 3)
 plot(NA, NA, xlim = c(0,5), ylim=c(0,5), axes=FALSE, xlab = "", ylab="")
   legend("bottomleft", legend=vls, pch=22, pt.bg=cols4, pt.cex=0.75, cex=0.75, bty="n",
        col="black", title="month", x.intersp=1, y.intersp=0.5)  
@@ -782,7 +832,7 @@ dev.off()
 
 # plot the latitudinal patterns with estimated dates of migration
 setEPS()
-postscript(file = paste(figpath, "/fig1_col4_", splist[s], ".eps", sep=""), width = 3, height = 3)
+postscript(file = paste(figpath, "/fig1_col4_", species, ".eps", sep=""), width = 3, height = 3)
 latmin = ((min(preds_sub$lat)%/%5+1)*5)-5
 latmax = ((max(preds_sub$lat)%/%5+1)*5) + 5 
 
@@ -842,10 +892,9 @@ for (f in 1:length(cfiles)){
     geom_path(aes(group=year)) + 
     geom_rect(data=pred_fal, aes(xmin=lon_lcl,ymin=lat_lcl,xmax=lon_ucl,ymax=lat_ucl, group=year), fill="orange", alpha=0.02) +
     geom_path(data=pred_fal, aes(lon, lat, group=year)) + 
-    theme(text = element_text(size=20)) + ggtitle(species)
+    theme(text = element_text(size=12)) + xlab("longitude") + ylab("latitude")
   
-  setEPS()
-  postcript(file = paste(figpath, file = paste("/fig1_col3_", species, ".eps", sep=""), width = 3, height = 3)
+  pdf(file = paste(figpath, "/fig1_col3_", species, ".pdf", sep=""), width = 3, height = 3)
   multiplot(seasons, cols = 1)
   dev.off()
 }

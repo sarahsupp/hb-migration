@@ -626,7 +626,7 @@ legend.col <- function(col, lev){
        yaxt = "n", ylab = "",
        xaxt = "n", xlab = "",
        frame.plot = FALSE)
-  axis(side = 4, las = 2, tick = FALSE, line = .25)
+  axis(side = 4, las = 2, tick = FALSE, line = 0.25)
   par <- opar
 }
 
