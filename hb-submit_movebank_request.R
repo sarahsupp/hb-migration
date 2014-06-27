@@ -3,7 +3,8 @@
 # of xy coordinates for annotation (see "/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/test_calliope.csv")
 # for an example of how it must be structured); xml=an xml file containing the request parameters (i.e. sensor, product, 
 # interpolation etc. See /Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/NDVI_EVI.xml for
-# example); un=movebank username; pw=movebank password; outdir=output directory for returned xml document with access key.
+# example); un=movebank username; pw=movebank password; req.outdir=output directory for returned xml document with access key;
+# ann.outdir=annotation output directory - will be written to db.
 #
 # Author: Tina Cormier
 # Date: April 21, 2014
@@ -23,7 +24,7 @@ library(XML)
 # pw <- args[5]
 # outdir <- args[6]
 
-###############################
+###########################################################################################
 # #hardcoded for testing:
 #
 #address to submit request
@@ -36,7 +37,7 @@ xy.csv <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/t
 
 #CSV file list of XMLs containing movebank request details (see hb_movebank_createXML.py)
 #xml.csv <- "C:/Share/tcormier/hummingbirds/migration_study/movebank/env_request_xmls/submit_lists/submit_vars_20140626.csv"
-xml.csv <- ""
+xml.csv <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/env_request_xmls/submit_lists/submit_vars_20140626_rugosity-slope.csv"
   
 #user name
 un <- ""
@@ -44,22 +45,25 @@ un <- ""
 #password
 pw <- ""
 
-#outdir
-outdir <- "C:/Share/tcormier/hummingbirds/migration_study/movebank/submitted_requests/"
-#outfile <- "/Users/tcormier/Documents/820_Hummingbirds/prelim_analyses/movebank/auto_submit/submitted_requests/testR.xml"
-##############################
+#request outdir
+#req.outdir <- "C:/Share/tcormier/hummingbirds/migration_study/movebank/submitted_requests/"
+req.outdir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/submitted_requests/ruhu/"
 
-#SKIP DB stuff for now - can't get it to work on arctic.
+#annotation outdir
+ann.outdir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/downloaded_annotations/ruhu/"
+##########################################################################################
+
+#SKIP DB stuff on arctic for now - can't get it to work on arctic.
 #connect to db
 # Connect to database
-# con <- dbConnect(drv="PostgreSQL", port="5433",host="fusion", dbname="tcormier")
+con <- dbConnect(drv="PostgreSQL", port="5433",host="fusion", dbname="tcormier")
 #dbListTables(con)
 
 #read in submit lists:
 xy.list <- as.vector(read.csv(xy.csv, header=F, as.is=T)[,1])
 xml.list <- as.vector(read.csv(xml.csv, header=F, as.is=T)[,1])
 
-#FOR NOW - until I can get database working from arctic:
+#FOR NOW - until I can get database working from arctic - do this on mac:
 
 #Now, loop over each xy list and submit a request for each xml in xml.list
 for (xy in xy.list) {
@@ -68,10 +72,10 @@ for (xy in xy.list) {
   for (xml in xml.list) {
     #Curl command will return an xml with the access key in it - filepath of that returned file:
     now <- format(Sys.time(), format="%Y%m%d_%H%M%S")
-    ret.xml <- paste(outdir, "/", unlist(strsplit(basename(xy), "\\."))[1], "_", unlist(strsplit(basename(xml), "\\."))[1], "_", now, ".xml", sep="")
+    ret.xml <- paste(req.outdir, "/", unlist(strsplit(basename(xy), "\\."))[1], "_", unlist(strsplit(basename(xml), "\\."))[1], "_", now, ".xml", sep="")
     
     #system call to curl (was able to get this to work somehow when I couldn't get Rcurl to work! - just need to plug ahead for now.)
-    curl.cmd <- paste("curl -o ", ret.xml, " -F \"request=@", xml, "\" -F \"tracks=@", xy, "\" -F \"login=", un, "\" -F \"password=", pw, "\" ", url, sep="")
+    curl.cmd <- paste("curl -o ", ret.xml, " -F \"request=@", xml, "\" -F \"tracks=@", xy, "\" -F \"login=", un, "\" -F \"password=", pw, "\" ", url, sep="")    
     system(curl.cmd)
     
     #check to see if ret.xml exists (it should if the curl system call did not produce an error).
@@ -82,14 +86,16 @@ for (xy in xy.list) {
       r <- xmlRoot(doc)
       ak <- xmlAttrs(r)[names(xmlAttrs(r))=="accessKey"]
       ak.status <- xmlAttrs(r)[names(xmlAttrs(r))=="status"]
+      ann_name <- paste0(ann.outdir,unlist(strsplit(basename(xy), "\\."))[1], "_", unlist(strsplit(basename(xml), "\\."))[1], ".csv")
+      spp <- unlist(strsplit(basename(ann_name), "_"))[1]
       
       #FIX this to non-test table when script is stable and production-ready
-      akl.query <- sprintf("INSERT INTO test_access_key_list (access_key) VALUES (%s)", ak)
-      insert.ak <- dbGetQuery(con, akl.query)
+      #akl.query <- sprintf("INSERT INTO test_access_key_list (access_key) VALUES (%s)", ak)
+      #insert.ak <- dbGetQuery(con, akl.query)
       
       #talk to Jesse about making this a real date-time; also look up how to more easily write a query to avoid
       #tedious issues with quotes fixed by using sprintf (can use this to convert python xml generator code over to R?)
-      status.query <- sprintf("INSERT INTO test_access_key_lut (access_key, date_time, tracks, xml, status) VALUES (%s,'%s','%s','%s','%s')", ak,now,xy,xml,ak.status)
+      status.query <- sprintf("INSERT INTO test_access_key_lut (access_key, date_time, tracks, xml, status, ann_name,spp) VALUES ('%s','%s','%s','%s','%s','%s','%s')", ak,now,xy,xml,ak.status,ann_name,spp)
       insert.ak <- dbGetQuery(con, status.query)
     }# end ret.xml if
   }

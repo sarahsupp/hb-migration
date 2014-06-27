@@ -97,7 +97,7 @@ prepAbs <- function(spp, abs_tbl, lag, outdir, year) {
 #This can be a loop over multiple spp in spp.list
 #spp <- spp.list[1]
 
-for (spp in spp.list) {#######
+for (spp in spp.list) {
   #prep and write out pres files
   pfile <- paste0(ebd.presfiles, spp, ".txt")
   tbl <- read.table(pfile, header=TRUE, sep=",", quote='"', fill=TRUE, as.is=TRUE, comment.char="")
