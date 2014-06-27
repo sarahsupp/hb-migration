@@ -736,16 +736,31 @@ for (s in 1:length(splist)){
   df5 = df5[order(df5$POLYFID),]
 
   #make a map with hexes colored by the number of times the species was observed in a given hex
-  # plot(hexgrid, col=df5$cols, border="white", lwd=0.25, xlim=c(-170,-50), ylim=c(15,75), las=1)
+  pdf(file = paste(figpath, "/fig1_col1_", splist[s], ".pdf", sep=""), width = 3, height = 2.5)
   plot(NA, NA, xlim = c(-140,-60), ylim=c(15,55),xlab="", ylab="", axes=FALSE)
     plot(hexgrid, col=df5$cols, border = "white", lwd = 0.25, las=1, add=TRUE)
     mtext(side=2,line=2, splist[s])
     map("worldHires", c("usa", "canada", "mexico"), add=TRUE, cex = 0.5)
+  dev.off()
   
   #plot the legend separately
-#  plot(NA,NA)
-#    legend("bottomleft", legend=vls, pch=22, pt.bg=cols2, pt.cex=1, cex=0.75, bty="n",
-#         col="black", title="Number of checklists", x.intersp=1, y.intersp=0.5, bg="white")
+  pdf(file = "/fig1_col1_legend.pdf", width = 3, height = 2.5)
+  
+  plot(NA, NA, xlim = c(0,5), ylim=c(0,5), axes=FALSE, xlab = "", ylab="")
+  legend.col(col = cols[,2], lev = sort(unique(df4$count)))
+  
+  r=raster(volcano)
+  obs = df5$count
+  obs[is.na(obs)] <- 0
+  range = c(min(obs), max(obs))
+  plot(r, legend.only=TRUE, col = rev(heat.colors(length(unique(df3.1$count)))), horiz=TRUE, legend.width=1, legend.shrink=0.75,
+    axis.args=list(at=seq(range[1], range[2], 500), labels=seq(range[1], range[2], 500), cex.axis=0.6),
+       legend.args=list(text="Number of observations", side = 1, font = 2, line = 0.5, cex=0.8), 
+       bty="n")
+
+  
+    legend("bottomleft", legend=vls, pch=22, pt.bg=cols2, pt.cex=1, cex=0.75, bty="n",
+         col="black", title="Number of checklists", x.intersp=1, y.intersp=0.5, bg="white")
 
 }
 
