@@ -667,7 +667,9 @@ dev.off()
 
 
 #-----------------------------------------------------------
-#       Make synthetic panel figure for paper draft 
+#       Make synthetic panel figure for paper draft
+#       Make parts separately, and bring back together 
+#         in Illustrator or Inkscape
 #-----------------------------------------------------------
 #reorder files to match manuscript ordering
 files = c(files[4],files[1],files[2],files[3],files[5])
@@ -676,7 +678,7 @@ mfiles = c(mfiles[2],mfiles[1],mfiles[4],mfiles[3],mfiles[5])
 
 #Open pdf plotting window
 setEPS()
-postscript(file = paste(figpath, "/Panel_figure1_allobs.eps", sep=""), width = 7.5, height = 8)
+postscript(file = paste(figpath, "/Panel_figure1_allobs_heat.eps", sep=""), width = 7.5, height = 8)
 #pdf(file ="Panel_figure_2.pdf", sep=""), width = 7.5, height = 10)
 par(mfrow=c(5,3), mai=c(0.4,0.2,0.2,0.2), oma = c(0, 2, 0, 0))
 
@@ -691,13 +693,9 @@ for (f in 1:length(files)) {
   
   humdat$MONTH = factor(humdat$MONTH, levels=c(1:12), ordered=TRUE)
   
-  #read in the centroid and migration data (by western flyway), use data for years 2008-2013
-  preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
-  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
-  preds_sub = preds[which(preds$year > 2007),]
-  dates_sub = dates[which(dates$year > 2007),]
-  species = preds[1,1]
-  years = c(2008:2013)
+  #grab species name for later identification
+  species = humdat$SCI_NAME[1]
+  species = gsub("\"", "", species, fixed=TRUE)
    
   #plot the geographic number of checklists for the species, over all the years  
   #find the number of obs in each cell
@@ -707,35 +705,60 @@ for (f in 1:length(files)) {
   df = data.frame(POLYFID = names(t), count=as.numeric(t))
   df2 = data.frame(POLYFID = unique(hexgrid$POLYFID))
   df3 = merge(df2, df, all.x=TRUE)
+  df3$species = species
   
+  #combine all the datasets so we can get the colors on the same scale
+  if (f == 1) {
+    df3.1 = df3
+    splist = species
+  }
+  
+  else{
+    df3.1 = rbind(df3.1, df3)
+    splist = c(splist, species)
+  }
+}
+
+# Set colors and legend scale by all species (e.g. some will be red, some will be shades of yellow)
   #matches colors with the number of observations
-  cols = data.frame(id=c(NA,sort(unique(df3$count))), cols=tim.colors(length(unique(df3$count))), stringsAsFactors=FALSE)
-  df4 = merge(df3, cols, by.x="count", by.y="id")
-  df5 = merge(hexgrid, df4, by.x="POLYFID", by.y="POLYFID", all.x=TRUE)
-  df5$cols = ifelse(is.na(df5$count), "white", df5$cols)  #hexes with no counts are white
-  df5 = df5[order(df5$POLYFID),]
-  
+  cols = data.frame(id=c(NA,sort(unique(df3.1$count))), cols=rev(heat.colors(length(unique(df3.1$count)))), stringsAsFactors=FALSE)
+  df4 = merge(df3.1, cols, by.x="count", by.y="id")
   #set scale for legend
   vls = sort(unique(round(cols$id/500)*500))
   vls[1] = 1
-  cols2 = tim.colors(length(vls))
-  
+  cols2 = rev(heat.colors(length(vls)))
+
+#separate back out by species for plotting
+for (s in 1:length(splist)){
+  df4.1 = subset(df4, species == splist[s])
+  df5 = merge(hexgrid, df4.1, by.x="POLYFID", by.y="POLYFID", all.x=TRUE)
+  df5$cols = ifelse(is.na(df5$count), "white", df5$cols)  #hexes with no counts are white
+  df5 = df5[order(df5$POLYFID),]
+
   #make a map with hexes colored by the number of times the species was observed in a given hex
   # plot(hexgrid, col=df5$cols, border="white", lwd=0.25, xlim=c(-170,-50), ylim=c(15,75), las=1)
-  plot(NA, NA, xlim = c(-140,-60), ylim=c(15,55),xlab="", ylab="")
+  plot(NA, NA, xlim = c(-140,-60), ylim=c(15,55),xlab="", ylab="", axes=FALSE)
     plot(hexgrid, col=df5$cols, border = "white", lwd = 0.25, las=1, add=TRUE)
-  #axis(side=1, xaxp=c(round(-140),round(-60),4), las=1)
-  #axis(side=2, yaxp=c(15,55,4), las=1)
-  mtext(side=2,line=2, species)
-  box()
-  ## legend
-  #legend("bottomleft", legend=vls, pch=22, pt.bg=cols2, pt.cex=1, cex=0.75, bty="",
-  #       col="black", title="Number of checklists", x.intersp=1, y.intersp=0.5, bg="white")
-  map("worldHires", c("usa", "canada", "mexico"), add=TRUE, cex = 0.5)
+    mtext(side=2,line=2, splist[s])
+    map("worldHires", c("usa", "canada", "mexico"), add=TRUE, cex = 0.5)
+  
+  #plot the legend separately
+#  plot(NA,NA)
+#    legend("bottomleft", legend=vls, pch=22, pt.bg=cols2, pt.cex=1, cex=0.75, bty="n",
+#         col="black", title="Number of checklists", x.intersp=1, y.intersp=0.5, bg="white")
 
+}
+
+for (f in 1:length(files)) {
+  #read in the centroid and migration data (by western flyway), use data for years 2008-2013
+  preds = read.table(cfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  preds_sub = preds[which(preds$year > 2007),]
+  dates_sub = dates[which(dates$year > 2007),]
+  species = preds[1,1]
+  years = c(2008:2013)
   
 # plot the migration routes in the next figure
-#myext <- c(-175, -50, 15, 75) #extent for maps
 preds_sub$month = as.factor(preds_sub$month)
 cols3 = data.frame(id=c(sort(unique(preds_sub$month))), cols=tim.colors(length(unique(preds_sub$month))), stringsAsFactors=FALSE)
 preds_sub = merge(preds_sub, cols3, by.x="month", by.y="id")
@@ -746,16 +769,20 @@ cols4 = tim.colors(length(vls))
 
 #plot(elev, ext=myext, ylab="", xlab="", xlim = c(-175, -50), ylim = c(15, 75), cex.lab = 1, cex.axis=1, col=gray(200:0/256))
 plot(preds_sub$lon, preds_sub$lat, col=preds_sub$cols, pch=19, cex=0.25, ylab="", xlab="", xlim = c(-140, -60), ylim = c(15, 55),
-     cex.lab = 1, cex.axis=1)
+     cex.lab = 1, cex.axis=1, axes=FALSE)
 map("worldHires", c("usa", "canada", "mexico"), add=TRUE)
 points(preds_sub$lon, preds_sub$lat, col=preds_sub$cols, pch=19, cex=0.25)
+
+#plot legend separately
+#plot(NA, NA)
 #legend("bottomleft", legend=vls, pch=22, pt.bg=cols4, pt.cex=0.75, cex=0.75, bty="n",
-#       col="black", title="", x.intersp=0.5, y.intersp=0.75)  
+#       col="black", title="month", x.intersp=1, y.intersp=0.5)  
   
 # plot the latitudinal patterns with estimated dates of migration
 latmin = ((min(preds_sub$lat)%/%5+1)*5)-5
 latmax = ((max(preds_sub$lat)%/%5+1)*5) + 5 
 
+par(bty="l")
 plot(preds_sub$jday, preds_sub$lat, pch = 19, xlab = "", ylab = "", 
      cex.axis = 1, col = "grey20", cex = 0.25)
   abline(v=dates_sub$spr_begin, col="cadetblue")
