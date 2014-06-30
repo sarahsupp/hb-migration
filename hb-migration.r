@@ -765,8 +765,7 @@ for (f in 1:length(files)) {
 
 # Set colors and legend scale by all species (e.g. some will be red, some will be shades of yellow)
   #matches colors with the number of observations
-  numobs=length(unique(df3.1$count))
-  yltord = rev(heat.colors(numobs+25)[1:numobs])
+  yltord = colorRampPalette(brewer.pal(9, "YlOrRd"))(length(unique(df3.1$count)))
   cols = data.frame(id=c(NA,sort(unique(df3.1$count))), cols=yltord, stringsAsFactors=FALSE)
   df4 = merge(df3.1, cols, by.x="count", by.y="id")
   #set scale for legend
