@@ -261,6 +261,7 @@ require(raster)
 require(gamm4)
 require(chron)
 require(fields)
+require(RColorBrewer)
 source(paste(gitpath, "/migration-fxns.r", sep=""))
 
 setwd(wd)
