@@ -313,19 +313,22 @@ for (f in 1:length(cfiles)){
   pred_spr_sub = pred_spr[which(pred_spr$year > 2007),]
   pred_fal_sub = pred_fal[which(pred_fal$year > 2007),]
   
-  lon_gam = gamm4(lon ~ s(jday, k=10), random = ~(1|year), data = preds_sub, gamma = 1.5)
+  #gam analysis to determine variance across years, using all of the daily centroids (Jday 1-365) in each year
+  lon_gam = gamm4(lon ~ s(jday, k=10), random = ~(1|year), data = preds_sub)
   print (paste("R2 for Longitude is:", round(summary(lon_gam$gam)$r.sq,4)))
-  lat_gam = gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=preds_sub, gamma = 1.5)
+  lat_gam = gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=preds_sub)
   print (paste("R2 for Latitude is:", round(summary(lat_gam$gam)$r.sq,4)))
   
-  lon_gam_spr = gamm4(lon ~ s(jday, k=10), random = ~(1|year), data=pred_spr_sub, gamma = 1.5)
+  #gam analysis to determine variance across years, using only spring centroids (start of spring to peak latitude date)
+  lon_gam_spr = gamm4(lon ~ s(jday, k=10), random = ~(1|year), data=pred_spr_sub)
   print (paste("R2 for spring Longitude is:", round(summary(lon_gam_spr$gam)$r.sq,4)))
-  lat_gam_spr = gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=pred_spr_sub, gamma = 1.5)
+  lat_gam_spr = gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=pred_spr_sub)
   print (paste("R2 for spring Latitude is:", round(summary(lat_gam_spr$gam)$r.sq,4)))
   
-  lon_gam_fal = gamm4(lon ~ s(jday, k=10), random = ~(1|year), data=pred_fal_sub, gamma = 1.5)
+  #gam analsysis to determine variance across years, using only fall centroids (peak latitude to end of fall date)
+  lon_gam_fal = gamm4(lon ~ s(jday, k=10), random = ~(1|year), data=pred_fal_sub)
   print (paste("R2 for fall Longitude is:", round(summary(lon_gam_fal$gam)$r.sq,4)))
-  lat_gam_fal = gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=pred_fal_sub, gamma = 1.5)
+  lat_gam_fal = gamm4(lat ~ s(jday, k=10), random = ~(1|year), data=pred_fal_sub)
   print (paste("R2 for fall Latitude is:", round(summary(lat_gam_fal$gam)$r.sq,4)))
   
   spdata[f,4] = summary(lat_gam$gam)$r.sq
