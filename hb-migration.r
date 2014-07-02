@@ -403,12 +403,14 @@ r = melt(rate[,c(1,2,3,4)], id.vars = c("year", "species"))
 names(r) = c("year", "species", "season", "rate")
 
 #plot the variance in estimated migration speed for all and for recent years
-pdf(file = paste(figpath, "/speed_all_species.pdf", sep=""), width = 6, height = 5)
+pdf(file = paste(figpath, "/speed_all_species.pdf", sep=""), width = 15, height = 3)
   
-bxp_speed = ggplot(r, aes(season, rate, fill=season)) + geom_boxplot() + theme_classic() + 
-    scale_fill_manual(values=c("cadetblue", "orange"), guide="none") + ylab("km/day") + facet_wrap(~species)
+bxp_speed = ggplot(r, aes(season, rate, fill=season)) + geom_boxplot() + theme_bw() + 
+    scale_fill_manual(values=c("cadetblue", "orange"), guide="none") + ylab("km/day") + 
+    scale_y_continuous(breaks = seq(0, 80, by = 20), limits = c(0,80)) + 
+    facet_wrap(~species, nrow=1)
   
-multiplot(bxp_speed, cols = 1)
+multiplot(bxp_speed, cols = 5)
 dev.off() 
 
 
@@ -449,15 +451,15 @@ d = melt(dates, id.vars = c("species", "year"))
 names(d) = c("species", "year", "season", "date")
   
 #plot the variance in estimated migration begin and end for all and for recent years
-pdf(file = paste(figpath, "/migdates_all_species.pdf", sep=""), width = 6, height = 5)
+pdf(file = paste(figpath, "/migdates_all_species.pdf", sep=""), width = 15, height = 3)
   
-bxp_date = ggplot(d, aes(season, date, fill=season)) + geom_boxplot() + theme_classic() + 
+bxp_date = ggplot(d, aes(season, date, fill=season)) + geom_boxplot() + theme_bw() + 
   scale_fill_manual(values=c("cadetblue", "olivedrab3", "orange"), guide = "none") + 
-  ylab("number of days +/- mean date") + theme(text = element_text(size=12)) + 
+  ylab("number of days -/+ mean date") + theme(text = element_text(size=12)) + 
   scale_y_continuous(breaks = seq(-40, 40, by = 20), limits = c(-40,40)) +
-  facet_wrap(~species)
+  facet_wrap(~species, nrow=1)
   
-  multiplot(bxp_date, cols = 1)
+  multiplot(bxp_date)
   dev.off()
 
 
