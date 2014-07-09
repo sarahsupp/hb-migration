@@ -1,11 +1,13 @@
 library(randomForest)
 library(party)
+library(sm)
+library(ggplot2)
 
 source("/Users/tcormier/Documents/scripts/git_repos/hb-migration/hb_RS_functions.R")
 
 ###########################################################################################
 #spp abbreviation (same one used in file paths and names)
-spp <- "bchu"
+spp <- "ruhu"
 
 #what lag do you want to explore?
 lag <- 0
@@ -13,8 +15,12 @@ lag <- 0
 #Aggregated, Annotated File dir
 agan.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/downloaded_annotations/"
 
+#directory containing migration timing text files
+migtime.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/data/supp_migration/"
+
 #fig dir 
 fig.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/figures/"
+
 
 ###########################################################################################
 
@@ -25,9 +31,13 @@ ann <- read.csv(agan.file, as.is=T)
 ann$timestamp <- as.Date(ann$timestamp, format='%Y-%m-%d %H:%M:%S.000')
 ann$present <- as.factor(ann$present)
 ann$GlobCover <- as.factor(ann$GlobCover)
+ann$month <- as.numeric(format(ann$timestamp, "%m"))
+ann$year <- as.numeric(format(ann$timestamp, "%Y"))
+ann$doy <- as.numeric(format(ann$timestamp, "%j"))
 
 #glob cover labels - legend for map comes from http://dup.esrin.esa.it/files/p68/GLOBCOVER2009_Product_Description_Manual_1.0.pdf
 #glob.label <- unique(ann$GlobCover)
+#oops, missing some here - go back and figure out which classes are missing.
 #glob.names <- c("closed Broadleaved","Closed to Open Grassland","Mosaic Vegetation Cropland","Closed to Open Broadleaved Evergreen and/or Semi-Deciduous Forest",
                 "Closed Needle-Leaved Evergreen Forest","Urban","Water","Closed to Open Mixed Broadleaved and Needleleaved Forest","Mosaic Forest or Shrubland and Grassland",
                 "Closed to Open Shrubland","Mosaic Cropland/Vegetation", "Closed Broadleaved Forest Regularly Flooded, Fresh Water",
@@ -39,6 +49,38 @@ ann$GlobCover <- as.factor(ann$GlobCover)
 pres <- ann[ann$present == 1,]
 abs <- ann[ann$present == 0,]
 
+#Separate by season
+#first read in the migration timing table and format
+migtime.file <- paste0(migtime.dir, "west_migration_", spp, ".txt")
+migtime <- read.table(migtime.file, header=T, sep=" ")
+years <- unique(ann$year)
+
+#set up dfs that will hold data during spring and fall migrations
+sf <- as.data.frame(matrix(data=NA, nrow=0, ncol=ncol(ann)+1))
+names(sf) <- c(names(ann), "season")
+
+for (yr in years) {
+  seasonal <- seasonalSub(ann, migtime, yr)
+  #append this year's data to sf table
+  sf <- rbind(sf, seasonal)
+}#end yr loop
+
+###########################################################################################
+# habitat utilization graphs (i.e. variable histograms)
+var <- "t10m"
+
+#subset by presence, absence
+pres <- sf[sf$present==1,]
+abs <- sf[sf$present==0,]
+
+#subset by spring, fall
+spr <- sf[sf$season == "spring",]
+fall <- sf[sf$season == "fall",]
+
+#END here on 7/9: refine this into a nice plot!
+# Kernel density plots for spring and fall migrations
+p <- ggplot(spr, aes(x=get(var), fill=present)) + geom_density(alpha=.3) + scale_fill_brewer()
+#p + theme(legend.position="top")
 
 ###########################################################################################
 # Correlate graphs, omitting NA values
@@ -77,9 +119,9 @@ head(ann)
 #first remove columns with bad preds (for some reason, rugosity5, slopeu, and slovev produced all NAs)
 preds <- ann[,-c(4,7,12:14)]
 preds <- na.omit(preds)
-preds$month <- as.numeric(format(preds$timestamp, "%m"))
-preds$year <- as.numeric(format(preds$timestamp, "%Y"))
-preds$doy <- as.numeric(format(preds$timestamp, "%j"))
+# preds$month <- as.numeric(format(preds$timestamp, "%m"))
+# preds$year <- as.numeric(format(preds$timestamp, "%Y"))
+# preds$doy <- as.numeric(format(preds$timestamp, "%j"))
 preds <- preds[,-1]
 response <- preds$present
 #preds <- preds[,-c(preds$present)]
