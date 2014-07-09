@@ -2,7 +2,7 @@
 # file for analysis.
 ###########################################################################################
 #directory containing annotations
-ann_dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/downloaded_annotations/ruhu/"
+ann_dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/downloaded_annotations/bchu/"
 ###########################################################################################
 #List files in ann_dir
 ann_files <- list.files(ann_dir, pattern="*csv", full.names=T)
