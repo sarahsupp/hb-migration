@@ -85,3 +85,31 @@ circle.corr <- function(corr, col=c("black","white"), bg = "white",
   points(rep(1:m, each = n)[zz==1], rep(n:1, m)[zz==1], pch=16, col="yellow")
 }
 #------------------------
+
+###################################################################################################
+# Subset observations by seasonal migration dates based on Sarah's text files of dates per year.
+# ann is the annotated observation data. migtime is the table of spring and fall migration dates.
+seasonalSub <- function(ann, migtime, yr) {
+  # start by subsetting for year, since spr and fall migrations start and end at slightly different 
+  # time each year
+  ann.yr <- ann[ann$year == yr,]
+  #now subset by spring start and end date for the given year (yr)
+  spr.begin <- migtime$spr_begin[migtime$year == yr]
+  spr.end <- migtime$spr_end[migtime$year == yr]
+  ann.spr <- ann.yr[ann.yr$doy >= spr.begin & ann.yr$doy <= spr.end,]
+  
+  #now the same for fall
+  fall.begin <- migtime$fal_begin[migtime$year == yr]
+  fall.end <- migtime$fal_end[migtime$year == yr]
+  ann.fall <- ann.yr[ann.yr$doy >= fall.begin & ann.yr$doy <= fall.end,]
+  
+  #add "season" field and put tables together
+  ann.spr$season <- "spring"
+  ann.fall$season <- "fall"
+  
+  sf <- rbind(ann.spr, ann.fall)
+  sf$season <- as.factor(sf$season)
+  
+  return(sf)
+  
+}#end seasonalSub function
