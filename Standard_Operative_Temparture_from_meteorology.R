@@ -2,6 +2,7 @@
 #
 # Pieter Beck (psabeck@gmail.com)
 # 09-12-2013
+# Modified by S.R. Supp 2014 (sarah@weecology.org)
 # 
 #Calculate Standard Operative T for hummingbirds using meteo input data 
 #based on Don Powers's email "Estimating Operative Temperature"
@@ -13,22 +14,18 @@
 #		1.0.0	|	09-12-2013 | Wrote script		| PB
 
 
+
 ra.calc <- function(u){
-  #caclulate aerodynamic resistance to convective heat transfer
-  #using an equation below was estimated for a small sparrow
-  # Args:
-  #  u: wind speed in m/s
-  #
-  # Returns:
-  #  aerodynamic resistance to convective heat transfer (s m-1)
-  # 
+  #caclulate aerodynamic resistance to convective heat transfer using an equation below (est for a small sparrow)
+  # Args: u: wind speed in m/s
+  # Returns: aerodynamic resistance to convective heat transfer (s m-1)
+  
   ra <- 37.76*u^(-0.945)
   return(ra)
 }  
 
-Rabs.calc <- function(Sp, ApOVERA = 0.25, Sd, aS = 0.89, aL = 0.9, Li){
+Rabs.calc <- function(Sp, Sd, Li, ApOVERA = 0.25, aS = 0.89, aL = 0.9){
   #Calculate long + shortwave radiation absorbed
-  #
   # Args:
   #  Sp: direct shortwave radiation (W m^(-2))
   #  ApOVERA: ratio of projected shadow area to total surface area. 
@@ -45,9 +42,8 @@ Rabs.calc <- function(Sp, ApOVERA = 0.25, Sd, aS = 0.89, aL = 0.9, Li){
   return(Rabs)
 }
 
-Te.calc <- function(Ta, Rabs, sigma = 5.67e-8, epsilon = 0.95, rhoCp = 1200, ra){
+Te.calc <- function(Ta, Rabs, ra, sigma = 5.67e-8, epsilon = 0.95, rhoCp = 1200){
   #Calculate operative temperature
-  #
   # Args:
   #  Ta: ambient T
   #  Rabs: long-wave+shortwave radiation absorbed (W m-2)
@@ -55,10 +51,9 @@ Te.calc <- function(Ta, Rabs, sigma = 5.67e-8, epsilon = 0.95, rhoCp = 1200, ra)
   #  epsilon: 3missivity of the bird's surface
   #  rhoCp: product of the density and specific heat capacity of air (J m-3 K^(-1))
   #  ra: aerodynamic resistance to convective heat transfer (s m-1)
-  #
   # Returns:
   #  Operative temperature
-  #
+  
   if (Ta < 263){cat("STOP !!! Ta needs to be provided in K !!!\n");
                 cat("provided Ta range is: ",range(Ta,na.rm=T),"\n");browser()}
   Te <- Ta + (Rabs - sigma*epsilon*(Ta^4))/(rhoCp / 4*sigma*(Ta^3) + ra)
@@ -67,66 +62,54 @@ Te.calc <- function(Ta, Rabs, sigma = 5.67e-8, epsilon = 0.95, rhoCp = 1200, ra)
 
 Tes.calc <- function(Te, Tb, u){
   #Calculate standard operative temperature
-  #
   # Args
   #   Te: Operative temperature
-  #   Tb: 42+273, #42 C, or 42 + 273 K
+  #   Tb: 315 K (42 C, assumed for small-bodied hummingbirds that are not in torpor)
   #   u: wind speed in m/s)
-  #
   # Returns
   #   Standard Operative Temperature
+  
   Tes <- Tb - (1 + (0.26 * sqrt(u))*(Tb-Te))
   return(Tes)
 }
 
-Tes.calc.compl <- function(Ta, u, Sp, Sd, Li){
+Tes.calc.compl <- function(Ta, u, Sp, Sd, Li, Tb=315){
   #A comprensive function to estimate standard operative temperature from basic meteo. variables,
   #but processed radiation data
-  #
   # Args:
   #   Ta: ambient T (Kelvin)
   #   u: wind speed (m/s)
   #   Sp: direct shortwave radiation (W m^(-2)) 
   #   Sd: diffuse shortwave radiation (W m^(-2)) 
   #   Li: incoming longwave radition (W m^(-2))
-  #
   # Returns:
   #   Standard Operative Temperature
-  #
+  
   #calc aerodynamic resistance to convective heat transfer
   ra <- ra.calc(u=u)
   #calc longwave+shortwave radiation absorbed
   Rabs <- Rabs.calc(Sp=Sp, Sd=Sd, Li=Li) 
   Te <- Te.calc(Ta=Ta,ra=ra,Rabs=Rabs)
-  Tes <- Tes.calc(Te,u=u)
+  Tes <- Tes.calc(Te,Tb=Tb,u=u)
   return(Tes)
 }
 
 
-Tes.calc.compl.incl.rad <- function(Ta,
-                           u,
-                           Li,
-                           Rsurface,
-                           R_extra_terr,
-                           solarzen                                  
-                  ){
-#A comprensive function to estimate standard operative temperature from basic meteo. variables,
-#and raw radiation data (drawing on functions in Diffuse_fraction_of_solar_radiation.r)
-#
-# Args:
-#   Ta: ambient T (Kelvin)
-#   u: wind speed (m/s)
-#   Li: incoming longwave radition (W m^(-2))
-#   RSurface: incoming shortwave radiation at the surface
-#   R_extra_terr: horizontal extraterrestrial radiation 
-#   solarzen:  solar zenith angle in radians
-#
-# Returns:
-#   Standard operative temperature
-#
+Tes.calc.compl.incl.rad <- function(Ta, u, Li, Rsurface, R_extra_terr,solarzen){
+  #A comprensive function to estimate standard operative temperature from basic meteo. variables,
+  #and raw radiation data (drawing on functions in Diffuse_fraction_of_solar_radiation.r)
+  # Args:
+  #   Ta: ambient T (Kelvin)
+  #   u: wind speed (m/s)
+  #   Li: incoming longwave radition (W m^(-2))
+  #   RSurface: incoming shortwave radiation at the surface
+  #   R_extra_terr: horizontal extraterrestrial radiation 
+  #   solarzen:  solar zenith angle in radians
+  # Returns:
+  #   Standard operative temperature
+  
   #load the function SpSd.calc
-  source("C:\\share\\pbeck\\Hummer_NASA\Code_copy\\Diffuse_fraction_of_solar_radiation.R")
-  #
+  source("Diffuse_fraction_of_solar_radiation.R")
   SpSd <- SpSd.calc(Rsurface=Rsurface,R_extra_terr=R_extra_terr,solarzen=solarzen)
   #win.graph();par(mfrow=c(2,2))
   #hist(Rsurface);hist(R_extra_terr);hist(SpSd[,1]);hist(SpSd[,2])

@@ -2,9 +2,9 @@
 #
 # Pieter Beck (psabeck@gmail.com)
 # 09-12-2013
+# Modified by S.R. Supp 2014 (sarah@weecology.org)
 # 
 # functions to calculate what fraction of incoming solar radiation reaches the surface as diffuse radiation
-#
 #
 # Changelog:
 #   VERS  | DATE  		 | CHANGES				| BY
@@ -16,25 +16,21 @@
 #Id/I (IdoverI) is the fraction of diffuse radiation in global radiation 
 #IdoverI is estimated as a function of kt (Liu and Jordan 1960) (and in some cases solar zenith angle)
 
-
 #kt is the clearness index
 #The clearness index measures the proportion of horizontal extraterrestrial radiation (Io)
 #reaching the surface.
 #it is defined as kt = I / (Io cos solarzen).
 #DSWRF = Downward short wave radiation flux 
 
-
 IdoverI.calc <- function(kt,solarzen){
   #calculate the fraction of diffuse radiation in global radiation
   #using the Reindl* method (Helbig 2009)
-  #
   # Args: 
   #  kt: The clearness index (sensu Liu and Jordan 1960)
   #  solarzen: solar zenith angle in radians
-  #
   # Returns:
   #   the fraction of diffuse radiation (Id) in global radiation (I)
-  #  
+  
   if (kt <= 0.3) {IdoverI <- 0.1020 - 0.248*kt}else{
   if(kt < 0.78){
     solar.elev <- pi/2 - solarzen
@@ -47,15 +43,13 @@ IdoverI.calc <- function(kt,solarzen){
 SpSd.calc <- function(Rsurface,R_extra_terr,solarzen){
   #calculate direct (Sp) and diffuse (Sd) radiation from global radiation
   #and horizontal extraterrestrial radiation 
-  #
   # Args: 
   #  Rsurface: incoming shortwave radiation at the surface
   #  R_extra_terr: horizontal extraterrestrial radiation 
   #  solarzen: solar zenith angle in radians
-  #
   # Returns:
   #  A two-column matrix giving incoming direct [,1], and diffuse [,2] radiationd at the surface
-  # 
+  
   if (solarzen > 2*pi){cat("STOP STOP STOP provide solarzenith in radiance to SpSd.calc\n");browser()}
   kt <- Rsurface/R_extra_terr
   #the formula in Lanini 2010 p1 is
@@ -71,14 +65,12 @@ SpSd.calc <- function(Rsurface,R_extra_terr,solarzen){
 
 solarzen.calc <- function(coords,datetimePOSIXct){
   #calculate solar zenith based on lat, lon & time of day
-  #
   # Args: 
   #  coords: coordinates
   #  datetimePOSIXct: a POSIXct object giving date and time
-  #
   # Returns:
   #  solar zenith angle
-  #
+
   require(maptools)
   solarelv <- solarpos(crds=coords,dateTime=datetimePOSIXct)
   solarelv <- solarelv[,2]
@@ -95,17 +87,14 @@ solarzen.calc <- function(coords,datetimePOSIXct){
 
 R_extra_terr.calc<-function(thisdate,lat.in.deg){
   #calculate hourly extraterrestrial irradiance in W/m2 using sirad package
-  #
   # Args: 
   #  thisdate: string object giving date, e.g. "2011-12-31"
   #  lat.in.deg: lattitude in degrees
-  #
   # Returns:
   #  hourly extraterrestrial radiation
-  #
   # Example:
   #  R_extra_terr.calc(thisdate=c("2012-01-19","2012-01-19"),lat.in.deg=c(-69))
-  #
+  
   require(sirad)
   JulianDay <- sirad::dayOfYear(thisdate)#dayOfYear("2011-01-01")
   lat.in.rad <- lat.in.deg*pi/180
@@ -130,20 +119,16 @@ R_extra_terr.calc<-function(thisdate,lat.in.deg){
 
 shift.vec <- function(vec,n,wrap=TRUE,pad=FALSE){
   # Shift a vector over by n spots
-  #
   #Args: 
   #  vec: vector to be shifted
   #  n: number of spots to shift the vector over
-  #
   #  Wrap adds the entry at the beginning to the end
-  # pad does nothing unless wrap is false, in which case it specifies whether to pad with NAs
-  #
+  #  pad does nothing unless wrap is false, in which case it specifies whether to pad with NAs
   # Returns:
   #  the vector vec, shifted over n sots
-  # 
   # Source:
   #  http://stackoverflow.com/questions/6828937/what-to-do-with-imperfect-but-useful-functions
-  #
+  
   if(length(vec)<abs(n)) { 
     #stop("Length of vector must be greater than the magnitude of n \n") 
   }
@@ -174,16 +159,14 @@ shift.vec <- function(vec,n,wrap=TRUE,pad=FALSE){
 
 shift_to_UTC <- function(hourly_tser,original.zone){
   #shift an hourly vector starting at midnight to start at midnight UTC
-  #
-  #Args: 
+  # Args: 
   #  hourly_tser: an hourly vector starting at midnight local time
   #  original.zone: the local time zone
-  #
   # Returns:
   #  an hourly vector, starting at midnight UTC
-  # 
   # Example:
   #  shift_to_UTC(hourly_tser=1:24,original.zone="America/Mexico_City")
+  
   require(timeDate)
   tt1<-timeDate("2010-01-01 00:00:00",zone=original.zone)
   tt2<-timeDate("2010-01-01 00:00:00",zone="UTC")
@@ -198,15 +181,13 @@ shift_to_UTC <- function(hourly_tser,original.zone){
 R_extra_for_site.vec <- function(thisdate,lat.in.deg,original.zone){
   #given a date, latitude, and time zone, calculate extraterrestrial radiation
   #for that latitude
-  #
   #Args:
   #  thisdate: date
   #  lat.in.deg: latitude in degrees
   #  original.zone: timezone
-  #
   # Returns:
   #  Extraterrestrial radiation for the given latitude and day, in 6 hour steps
-  #
+  
   if(length(thisdate)!=length(lat.in.deg)){
     cat("Please provide thisdate and lat.in.deg of equal length\n");browser()}
   #get the 24 R_extra_terr values for this lat & date
@@ -220,4 +201,3 @@ R_extra_for_site.vec <- function(thisdate,lat.in.deg,original.zone){
   rm(R_extra_terr_24,R_extra_terr_24UTC)
   return(R_extra_terr_epochUTC)
 }
-
