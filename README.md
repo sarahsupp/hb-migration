@@ -9,7 +9,7 @@ The code and data in this repository allow for the analyses and figures to be fu
 The project and code in this repository are still under development.
 
 **Requirements:**
-R 3.x, R packages `chron`, `fields`, `knitr`, `gamm4` , `geosphere`, `ggplot2`, `ggmap`, `maps`, `maptools`, `mapdata`, `mgcv`, `plyr`, `raster`, `reshape2`, `rgdal`, `Rmisc`, `RPostgreSQL`, `SDMTools`,  `sirad`, `sp`, `spaa`, `timeDate`, `XML`, Python 2.7 or greater, Python modules `argparse`, `os`, `xml.etree.ElementTRee`, `xml.dom`, and files containing functions specific to this code.
+R 3.x, R packages `chron`, `fields`, `knitr`, `gamm4` , `geosphere`, `ggplot2`, `ggmap`, `maps`, `maptools`, `mapdata`, `mgcv`, `party`, `plyr`, `randomForest`, `raster`, `reshape2`, `rgdal`, `Rmisc`, `RPostgreSQL`, `SDMTools`,  `sirad`, `sm`, `sp`, `spaa`, `timeDate`, `XML`, Python 2.7 or greater, Python modules `argparse`, `os`, `xml.etree.ElementTRee`, `xml.dom`, and files containing functions specific to this code.
 
 The analyses can be replicated by changing the working directory at the top of the file .R to the location on your computer where you have stored the .R, .txt, and .csv files, and by modifying the pathnames for output to where you would like to store the results. Questions about the code should be directed to SRS (sarah@weecology.org).
 
