@@ -184,20 +184,24 @@ dev.off()
 #                                  lty=’longdash’, lwd=2)
 ###########################################################################################
 
-p <- ggplot(spr, aes(x=get(var), fill=present)) + geom_density(alpha=.3) + scale_fill_brewer()
-
-ggplot(pres, aes(doy)) + geom_histogram(fill="red", alpha=0.5) + 
-  geom_histogram(data=abs, aes(doy), fill="blue", alpha=0.5) + 
-  theme_classic() + ggtitle("blue = absent, red = present")
-
-# Compare present and absent environment in each season and year using Kolmogorov-Smirnoff (KS) tests
+# Compare environmental data using Kolmogorov-Smirnoff (KS) tests
 # KS test has less power to detect a shift in the median but more power to detect changes in 
 # the shape of the distributions. Null hypothesis is that both groups were sampled from populations 
 # with identical distributions. It tests for any violation of that null hypothesis -- 
 # different medians, different variances, or different distributions.
 
+critical_D <- function(n1, n2){
+  # http://www.soest.hawaii.edu/wessel/courses/gg313/Critical_KS.pdf
+  # assuming alpha = 0.05
+  # values > Da are significant?
+  Da <- 1.36 * sqrt((n1+n2)/(n1*n2))
+  return(Da)
+}
+
 season <- c("spring", "fall")
 vars <- c("SRTM_elev", "EVI", "lwrf", "swrf", "t10m") #add other vars as necessary
+
+# Compare presence vs absence points in seasons and years for each variable
 ks_pa <- data.frame("year"=1, "season"=NA, "var"=NA, "Dstat"=1, "Pvalue"=1)
 for (y in unique(years)){
   for (s in unique(season)){
@@ -214,4 +218,60 @@ for (y in unique(years)){
   }
 }
 ks_pa <- ks_pa[-1,] #delete first row of dummy data
+
+
+# compare years. Are there any years that really differ?
+ks_yrs <- data.frame("year1"=1, "year2"=1, "var"=NA, "Dstat"=1, "pvalue"=1, "signif"=NA)
+for (var in unique(vars)){
+  for (y in unique(years)){
+    if(y==2013)
+      next
+    for(ynext in unique(years[-1])){
+      if(y==ynext)
+        next
+    pres <- sf[sf$present == 1 & sf$year == y,]
+    abs <- sf[sf$present == 0 & sf$year == y,]
+    pres2 <- sf[sf$present == 1 & sf$year == ynext,]
+    abs2 <- sf[sf$present == 0 & sf$year == ynext,]
+    compare <- ggplot(pres, aes(x=get(var))) + geom_density(alpha=0.3, fill="red") + 
+      geom_density(data=pres2, alpha=0.3, fill="blue") + 
+      geom_density(data=abs, alpha=0.3, fill="grey60",col="red") + 
+      geom_density(data=abs2, alpha=0.3, fill="grey60",col="blue") + 
+      theme_classic() + xlab(var) + 
+      ggtitle(paste(y,ynext,var, sep=" - "))
+    print(compare)
+    ks <- ks.test(pres[,colnames(pres) %in% var], pres2[,colnames(pres2) %in% var])
+    Da <- critical_D(nrow(pres), nrow(pres2))
+    if(Da > ks$statistic){ sig <- "N" }
+    else{ sig <- "Y" }  
+    ks_yrs <- rbind(ks_yrs, c(y, ynext, var, round(as.numeric(ks$statistic),4), round(ks$p.value,4), sig))
+  }}
+}
+ks_yrs <- ks_yrs[-1,]
+
+
+# compare seasons Are hb selecting diff in diff seasons? How influenced by background diffs is this?
+ks_season <- data.frame("year"=1, "var"=NA, "Dstat"=1, "pvalue"=1, "signif"=NA)
+for (var in unique(vars)){
+  for (y in unique(years)){
+      spr_pres <- sf[sf$present == 1 & sf$year == y & sf$season == "spring",]
+      fal_pres <- sf[sf$present == 1 & sf$year == y & sf$season == "fall",]
+      compare <- ggplot(spr_pres, aes(x=get(var))) + geom_density(alpha=0.3, fill="cadetblue") + 
+        geom_density(data=fal_pres, alpha=0.3, fill="orange") + 
+        theme_classic() + xlab(var) + ggtitle(paste(y, var, sep=" - "))
+      print(compare)
+      ks <- ks.test(spr_pres[,colnames(spr_pres) %in% var], fal_pres[,colnames(fal_pres) %in% var])
+      Da <- critical_D(nrow(pres), nrow(pres2))
+      if(Da > ks$statistic){ sig <- "N" }
+      else{ sig <- "Y" }  
+      ks_season <- rbind(ks_season, c(y, var, round(as.numeric(ks$statistic),4), round(ks$p.value,4), sig))
+    }
+}
+ks_season <- ks_season[-1,]
+
+
+
+
+
+
 
