@@ -49,6 +49,12 @@ ann$doy <- as.numeric(format(ann$timestamp, "%j"))
 pres <- ann[ann$present == 1,]
 abs <- ann[ann$present == 0,]
 
+#plot doy representation to check that it is similar for pres and abs
+ggplot(pres, aes(doy)) + geom_histogram(fill="red", alpha=0.5) + 
+  geom_histogram(data=abs, aes(doy), fill="blue", alpha=0.5) + 
+  theme_classic() + ggtitle("blue = absent, red = present")
+
+
 #Separate by season
 #first read in the migration timing table and format
 migtime.file <- paste0(migtime.dir, "west_migration_", spp, ".txt")
