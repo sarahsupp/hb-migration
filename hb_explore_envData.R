@@ -1,7 +1,9 @@
 library(randomForest)
-library(party)
+#library(party)
 library(sm)
 library(ggplot2)
+library(ltm)
+library(Rarity)
 
 source("/Users/tcormier/Documents/scripts/git_repos/hb-migration/hb_RS_functions.R")
 
@@ -19,7 +21,7 @@ agan.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank
 migtime.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/data/supp_migration/"
 
 #fig dir 
-fig.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/figures/"
+fig.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/figures/ruhu/"
 
 
 ###########################################################################################
@@ -29,7 +31,7 @@ agan.file <- paste0(agan.dir, spp, "/combined/", spp, "_lag",lag,"_allYears.csv"
 
 ann <- read.csv(agan.file, as.is=T)
 ann$timestamp <- as.Date(ann$timestamp, format='%Y-%m-%d %H:%M:%S.000')
-ann$present <- as.factor(ann$present)
+#ann$present <- as.factor(ann$present)
 ann$GlobCover <- as.factor(ann$GlobCover)
 ann$month <- as.numeric(format(ann$timestamp, "%m"))
 ann$year <- as.numeric(format(ann$timestamp, "%Y"))
@@ -46,8 +48,8 @@ ann$doy <- as.numeric(format(ann$timestamp, "%j"))
                 "Open Broadleaved Deciduous Forest/Woodland","Bare","Permanent Snow and Ice","No Data")
 
 #separate pres from abs
-pres <- ann[ann$present == 1,]
-abs <- ann[ann$present == 0,]
+# pres <- ann[ann$present == 1,]
+# abs <- ann[ann$present == 0,]
 
 #Separate by season
 #first read in the migration timing table and format
@@ -67,11 +69,22 @@ for (yr in years) {
 
 ###########################################################################################
 # habitat utilization graphs (i.e. variable histograms)
-var <- "t10m"
+#test to see if we can get any signal from swrf - this might be wrong to do, but helps visualization of 
+#density plots - otherwise, the spike at 0 is so great, it's impossible to see what's happening in the rest
+#of the graph.
+#convert K to celsius
+sf$t10m <- sf$t10m - 273.15
+
+sf2 <- sf
+sf <- sf[sf$swrf != 0,]
+
+sf$occurrence[sf$present==1] <- "present"
+sf$occurrence[sf$present==0] <- "absent"
+
 
 #subset by presence, absence
-pres <- sf[sf$present==1,]
-abs <- sf[sf$present==0,]
+pres <- sf[sf$occurrence=="present",]
+abs <- sf[sf$occurrence=="absent",]
 
 #subset by spring, fall
 spr <- sf[sf$season == "spring",]
@@ -79,8 +92,88 @@ fall <- sf[sf$season == "fall",]
 
 #END here on 7/9: refine this into a nice plot!
 # Kernel density plots for spring and fall migrations
-p <- ggplot(spr, aes(x=get(var), fill=present)) + geom_density(alpha=.3) + scale_fill_brewer()
-#p + theme(legend.position="top")
+
+#Set up variables and titles for looping
+seasons <- c("spr", "fall")
+season.titles <- c("Spring", "Fall")
+
+vars <- c("SRTM_elev", "t10m", "EVI", "swrf", "rugosity25", "u10m")
+var.titles <- c("Elevation", "Temperature at 10 m", "EVI", "Downward Shortwave Radiation Flux", "Surface Roughness", "East-West Wind at 10 m")
+xlab.titles <- c("Elevation (m)", expression("Temperature at 10 m" ~ (degree~C)), "EVI", expression("Downward Shortwave Radiation Flux" ~ (W ~ m^-2)), "Surface Roughness", "East-West Wind at 10 m (m/s)")
+
+#for each variable, let's look at presence vs. absence in spring and fall
+for (i in 1:length(vars)) {
+  #print(paste(vars[i]))
+  for (s in 1:length(seasons)) {
+    #print(paste(vars[i], seasons[s]))
+    #create graphs for spring presence/absence, spring first
+    title <- paste0(season.titles[s], " Rufous Hummingbird Habitat Utilization - \n", var.titles[i])
+    outfile <- paste0(fig.dir, season.titles[s], "_ruhu_habitat_utilization_", vars[i], ".pdf")
+    spr.col <- c("gray30","cadetblue")
+    fall.col <- c("gray30", "orange")
+    
+    if (seasons[s] == "spr") {
+      col <- spr.col
+    } else {
+      col <- fall.col
+    }#end color if
+    
+    pdf(outfile, width=9, height=8)
+    p <- ggplot(get(seasons[s]), aes(x=get(vars[i]),fill=occurrence)) + geom_density(alpha=.4)
+    p <- p + scale_fill_manual( values = col)
+    p <- p + theme_classic() + theme(text=element_text(size=20))
+    p <- p + ggtitle(title) + xlab(xlab.titles[i])
+    print(p)
+    
+    dev.off()
+   }#end seasons loop
+} #end vars loop
+#p + scale_fill_manual( values = c("red", "mediumaquamarine"))
+
+# Now, look at presence only and the difference between seasons on the same plot
+for (j in 1:length(vars)) {
+  #create graphs of presence spring vs fall
+  title <- paste0("Spring vs. Fall Rufous Hummingbird Habitat Utilization - \n", var.titles[j])
+  outfile <- paste0(fig.dir, "ruhu_springVsFall_habitat_utilization_", vars[j], ".pdf")
+  pdf(outfile, width=9, height=8)
+  #FIX COLORS
+  p <- ggplot(pres, aes(x=get(vars[j]), fill=season)) + geom_density(alpha=.4)   
+  p <- p + scale_fill_manual( values = c("orange", "cadetblue"))
+  p <- p + theme_classic() + theme(text=element_text(size=20))
+  p <- p + ggtitle(title) + xlab(xlab.titles[j])
+  print(p)
+  dev.off()
+
+} #end vars loop
+
+###########################################################################################
+#pairwise correlation plot
+#first, we only want presence/absence and the environmental variables
+#use sf2, which still have 0's in swrf
+#df.cor <- sf2[,-c(1:4,7,10,12:14,21:24)]
+df.cor <- sf2[,c(5,6,9,18,17,15)]
+#df.cor$num_season[df.cor$season=="spring"] <- 1
+#df.cor$num_season[df.cor$season=="fall"] <- 0
+#df.cor <- df.cor[,-12]
+
+#some labels - later, create a lookup table for these so you can add/remove columns and not 
+#have to manually go through this.
+lab <- c("presence","elev","EVI","t10m","swrf","uplift")
+names(df.cor) <- lab
+#set color of points with desired transparency
+#cols <- makeTransparent("steelblue3", alpha=50)
+cols <- addTrans("cadetblue", 50)
+#pairwise correlation plot - par(mar=) does not work here bc it's set in
+#the corPlot function. Need to adjust at some point.
+outcp <- paste0(fig.dir, "Rufous_variable_correlations.png")
+png(outcp, width=12, height=12, units="in", res=300)
+par(mar=c(0.5, 1, 0.5, 0.5),pch=20, cex.lab=1.5)
+corPlot(df.cor, method="pearson", xlab=lab, ylab=lab, col=cols)
+dev.off()
+
+
+#corr.pa <- biserial.cor(sf2$swrf, sf2$present, use="complete.obs", level=2)
+
 
 ###########################################################################################
 # Correlate graphs, omitting NA values
