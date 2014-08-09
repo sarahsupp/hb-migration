@@ -8,18 +8,27 @@
 #
 #Status: Runs but needs to be cleaned up!
 ###################################################
+library(maptools)
+library(raster)
+
 #ebird daily observation data
-ebd.presfiles <- "C:/Share/tcormier/hummingbirds/migration_study/data/ebird/present_points/"
-ebd.absfiles <- "C:/Share/tcormier/hummingbirds/migration_study/data/ebird/absent_points/"
+#ebd.presfiles <- "C:/Share/tcormier/hummingbirds/migration_study/data/ebird/present_points/"
+ebd.presfiles <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/data/ebird/present_points/"
 
+#ebd.absfiles <- "C:/Share/tcormier/hummingbirds/migration_study/data/ebird/absent_points/"
+ebd.absfiles <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/data/ebird/absent_points/"
+
+#study area boundary (should be the western flyway, except for Ruby):
+sa.file <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/boundaries/western_flyway_dissolve.shp"
+  
 #Output movebank tracks file (directory):
-trackdir <- "C:/Share/tcormier/hummingbirds/migration_study/movebank/track_csvs/"
-
+#trackdir <- "C:/Share/tcormier/hummingbirds/migration_study/movebank/track_csvs/"
+trackdir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/track_csvs/"
 #lag in days
 lag=0
 
 #spp.list <- c("bchu", "bthu","cahu","rthu","ruhu")
-spp.list <- c("bchu", "bthu","cahu","ruhu")
+spp.list <- c("rthu")
 ###################################################
  
 
@@ -102,8 +111,12 @@ for (spp in spp.list) {
   pfile <- paste0(ebd.presfiles, spp, ".txt")
   tbl <- read.table(pfile, header=TRUE, sep=",", quote='"', fill=TRUE, as.is=TRUE, comment.char="")
   
+  #first clip pres points to study area boundary (western flyway, except for rthu)
+  
+  
   #write out pres track files
-  prepPres(spp, tbl, 0, trackdir)
+  trackdir2 <- paste0(trackdir, spp, "/")
+  prepPres(spp, tbl, 0, trackdir2)
   
   #prep and write out Abs files
   pattern=paste0(spp, "_[0-9]{4}_sub\\.csv")
@@ -115,11 +128,11 @@ for (spp in spp.list) {
     year <- regmatches(abs_y, year)
     
     #Write out Abs track files
-    prepAbs(spp, abs_tbl, 0, trackdir, year)
+    prepAbs(spp, abs_tbl, 0, trackdir2, year)
   }
   
   #write out pres track files
-  prepPres(spp,tbl,0,trackdir)
+  #prepPres(spp,tbl,0,trackdir)
 }#end spp loop  
 
 

@@ -8,20 +8,21 @@ con <- dbConnect(drv="PostgreSQL", port="5433",host="fusion", dbname="tcormier")
 
 #select requests that are not "downloaded"
 #FIX this to non-test table when script is stable and production-ready
-status.query <- "SELECT * FROM test_access_key_lut WHERE status != 'delivered' AND status != 'failed';"
+#options(digits=22)
+status.query <- "SELECT * FROM access_key_lut WHERE status != 'delivered' AND status != 'failed';"
 check.list <- dbGetQuery(con,status.query)
 
 #Now check status of these acess keys. If available, download it and record to db.
 for (i in check.list$access_key) {
   #get current status from db
-  st.query <- sprintf("SELECT status FROM test_access_key_lut WHERE access_key='%s';",i)
+  st.query <- sprintf("SELECT status FROM access_key_lut WHERE access_key = '%s';",i)
   st.db <- dbGetQuery(con,st.query)
   
   #URL where you can check the status of your request
   url <- paste0("http://www.bioinfo.mpg.de/orn-gateway/request-info-xml.jsp?access-key=",as.character(i))
   
   #query name of output file from db
-  ann_file.query <- sprintf("SELECT ann_name FROM test_access_key_lut WHERE access_key='%s';",i)
+  ann_file.query <- sprintf("SELECT ann_name FROM access_key_lut WHERE access_key='%s';",i)
   ann_file <- as.vector(dbGetQuery(con,ann_file.query)[,1])
   ann_name <- unlist(strsplit(basename(ann_file), "\\."))[1]
   
@@ -40,7 +41,7 @@ for (i in check.list$access_key) {
   #if movebank status is "available", download annotation.
   if (ak.status == "available") {
     #update status in DB
-    up.query <- sprintf("UPDATE test_access_key_lut SET status = '%s' WHERE access_key = '%s'", ak.status, i)
+    up.query <- sprintf("UPDATE access_key_lut SET status = '%s' WHERE access_key = '%s'", ak.status, i)
     up.ak <- dbGetQuery(con, up.query)
     
     #downlod file
@@ -63,7 +64,7 @@ for (i in check.list$access_key) {
     
     if (file.exists(ann_file) && ak.status == "delivered"){
       #update status in DB
-      up.query <- sprintf("UPDATE test_access_key_lut SET status = '%s' WHERE access_key = '%s'", ak.status, i)
+      up.query <- sprintf("UPDATE access_key_lut SET status = '%s' WHERE access_key = '%s'", ak.status, i)
       up.ak <- dbGetQuery(con, up.query)
     } else {
       print(paste0("conflict with access key ", i, ". Check if ", ann_file, " was downloaded!"))
@@ -73,7 +74,7 @@ for (i in check.list$access_key) {
     
   #Is db status different from movebank status (i.e., has status changed since last check?)  
   } else if (ak.status != st.db){
-      up.query <- sprintf("UPDATE test_access_key_lut SET status = '%s' WHERE access_key = '%s'", ak.status, i)
+      up.query <- sprintf("UPDATE access_key_lut SET status = '%s' WHERE access_key = '%s'", ak.status, i)
       up.ak <- dbGetQuery(con, up.query)
   }#else do nothing - end if status is available if statement
 }# end access key loop

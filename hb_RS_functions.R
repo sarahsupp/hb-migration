@@ -113,3 +113,89 @@ seasonalSub <- function(ann, migtime, yr) {
   return(sf)
   
 }#end seasonalSub function
+
+###################################################################################################
+#For plotting transparency - this function will take a color and set transparency (on 0-255 scale)
+#from: http://stackoverflow.com/questions/8047668/transparent-equivalent-of-given-color
+makeTransparent<-function(someColor, alpha=100)
+{
+  newColor<-col2rgb(someColor)
+  apply(newColor, 2, function(curcoldata){rgb(red=curcoldata[1], green=curcoldata[2],
+                                              blue=curcoldata[3],alpha=alpha, maxColorValue=255)})
+}
+
+###################################################################################################
+#Another function for transparency - see if this is better
+#from one of the responses here: http://stackoverflow.com/questions/12995683/any-way-to-make-plot-points-in-scatterplot-more-transparent-in-r
+addTrans <- function(color,trans)
+{
+  # This function adds transparancy to a color.
+  # Define transparancy with an integer between 0 and 255
+  # 0 being fully transparant and 255 being fully visable
+  # Works with either color and trans a vector of equal length,
+  # or one of the two of length 1.
+  
+  if (length(color)!=length(trans)&!any(c(length(color),length(trans))==1)) stop("Vector lengths not correct")
+  if (length(color)==1 & length(trans)>1) color <- rep(color,length(trans))
+  if (length(trans)==1 & length(color)>1) trans <- rep(trans,length(color))
+  
+  num2hex <- function(x)
+  {
+    hex <- unlist(strsplit("0123456789ABCDEF",split=""))
+    return(paste(hex[(x-x%%16)/16+1],hex[x%%16+1],sep=""))
+  }
+  rgb <- rbind(col2rgb(color),trans)
+  res <- paste("#",apply(apply(rgb,2,num2hex),2,paste,collapse=""),sep="")
+  return(res)
+}
+
+###################################################################################################
+#Function that submits request to movebank and returns the filepath of the resulting xml.
+#requires: url= movebank url, un=username, pw=password, xy=file containing xypoints to be annotated - must be in specific movebank format
+#xml=xml file that generates specifics of the request (see hb_movebank_createXML.py), req.outdir=directory where details of request are stored for
+#record-keeping
+#
+submitMB <- function(url, un, pw, xy, xml,req.outdir){
+  now <- Sys.time()
+  #for file naming
+  text.now <- format(now, format="%Y%m%d_%H%M%S")
+  ret.xml <- paste(req.outdir, "/", unlist(strsplit(basename(xy), "\\."))[1], "_", unlist(strsplit(basename(xml), "\\."))[1], "_", text.now, ".xml", sep="")
+  
+  #system call to curl (was able to get this to work somehow when I couldn't get Rcurl to work! - just need to plug ahead for now.)
+  curl.cmd <- paste("curl -o ", ret.xml, " -F \"request=@", xml, "\" -F \"tracks=@", xy, "\" -F \"login=", un, "\" -F \"password=", pw, "\" ", url, sep="")    
+  system(curl.cmd)
+  
+  return(list(ret.xml,now))
+}#end submitMB
+
+###################################################################################################
+#write text files for resubmitting failed mb requests
+#requires same psql db set up that I have - this is not a super general function, but 
+#could be adapted to use text logs instead of the db. 
+
+#ALSO, requests should not be resubmitted unless you know why it failed and have resolved the issue.
+# 
+# writeFails <- function()
+#   #
+#   
+#   
+#   
+#   
+###################################################################################################
+#clip eBird points by a polygon and returns clipped points.
+#requires sp package
+#pts is a dataframe of eBird points. sa is a SpatialPolygonsDataFrame representing the study area
+#LATfield and LONfield refer to the names of the latitude and longitude fields in the point layer
+clipPoints <- function(pts, sa, LONfield, LATfield) {
+  #Convert to spatial points df
+  coordinates(pts) <- c(LONfield, LATfield)
+  
+  #clip adata.sp to sa boundaries - reduce the number of points in analysis
+  pts.na <- over(pts, sa)
+  pts.na2 <- cbind(pts, pts.na)
+  pts.clip <- pts.na2[!is.na(pts.na2$ras),]
+  
+  return(pts.clip)
+}#end clipPoints
+  
+  

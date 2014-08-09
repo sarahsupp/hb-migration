@@ -10,48 +10,66 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 import argparse
 
-#Deal with passed arguments
-p = argparse.ArgumentParser(prog="hb_movebank_createXML.py", description="generate annotation request xml for submission to movebank.")
-p.add_argument("-vl", dest="var_labels", required=True, help="String list of variable names. These are the column names that will appear in your output table. e.g., 'Quality,NDVI,EVI'")
-p.add_argument("-i", dest="int_type", required=True, help="Interpolation type. Must be nearest-neighbor, bilinear, or inverse-distance-weighted")
-p.add_argument("-t", dest="type_name", required=True, help="movebank directory and sensor type (e.g., 'modis-land/MOD13Q1.005'")
-p.add_argument("-vn", dest="mb_var_names", required=True, help="variable names exactly as they are listed in movebank (e.g.,'250m 16 days VI Quality,250m 16 days NDVI,250m 16 days EVI'")
-p.add_argument("-o", dest="outdir", required=True, help="output directory for xml file - use trailing slash")
+##Deal with passed arguments
+#p = argparse.ArgumentParser(prog="hb_movebank_createXML.py", description="generate annotation request xml for submission to movebank.")
+#p.add_argument("-vl", dest="var_labels", required=True, help="String list of variable names. These are the column names that will appear in your output table. e.g., 'Quality,NDVI,EVI'")
+#p.add_argument("-i", dest="int_type", required=True, help="Interpolation type. Must be nearest-neighbor, bilinear, or inverse-distance-weighted")
+#p.add_argument("-t", dest="type_name", required=True, help="movebank directory and sensor type (e.g., 'modis-land/MOD13Q1.005'")
+#p.add_argument("-vn", dest="mb_var_names", required=True, help="variable names exactly as they are listed in movebank (e.g.,'250m 16 days VI Quality,250m 16 days NDVI,250m 16 days EVI'")
+#p.add_argument("-o", dest="outdir", required=True, help="output directory for xml file - use trailing slash")
 
-args = p.parse_args()
+#args = p.parse_args()
 
-var_labels = args.var_labels
-int_type = args.int_type
-type_name = args.type_name
-mb_var_names = args.mb_var_names
-outdir = args.outdir
+#var_labels = args.var_labels
+#int_type = args.int_type
+#type_name = args.type_name
+#mb_var_names = args.mb_var_names
+#outdir = args.outdir
 
-print var_labels
-print int_type
-print type_name
-print mb_var_names
-print outdir
+#print var_labels
+#print int_type
+#print type_name
+#print mb_var_names
+#print outdir
 
 ############### Hardcoded Variables for Testing ###############
 ## variable names you want to extract (these are the names that will appear in the
 ## output table - can name them as you wish).
-##var_labels = "lwrf,swrf,t10m,u10m,v10m"
+#var_labels = "lwrf,swrf,t10m,u10m,v10m"
 #var_labels = "Quality,NDVI,EVI"
-
+#var_labels = "Temp_sfc,Temp_775_mb"
+#var_labels = "Temp_825_mb,Temp_925_mb"
+#var_labels = "Total_precipitation_sfc,Precipitation_rate_sfc"
+#var_labels = "u_wind_30m,u_wind_725_mb"
+#var_labels = "u_wind_825_mb,u_wind_925_mb"
+#var_labels = "v_wind_30m,v_wind_725_mb"
+#var_labels = "v_wind_825_mb,v_wind_925_mb"
+#var_labels = "sfc_roughness"
+var_labels = "lwrf_up,swrf_up"
 ## Interpolation type - one of "inverse-distance-weighted", "bilinear", or "nearest-neighbor"
-#int_type = "inverse-distance-weighted"
+int_type = "inverse-distance-weighted"
 
 ## Type Name - need directory and sensor type (e.g. "modis-land/MOD13Q1.005")
 #type_name = "modis-land/MOD13Q1.005"
-##type_name = "nomads.ncdc.noaa.gov/NARR"
+type_name = "nomads.ncdc.noaa.gov/NARR"
+#type_name = "srtm.csi.cgiar.org/SRTM_v41/derived"
 
 ## Variable names - must be names listed in movebank
 #mb_var_names = "250m 16 days VI Quality,250m 16 days NDVI,250m 16 days EVI"
 ##mb_var_names = "Downward_longwave_radiation_flux_sfc,Downward_shortwave_radiation_flux_sfc,Temp._10_m_above_gnd,u_wind_10_m_above_gnd,v_wind_10_m_above_gnd"
+#mb_var_names = "Temp._sfc,Temp._775_mb"
+#mb_var_names = "Temp._825_mb,Temp._925_mb"
+#mb_var_names = "Total_precipitation_sfc,Precipitation_rate_sfc"
+#mb_var_names = "u_wind_30_m_above_gnd,u_wind_725_mb"
+#mb_var_names = "u_wind_825_mb,u_wind_925_mb"
+#mb_var_names = "v_wind_30_m_above_gnd,v_wind_725_mb"
+#mb_var_names = "v_wind_825_mb,v_wind_925_mb"
+#mb_var_names = "rugosity15x15"
+mb_var_names = "Upward_long_wave_radiation_flux_sfc,Upward_short_wave_radiation_flux_sfc"
 
 ## Set output directory for xml file
 #outdir = "C:/Share/tcormier/hummingbirds/migration_study/movebank/env_request_xmls/"
-
+outdir = "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/env_request_xmls/"
 ##############################
 
 #set output file
@@ -75,7 +93,7 @@ def CreateXML(var_labels, int_type, type_name, mb_var_names, outfile):
     #Create xml
     root = ET.Element("AnnotationRequest")
     root.set("annotationType","track2")
-    root.set("name","test_annotation")
+    root.set("name","cormier_hb")
     root.set("notificationEmail","tcormier@whrc.org")
     root.set("owner","tcormier")
     elements = ET.SubElement(root, "Elements")

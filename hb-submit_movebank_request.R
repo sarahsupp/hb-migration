@@ -12,7 +12,7 @@
 
 library(RPostgreSQL)
 library(XML)
-
+source("/Users/tcormier/Documents/scripts/git_repos/hb-migration/hb_RS_functions.R")
 
 # options(echo=TRUE)
 # args <- commandArgs(trailingOnly=TRUE)
@@ -37,7 +37,7 @@ xy.csv <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/t
 
 #CSV file list of XMLs containing movebank request details (see hb_movebank_createXML.py)
 #xml.csv <- "C:/Share/tcormier/hummingbirds/migration_study/movebank/env_request_xmls/submit_lists/submit_vars_20140626.csv"
-xml.csv <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/env_request_xmls/submit_lists/submit_vars_20140626_rugosity-slope.csv"
+xml.csv <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/env_request_xmls/submit_lists/submit_allVars_20140721.csv"
   
 #user name
 un <- ""
@@ -47,13 +47,13 @@ pw <- ""
 
 #request outdir
 #req.outdir <- "C:/Share/tcormier/hummingbirds/migration_study/movebank/submitted_requests/"
-req.outdir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/submitted_requests/ruhu/"
+req.outdir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/submitted_requests/bchu/"
 
 #annotation outdir
-ann.outdir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/downloaded_annotations/ruhu/"
+ann.outdir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/downloaded_annotations/bchu/"
 ##########################################################################################
 
-#SKIP DB stuff on arctic for now - can't get it to work on arctic.
+#SKIP DB stuff on arctic for now - can't get it to work on arctic - works on the mac though :)
 #connect to db
 # Connect to database
 con <- dbConnect(drv="PostgreSQL", port="5433",host="fusion", dbname="tcormier")
@@ -70,13 +70,10 @@ for (xy in xy.list) {
   tbl <- read.csv(xy)
   
   for (xml in xml.list) {
-    #Curl command will return an xml with the access key in it - filepath of that returned file:
-    now <- format(Sys.time(), format="%Y%m%d_%H%M%S")
-    ret.xml <- paste(req.outdir, "/", unlist(strsplit(basename(xy), "\\."))[1], "_", unlist(strsplit(basename(xml), "\\."))[1], "_", now, ".xml", sep="")
-    
-    #system call to curl (was able to get this to work somehow when I couldn't get Rcurl to work! - just need to plug ahead for now.)
-    curl.cmd <- paste("curl -o ", ret.xml, " -F \"request=@", xml, "\" -F \"tracks=@", xy, "\" -F \"login=", un, "\" -F \"password=", pw, "\" ", url, sep="")    
-    system(curl.cmd)
+    #submit request - returns two objects in a list
+    mb.return <- submitMB(url,un,pw,xy,xml,req.outdir)
+    ret.xml <- mb.return[[1]]
+    db.now <- format(mb.return[[2]], format='%Y-%m-%d %H:%M:%S')
     
     #check to see if ret.xml exists (it should if the curl system call did not produce an error).
     #If it exists, write access key to db
@@ -89,17 +86,13 @@ for (xy in xy.list) {
       ann_name <- paste0(ann.outdir,unlist(strsplit(basename(xy), "\\."))[1], "_", unlist(strsplit(basename(xml), "\\."))[1], ".csv")
       spp <- unlist(strsplit(basename(ann_name), "_"))[1]
       
-      #FIX this to non-test table when script is stable and production-ready
-      #akl.query <- sprintf("INSERT INTO test_access_key_list (access_key) VALUES (%s)", ak)
-      #insert.ak <- dbGetQuery(con, akl.query)
-      
-      #talk to Jesse about making this a real date-time; also look up how to more easily write a query to avoid
-      #tedious issues with quotes fixed by using sprintf (can use this to convert python xml generator code over to R?)
-      status.query <- sprintf("INSERT INTO test_access_key_lut (access_key, date_time, tracks, xml, status, ann_name,spp) VALUES ('%s','%s','%s','%s','%s','%s','%s')", ak,now,xy,xml,ak.status,ann_name,spp)
+      #talk to Jesse about making this a real date-time (DONE)
+      status.query <- sprintf("INSERT INTO access_key_lut (access_key, date_time, tracks, xml, status, ann_name,spp) VALUES ('%s','%s','%s','%s','%s','%s','%s')", ak,db.now,xy,xml,ak.status,ann_name,spp)
       insert.ak <- dbGetQuery(con, status.query)
+    } else {
+        print(paste0(ret.xml, " does not exist - check to see if request was submitted.")) 
     }# end ret.xml if
-  }
-  
+  }#end xml for loop
 }#end xy loop
 
 
