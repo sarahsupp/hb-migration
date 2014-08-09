@@ -41,15 +41,21 @@ ann$doy <- as.numeric(format(ann$timestamp, "%j"))
 #glob.label <- unique(ann$GlobCover)
 #oops, missing some here - go back and figure out which classes are missing.
 #glob.names <- c("closed Broadleaved","Closed to Open Grassland","Mosaic Vegetation Cropland","Closed to Open Broadleaved Evergreen and/or Semi-Deciduous Forest",
-                "Closed Needle-Leaved Evergreen Forest","Urban","Water","Closed to Open Mixed Broadleaved and Needleleaved Forest","Mosaic Forest or Shrubland and Grassland",
-                "Closed to Open Shrubland","Mosaic Cropland/Vegetation", "Closed Broadleaved Forest Regularly Flooded, Fresh Water",
-                "Closed Broadleaved Semi-Deciduous and/or Evergreen Forest Regularly Flooded, Saline Water", "Sparse Vegetation",
-                "Close to Open Grassland or Shurbland or Woody Vegetation on Regularly Flooded or Waterlogged soil, fresh brakish, or saline water",
-                "Open Broadleaved Deciduous Forest/Woodland","Bare","Permanent Snow and Ice","No Data")
+#                 "Closed Needle-Leaved Evergreen Forest","Urban","Water","Closed to Open Mixed Broadleaved and Needleleaved Forest","Mosaic Forest or Shrubland and Grassland",
+#                 "Closed to Open Shrubland","Mosaic Cropland/Vegetation", "Closed Broadleaved Forest Regularly Flooded, Fresh Water",
+#                 "Closed Broadleaved Semi-Deciduous and/or Evergreen Forest Regularly Flooded, Saline Water", "Sparse Vegetation",
+#                 "Close to Open Grassland or Shurbland or Woody Vegetation on Regularly Flooded or Waterlogged soil, fresh brakish, or saline water",
+#                 "Open Broadleaved Deciduous Forest/Woodland","Bare","Permanent Snow and Ice","No Data")
 
 #separate pres from abs
 # pres <- ann[ann$present == 1,]
 # abs <- ann[ann$present == 0,]
+
+#plot doy representation to check that it is similar for pres and abs
+ggplot(pres, aes(doy)) + geom_histogram(fill="red", alpha=0.5) + 
+  geom_histogram(data=abs, aes(doy), fill="blue", alpha=0.5) + 
+  theme_classic() + ggtitle("blue = absent, red = present")
+
 
 #Separate by season
 #first read in the migration timing table and format
@@ -57,7 +63,8 @@ migtime.file <- paste0(migtime.dir, "west_migration_", spp, ".txt")
 migtime <- read.table(migtime.file, header=T, sep=" ")
 years <- unique(ann$year)
 
-#set up dfs that will hold data during spring and fall migrations
+#set up dfs that will hold data during spring and fall migrations 
+# Note: data that falls outside of seasons is not included in the new dataframe (sf)
 sf <- as.data.frame(matrix(data=NA, nrow=0, ncol=ncol(ann)+1))
 names(sf) <- c(names(ann), "season")
 
@@ -195,13 +202,13 @@ rownames(aa) <- corr.names
 colnames(aa) <- corr.names
 
 # Matrix plot of variable correlations ordered by principle components
-circle.corr( yy, order = TRUE, bg = "gray65",
+circle.corr( yy, order = TRUE, bg = "white",
              col = colorRampPalette(c("blue","white","red"))(100) )
 
-circle.corr( pp, order = TRUE, bg = "gray65",
+circle.corr( pp, order = TRUE, bg = "white",
              col = colorRampPalette(c("blue","white","red"))(100) )
 
-circle.corr( aa, order = TRUE, bg = "gray65",
+circle.corr( aa, order = TRUE, bg = "white",
              col = colorRampPalette(c("blue","white","red"))(100) )
 
 ###########################################################################################
@@ -269,3 +276,95 @@ dev.off()
 #                     panel.abline(v=abs(min(data.cforest.varimp)), col=’red’,
 #                                  lty=’longdash’, lwd=2)
 ###########################################################################################
+
+# Compare environmental data using Kolmogorov-Smirnoff (KS) tests
+# KS test has less power to detect a shift in the median but more power to detect changes in 
+# the shape of the distributions. Null hypothesis is that both groups were sampled from populations 
+# with identical distributions. It tests for any violation of that null hypothesis -- 
+# different medians, different variances, or different distributions.
+
+critical_D <- function(n1, n2){
+  # http://www.soest.hawaii.edu/wessel/courses/gg313/Critical_KS.pdf
+  # assuming alpha = 0.05
+  # values > Da are significant?
+  Da <- 1.36 * sqrt((n1+n2)/(n1*n2))
+  return(Da)
+}
+
+season <- c("spring", "fall")
+vars <- c("SRTM_elev", "EVI", "lwrf", "swrf", "t10m") #add other vars as necessary
+
+# Compare presence vs absence points in seasons and years for each variable
+ks_pa <- data.frame("year"=1, "season"=NA, "var"=NA, "Dstat"=1, "Pvalue"=1)
+for (y in unique(years)){
+  for (s in unique(season)){
+    pres <- sf[sf$present == 1 & sf$year == y & sf$season == s,]
+    abs <- sf[sf$present == 0 & sf$year == y & sf$season == s,]
+    for (var in unique(vars)){
+      compare <- ggplot(pres, aes(x=get(var))) + geom_density(alpha=0.3, fill="red") + 
+        geom_density(data=abs, alpha=0.3, fill="blue") + theme_classic() + xlab(var) + 
+        ggtitle(paste(y,s,var, sep=" - "))
+      print(compare)
+      ks <- ks.test(pres[,colnames(pres) %in% var], abs[,colnames(abs) %in% var])
+      ks_pa = rbind(ks_pa, c(y,s,var,round(as.numeric(ks$statistic),4),round(ks$p.value,4)))
+    }  
+  }
+}
+ks_pa <- ks_pa[-1,] #delete first row of dummy data
+
+
+# compare years. Are there any years that really differ?
+ks_yrs <- data.frame("year1"=1, "year2"=1, "var"=NA, "Dstat"=1, "pvalue"=1, "signif"=NA)
+for (var in unique(vars)){
+  for (y in unique(years)){
+    if(y==2013)
+      next
+    for(ynext in unique(years[-1])){
+      if(y==ynext)
+        next
+    pres <- sf[sf$present == 1 & sf$year == y,]
+    abs <- sf[sf$present == 0 & sf$year == y,]
+    pres2 <- sf[sf$present == 1 & sf$year == ynext,]
+    abs2 <- sf[sf$present == 0 & sf$year == ynext,]
+    compare <- ggplot(pres, aes(x=get(var))) + geom_density(alpha=0.3, fill="red") + 
+      geom_density(data=pres2, alpha=0.3, fill="blue") + 
+      geom_density(data=abs, alpha=0.3, fill="grey60",col="red") + 
+      geom_density(data=abs2, alpha=0.3, fill="grey60",col="blue") + 
+      theme_classic() + xlab(var) + 
+      ggtitle(paste(y,ynext,var, sep=" - "))
+    print(compare)
+    ks <- ks.test(pres[,colnames(pres) %in% var], pres2[,colnames(pres2) %in% var])
+    Da <- critical_D(nrow(pres), nrow(pres2))
+    if(Da > ks$statistic){ sig <- "N" }
+    else{ sig <- "Y" }  
+    ks_yrs <- rbind(ks_yrs, c(y, ynext, var, round(as.numeric(ks$statistic),4), round(ks$p.value,4), sig))
+  }}
+}
+ks_yrs <- ks_yrs[-1,]
+
+
+# compare seasons Are hb selecting diff in diff seasons? How influenced by background diffs is this?
+ks_season <- data.frame("year"=1, "var"=NA, "Dstat"=1, "pvalue"=1, "signif"=NA)
+for (var in unique(vars)){
+  for (y in unique(years)){
+      spr_pres <- sf[sf$present == 1 & sf$year == y & sf$season == "spring",]
+      fal_pres <- sf[sf$present == 1 & sf$year == y & sf$season == "fall",]
+      compare <- ggplot(spr_pres, aes(x=get(var))) + geom_density(alpha=0.3, fill="cadetblue") + 
+        geom_density(data=fal_pres, alpha=0.3, fill="orange") + 
+        theme_classic() + xlab(var) + ggtitle(paste(y, var, sep=" - "))
+      print(compare)
+      ks <- ks.test(spr_pres[,colnames(spr_pres) %in% var], fal_pres[,colnames(fal_pres) %in% var])
+      Da <- critical_D(nrow(pres), nrow(pres2))
+      if(Da > ks$statistic){ sig <- "N" }
+      else{ sig <- "Y" }  
+      ks_season <- rbind(ks_season, c(y, var, round(as.numeric(ks$statistic),4), round(ks$p.value,4), sig))
+    }
+}
+ks_season <- ks_season[-1,]
+
+
+
+
+
+
+
