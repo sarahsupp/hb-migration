@@ -37,6 +37,7 @@ ann$GlobCover <- as.factor(ann$GlobCover)
 ann$month <- as.numeric(format(ann$timestamp, "%m"))
 ann$year <- as.numeric(format(ann$timestamp, "%Y"))
 ann$doy <- as.numeric(format(ann$timestamp, "%j"))
+ann$present <- as.factor(ann$present)
 
 #glob cover labels - legend for map comes from http://dup.esrin.esa.it/files/p68/GLOBCOVER2009_Product_Description_Manual_1.0.pdf
 #glob.label <- unique(ann$GlobCover)
@@ -47,6 +48,7 @@ ann$doy <- as.numeric(format(ann$timestamp, "%j"))
 #                 "Closed Broadleaved Semi-Deciduous and/or Evergreen Forest Regularly Flooded, Saline Water", "Sparse Vegetation",
 #                 "Close to Open Grassland or Shurbland or Woody Vegetation on Regularly Flooded or Waterlogged soil, fresh brakish, or saline water",
 #                 "Open Broadleaved Deciduous Forest/Woodland","Bare","Permanent Snow and Ice","No Data")
+
 
 #separate pres from abs
  pres <- ann[ann$present == 1,]
@@ -386,6 +388,27 @@ for (y in unique(years)){
     else { print("WE NEED A BETTER MODEL") }
   }
 }
+
+
+#---------------------------------------------------------------------------------------------------
+#         GLMER test comparing distribution of envr. data with presence with year as random effect
+#---------------------------------------------------------------------------------------------------
+
+#TODO: Figure out how to use glmer
+
+#standardize the data
+zscore = apply(spr[,names(spr)%in% c("SRTM_elev","EVI", "t10m", "swrf")], 2, function(x) {
+  y = (x - mean(x))/sd(x)
+  return(y)
+})
+
+zscore <- as.data.frame(zscore)
+zscore$present <- spr$present
+zscore$year <- spr$year
+
+
+m <- glmer(present ~ SRTM_elev + EVI + swrf + t10m + (1 | year), data = zscore, family = "binomial", 
+           control = glmerControl(optimizer = "bobyqa"),  nAGQ = 10)
 
 
 
