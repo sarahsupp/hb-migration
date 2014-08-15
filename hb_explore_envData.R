@@ -4,6 +4,7 @@ library(sm)
 library(ggplot2)
 library(ltm)
 library(Rarity)
+library(lme4)
 
 source("/Users/tcormier/Documents/scripts/git_repos/hb-migration/hb_RS_functions.R")
 
@@ -388,4 +389,12 @@ for (y in unique(years)){
 
 
 
+
+#-------------------------- An interesting (or confusing?) way to plot the data using violin plots
+tmp <- melt(sf[, c("present", "EVI", "SRTM_elev", "t10m", "swrf")], id.vars="present")
+ggplot(tmp, aes(x = as.factor(present), y = value)) +
+  geom_jitter(alpha = .1) +
+  geom_violin(alpha = .75) +
+  facet_grid(variable ~ .) +
+  scale_y_sqrt()
 
