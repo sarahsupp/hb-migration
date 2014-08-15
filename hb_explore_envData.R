@@ -48,11 +48,11 @@ ann$doy <- as.numeric(format(ann$timestamp, "%j"))
 #                 "Open Broadleaved Deciduous Forest/Woodland","Bare","Permanent Snow and Ice","No Data")
 
 #separate pres from abs
-# pres <- ann[ann$present == 1,]
-# abs <- ann[ann$present == 0,]
+ pres <- ann[ann$present == 1,]
+ abs <- ann[ann$present == 0,]
 
 #plot doy representation to check that it is similar for pres and abs
-ggplot(pres, aes(doy)) + geom_histogram(fill="red", alpha=0.5) + 
+ggplot(data=pres, aes(doy)) + geom_histogram(fill="red", alpha=0.5) + 
   geom_histogram(data=abs, aes(doy), fill="blue", alpha=0.5) + 
   theme_classic() + ggtitle("blue = absent, red = present")
 
@@ -136,6 +136,7 @@ for (i in 1:length(vars)) {
    }#end seasons loop
 } #end vars loop
 #p + scale_fill_manual( values = c("red", "mediumaquamarine"))
+
 
 # Now, look at presence only and the difference between seasons on the same plot
 for (j in 1:length(vars)) {
@@ -291,13 +292,13 @@ critical_D <- function(n1, n2){
   return(Da)
 }
 
-season <- c("spring", "fall")
+seasons <- c("spring", "fall")
 vars <- c("SRTM_elev", "EVI", "lwrf", "swrf", "t10m") #add other vars as necessary
 
 # Compare presence vs absence points in seasons and years for each variable
 ks_pa <- data.frame("year"=1, "season"=NA, "var"=NA, "Dstat"=1, "Pvalue"=1)
 for (y in unique(years)){
-  for (s in unique(season)){
+  for (s in unique(seasons)){
     pres <- sf[sf$present == 1 & sf$year == y & sf$season == s,]
     abs <- sf[sf$present == 0 & sf$year == y & sf$season == s,]
     for (var in unique(vars)){
@@ -319,7 +320,9 @@ for (var in unique(vars)){
   for (y in unique(years)){
     if(y==2013)
       next
-    for(ynext in unique(years[-1])){
+    for(ynext in unique(years)){
+      if (y > ynext)
+        next
       if(y==ynext)
         next
     pres <- sf[sf$present == 1 & sf$year == y,]
@@ -335,8 +338,8 @@ for (var in unique(vars)){
     print(compare)
     ks <- ks.test(pres[,colnames(pres) %in% var], pres2[,colnames(pres2) %in% var])
     Da <- critical_D(nrow(pres), nrow(pres2))
-    if(Da > ks$statistic){ sig <- "N" }
-    else{ sig <- "Y" }  
+    if(Da > ks$statistic){ sig <- "Y" }
+    else{ sig <- "N" }  
     ks_yrs <- rbind(ks_yrs, c(y, ynext, var, round(as.numeric(ks$statistic),4), round(ks$p.value,4), sig))
   }}
 }
@@ -364,6 +367,24 @@ ks_season <- ks_season[-1,]
 
 
 
+#---------------------------------------------------------------------------------
+#         GLM test comparing distribution of envr. data with presence
+#---------------------------------------------------------------------------------
+
+for (y in unique(years)){
+  for (s in unique(seasons)){
+    data <- sf[sf$year == y & sf$season == s,]
+    
+    fit <- glm(present ~ swrf + lwrf + SRTM_elev + EVI + t10m, family="binomial", data=data)
+    
+    #check the residual deviance and degrees of freedom in the model (should not be significant)
+    check <- 1 - pchisq(fit$deviance, fit$df.residual)
+    if (check > 0.05) {
+      print (summary(fit))
+    }
+    else { print("WE NEED A BETTER MODEL") }
+  }
+}
 
 
 
