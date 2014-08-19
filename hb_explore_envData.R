@@ -1,3 +1,6 @@
+# this code is to analyze and plot the eBird hummingbird presence data with environmental correlates
+
+# import libraries
 library(randomForest)
 #library(party)
 library(sm)
@@ -6,7 +9,18 @@ library(ltm)
 library(Rarity)
 library(lme4)
 
-source("/Users/tcormier/Documents/scripts/git_repos/hb-migration/hb_RS_functions.R")
+# define pathnames
+function.dir <- "/Users/sarah/Documents/github/hb-migration/hb_RS_functions.R"
+agan.dir <- "/Users/sarah/Dropbox/ebird_annotated_raw/"
+migtime.dir <- "/Users/sarah/Dropbox/ebird_annotated_raw/"
+fig.dir <- "/Users/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figues/"
+
+#function.dir <- "/Users/tcormier/Documents/scripts/git_repos/hb-migration/hb_RS_functions.R"
+#agan.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/downloaded_annotations/"
+#migtime.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/data/supp_migration/"
+#fig.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/figures/ruhu/"
+
+source(function.dir)
 
 ###########################################################################################
 #spp abbreviation (same one used in file paths and names)
@@ -14,15 +28,6 @@ spp <- "ruhu"
 
 #what lag do you want to explore?
 lag <- 0
-
-#Aggregated, Annotated File dir
-agan.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/downloaded_annotations/"
-
-#directory containing migration timing text files
-migtime.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/data/supp_migration/"
-
-#fig dir 
-fig.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/figures/ruhu/"
 
 
 ###########################################################################################
