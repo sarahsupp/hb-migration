@@ -10,10 +10,10 @@ library(Rarity)
 library(lme4)
 
 # define pathnames
-function.dir <- "/Users/sarah/Documents/github/hb-migration/hb_RS_functions.R"
-agan.dir <- "/Users/sarah/Dropbox/ebird_annotated_raw/"
-migtime.dir <- "/Users/sarah/Dropbox/ebird_annotated_raw/"
-fig.dir <- "/Users/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figues/"
+function.dir <- "C:/Users/sarah/Documents/github/hb-migration/hb_RS_functions.R"
+agan.dir <- "C:/Users/sarah/Dropbox/ebird_annotated_raw/"
+migtime.dir <- "C:/Users/sarah/Dropbox/ebird_annotated_raw/"
+fig.dir <- "C:/Users/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figues/"
 
 #function.dir <- "/Users/tcormier/Documents/scripts/git_repos/hb-migration/hb_RS_functions.R"
 #agan.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/downloaded_annotations/"
@@ -33,16 +33,16 @@ lag <- 0
 ###########################################################################################
 
 #ann file
-agan.file <- paste0(agan.dir, spp, "/combined/", spp, "_lag",lag,"_allYears.csv")
+agan.file <- paste0(agan.dir, spp, "/", spp, "_lag",lag,"_allYears.csv")
 
 ann <- read.csv(agan.file, as.is=T)
 ann$timestamp <- as.Date(ann$timestamp, format='%Y-%m-%d %H:%M:%S.000')
-#ann$present <- as.factor(ann$present)
+ann$presence <- as.factor(ann$presence)
 ann$GlobCover <- as.factor(ann$GlobCover)
 ann$month <- as.numeric(format(ann$timestamp, "%m"))
 ann$year <- as.numeric(format(ann$timestamp, "%Y"))
 ann$doy <- as.numeric(format(ann$timestamp, "%j"))
-ann$present <- as.factor(ann$present)
+
 
 #glob cover labels - legend for map comes from http://dup.esrin.esa.it/files/p68/GLOBCOVER2009_Product_Description_Manual_1.0.pdf
 #glob.label <- unique(ann$GlobCover)
@@ -56,8 +56,8 @@ ann$present <- as.factor(ann$present)
 
 
 #separate pres from abs
- pres <- ann[ann$present == 1,]
- abs <- ann[ann$present == 0,]
+ pres <- ann[ann$presence == 1,]
+ abs <- ann[ann$presence == 0,]
 
 #plot doy representation to check that it is similar for pres and abs
 ggplot(data=pres, aes(doy)) + geom_histogram(fill="red", alpha=0.5) + 
@@ -67,11 +67,11 @@ ggplot(data=pres, aes(doy)) + geom_histogram(fill="red", alpha=0.5) +
 
 #Separate by season
 #first read in the migration timing table and format
-migtime.file <- paste0(migtime.dir, "west_migration_", spp, ".txt")
+migtime.file <- paste0(migtime.dir, spp, "/", "west_migration_", spp, ".txt")
 migtime <- read.table(migtime.file, header=T, sep=" ")
 years <- unique(ann$year)
 
-#set up dfs that will hold data during spring and fall migrations 
+#set up dataframes that will hold data during spring and fall migrations 
 # Note: data that falls outside of seasons is not included in the new dataframe (sf)
 sf <- as.data.frame(matrix(data=NA, nrow=0, ncol=ncol(ann)+1))
 names(sf) <- c(names(ann), "season")
@@ -82,19 +82,24 @@ for (yr in years) {
   sf <- rbind(sf, seasonal)
 }#end yr loop
 
+
 ###########################################################################################
 # habitat utilization graphs (i.e. variable histograms)
 #test to see if we can get any signal from swrf - this might be wrong to do, but helps visualization of 
 #density plots - otherwise, the spike at 0 is so great, it's impossible to see what's happening in the rest
 #of the graph.
+#TODO: I think maybe we shouldn't do this, unless 0 represents an inaccurate measure. As long as it is valid,
+# then it is an important part of the comparison. Max swrf seems to increase with day of year and somewhat with latitude, 
+# but freq of 0 remains high year-round. 
+
 #convert K to celsius
 sf$t10m <- sf$t10m - 273.15
 
-sf2 <- sf
-sf <- sf[sf$swrf != 0,]
+sf2 <- sf  #create a copy of sf that will hold swrf values == 0
+sf <- sf[sf$swrf != 0,]   # copy of sf that only has swrf > 0
 
-sf$occurrence[sf$present==1] <- "present"
-sf$occurrence[sf$present==0] <- "absent"
+sf$occurrence[sf$presence==1] <- "present"
+sf$occurrence[sf$presence==0] <- "absent"
 
 
 #subset by presence, absence
@@ -105,9 +110,7 @@ abs <- sf[sf$occurrence=="absent",]
 spr <- sf[sf$season == "spring",]
 fall <- sf[sf$season == "fall",]
 
-#END here on 7/9: refine this into a nice plot!
 # Kernel density plots for spring and fall migrations
-
 #Set up variables and titles for looping
 seasons <- c("spr", "fall")
 season.titles <- c("Spring", "Fall")
