@@ -173,6 +173,11 @@ dev.off()
 
 ###########################################################################################
 #Random forest - for variable importance
+#TODO: need to filter NDVI/EVI for quality - just looking quickly at this now.
+#first remove columns with bad preds (for some reason, rugosity5, slopeu, and slovev produced all NAs)
+preds <- ann[,-c(4,7,12:14)]
+preds <- na.omit(preds)
+
 preds <- preds[,-1]
 response <- preds$presence
 
