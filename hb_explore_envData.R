@@ -173,10 +173,6 @@ dev.off()
 
 ###########################################################################################
 #Random forest - for variable importance
-
-#TODO: need to filter NDVI/EVI for quality - just looking quickly at this now.
-# remove columns with bad data (e.g., height_above_ellipsoid is all NAs)
-preds <- ann[complete.cases(ann[-c(4)]),]
 preds <- preds[,-1]
 response <- preds$presence
 
@@ -197,29 +193,6 @@ dev.off()
 
 
 ###########################################################################################
-#Now try it with the party package based on this blog http://alandgraf.blogspot.com/2012/07/random-forest-variable-importance.html and the Strobl et al. paper)
-#WOW, this ran for almost 24 hrs and crashed my machine. Need to rethink.
-# data.controls <- cforest_unbiased(ntree=1000, mtry=round(sqrt(ncol(preds))))
-# cf1 <- cforest(present~.,data=preds,control=data.controls)
-# varimp(cf1)
-# varimp(cf1,conditional=TRUE)
-
-
-#Variables can be considered informative and important if their variable importance value is above the absolute value of the lowest negative-scoring variable. 
-#“The rationale for this rule of thumb is that the importance of irrelevant variables varies randomly around zero” (Strobl et al. 2009b: 342). 
-# barplot(sort(varImp), horiz=TRUE, xlab="Variable Importance \n(predictors to right of red dashed are significant)", ))
-# abline(v=abs(min(varImp)), col='red',lty='longdash', lwd=2)
-# 
-# #Variables can be considered informative and important if their variable importance value is above the absolute value of the lowest negative-scoring variable. 
-# #“The rationale for this rule of thumb is that the importance of irrelevant variables varies randomly around zero” (Strobl et al. 2009b: 342). 
-# dotplot(sort(data.cforest.varimp), xlab=”Variable Importance
-#         in DATA\n(predictors to right of dashed vertical line are
-#                   significant)”, panel = function(x,y){
-#                     panel.dotplot(x, y, col=’darkblue’, pch=16, cex=1.1)
-#                     panel.abline(v=abs(min(data.cforest.varimp)), col=’red’,
-#                                  lty=’longdash’, lwd=2)
-###########################################################################################
-
 # Compare environmental data using Kolmogorov-Smirnoff (KS) tests
 # KS test has less power to detect a shift in the median but more power to detect changes in 
 # the shape of the distributions. Null hypothesis is that both groups were sampled from populations 
@@ -312,16 +285,18 @@ ks_season <- ks_season[-1,]
 #---------------------------------------------------------------------------------
 #         GLM test comparing distribution of envr. data with presence
 #---------------------------------------------------------------------------------
+seasons <- c("spring", "fall")
 
 for (y in unique(years)){
   for (s in unique(seasons)){
     data <- sf[sf$year == y & sf$season == s,]
     
-    fit <- glm(present ~ swrf + lwrf + SRTM_elev + EVI + t10m, family="binomial", data=data)
+    fit <- glm(presence ~ swrf + lwrf + SRTM_elev + EVI + Temp_sfc, Total_precipitation_sfc, family="binomial", data=data)
     
     #check the residual deviance and degrees of freedom in the model (should not be significant)
     check <- 1 - pchisq(fit$deviance, fit$df.residual)
     if (check > 0.05) {
+      print(paste(y, s, "WAS SUCCESSFUL! RESULTS BELOW:", sep=" "))
       print (summary(fit))
     }
     else { print("WE NEED A BETTER MODEL") }
@@ -333,22 +308,26 @@ for (y in unique(years)){
 #         GLMER test comparing distribution of envr. data with presence with year as random effect
 #---------------------------------------------------------------------------------------------------
 
-#TODO: Figure out how to use glmer
+# get rid of columns that aren't needed
+sf2 <- sf[complete.cases(sf[,-4]),]
 
 #standardize the data
-zscore = apply(spr[,names(spr)%in% c("SRTM_elev","EVI", "t10m", "swrf")], 2, function(x) {
+zscore = apply(sf2[,names(sf2)%in% vars ], 2, function(x) {
   y = (x - mean(x))/sd(x)
   return(y)
 })
 
+#make into data frame and and ID and time vars back in
 zscore <- as.data.frame(zscore)
-zscore$present <- spr$present
-zscore$year <- spr$year
+zscore$presence <- sf2$presence
+zscore$year <- as.factor(sf2$year)
+zscore$season <- sf2$season
 
 
-m <- glmer(present ~ SRTM_elev + EVI + swrf + t10m + (1 | year), data = zscore, family = "binomial", 
-           control = glmerControl(optimizer = "bobyqa"),  nAGQ = 10)
-
+fit <- glmer(presence ~ Temp_sfc + t10m + swrf + lwrf + EVI + Total_precipitation_sfc + uplift + SRTM_elev + 
+               (1|year) + (1|season), data = sf, family = "binomial", 
+                control = glmerControl(optimizer = "bobyqa"))
+summary(fit)
 
 
 
@@ -389,3 +368,29 @@ circle.corr( pp, order = TRUE, bg = "white",
 
 circle.corr( aa, order = TRUE, bg = "white",
              col = colorRampPalette(c("blue","white","red"))(100) )
+
+
+
+
+###########################################################################################
+#Now try variable importance testing with the party package based on this blog http://alandgraf.blogspot.com/2012/07/random-forest-variable-importance.html and the Strobl et al. paper)
+#WOW, this ran for almost 24 hrs and crashed my machine. Need to rethink.
+# data.controls <- cforest_unbiased(ntree=1000, mtry=round(sqrt(ncol(preds))))
+# cf1 <- cforest(present~.,data=preds,control=data.controls)
+# varimp(cf1)
+# varimp(cf1,conditional=TRUE)
+
+
+#Variables can be considered informative and important if their variable importance value is above the absolute value of the lowest negative-scoring variable. 
+#“The rationale for this rule of thumb is that the importance of irrelevant variables varies randomly around zero” (Strobl et al. 2009b: 342). 
+# barplot(sort(varImp), horiz=TRUE, xlab="Variable Importance \n(predictors to right of red dashed are significant)", ))
+# abline(v=abs(min(varImp)), col='red',lty='longdash', lwd=2)
+# 
+# #Variables can be considered informative and important if their variable importance value is above the absolute value of the lowest negative-scoring variable. 
+# #“The rationale for this rule of thumb is that the importance of irrelevant variables varies randomly around zero” (Strobl et al. 2009b: 342). 
+# dotplot(sort(data.cforest.varimp), xlab=”Variable Importance
+#         in DATA\n(predictors to right of dashed vertical line are
+#                   significant)”, panel = function(x,y){
+#                     panel.dotplot(x, y, col=’darkblue’, pch=16, cex=1.1)
+#                     panel.abline(v=abs(min(data.cforest.varimp)), col=’red’,
+#                                  lty=’longdash’, lwd=2)
