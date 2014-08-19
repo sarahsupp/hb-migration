@@ -157,33 +157,18 @@ for (j in 1:length(vars)) {
   dev.off()
 } #end vars loop
 
+
 ###########################################################################################
 #pairwise correlation plot
 #first, we only want presence/absence and the environmental variables
-#use sf2, which still have 0's in swrf
-#df.cor <- sf2[,-c(1:4,7,10,12:14,21:24)]
-df.cor <- sf2[,c(5,6,9,18,17,15)]
-#df.cor$num_season[df.cor$season=="spring"] <- 1
-#df.cor$num_season[df.cor$season=="fall"] <- 0
-#df.cor <- df.cor[,-12]
+keepcols <- c("Temp_sfc", "Total_precipitation_sfc", "EVI", "swrf", "lwrf", "u10m", "uplift", "SRTM_elev" )
+df.cor <- sf[,names(sf) %in% keepcols]
+df.cor <- df.cor[complete.cases(df.cor),]
 
-#some labels - later, create a lookup table for these so you can add/remove columns and not 
-#have to manually go through this.
-lab <- c("presence","elev","EVI","t10m","swrf","uplift")
-names(df.cor) <- lab
-#set color of points with desired transparency
-#cols <- makeTransparent("steelblue3", alpha=50)
-cols <- addTrans("cadetblue", 50)
-#pairwise correlation plot - par(mar=) does not work here bc it's set in
-#the corPlot function. Need to adjust at some point.
-outcp <- paste0(fig.dir, "Rufous_variable_correlations.png")
-png(outcp, width=12, height=12, units="in", res=300)
-par(mar=c(0.5, 1, 0.5, 0.5),pch=20, cex.lab=1.5)
-corPlot(df.cor, method="pearson", xlab=lab, ylab=lab, col=cols)
+out <- paste0(fig.dir, spp, "_variable_correlations.png")
+png(out, width=12, height=12, units="in", res=600)
+pairs(df.cor, diag.panel=panel.hist, upper.panel=panel.cor)
 dev.off()
-
-
-#corr.pa <- biserial.cor(sf2$swrf, sf2$present, use="complete.obs", level=2)
 
 
 ###########################################################################################
