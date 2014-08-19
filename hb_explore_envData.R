@@ -172,76 +172,30 @@ dev.off()
 
 
 ###########################################################################################
-# Correlate graphs, omitting NA values
-ann.sub <- ann[,c(6,8,9,11,15:ncol(ann))]
-corr.names <- c("elev","NDVI","EVI","Rugosity","uplift","lwrf","swrf","temp10m","uwind10m","vwind10m")
-yy <- cor(ann.sub, use = "pairwise.complete.obs")
-
-pres.sub <- pres[,c(6,8,9,11,15:ncol(pres))]
-pp <- cor(pres.sub, use = "pairwise.complete.obs")
-
-abs.sub <- abs[,c(6,8,9,11,15:ncol(abs))]
-aa <- cor(abs.sub, use = "pairwise.complete.obs")
-
-rownames(yy) <- corr.names
-colnames(yy) <- corr.names
-rownames(pp) <- corr.names
-colnames(pp) <- corr.names
-rownames(aa) <- corr.names
-colnames(aa) <- corr.names
-
-# Matrix plot of variable correlations ordered by principle components
-circle.corr( yy, order = TRUE, bg = "white",
-             col = colorRampPalette(c("blue","white","red"))(100) )
-
-circle.corr( pp, order = TRUE, bg = "white",
-             col = colorRampPalette(c("blue","white","red"))(100) )
-
-circle.corr( aa, order = TRUE, bg = "white",
-             col = colorRampPalette(c("blue","white","red"))(100) )
-
-###########################################################################################
 #Random forest - for variable importance
-head(ann)
 
-#LATER, need to filter NDVI/EVI for quality - just looking quickly at this now.
-#first remove columns with bad preds (for some reason, rugosity5, slopeu, and slovev produced all NAs)
-preds <- ann[,-c(4,7,12:14)]
-preds <- na.omit(preds)
-# preds$month <- as.numeric(format(preds$timestamp, "%m"))
-# preds$year <- as.numeric(format(preds$timestamp, "%Y"))
-# preds$doy <- as.numeric(format(preds$timestamp, "%j"))
+#TODO: need to filter NDVI/EVI for quality - just looking quickly at this now.
+# remove columns with bad data (e.g., height_above_ellipsoid is all NAs)
+preds <- ann[complete.cases(ann[-c(4)]),]
 preds <- preds[,-1]
-response <- preds$present
-#preds <- preds[,-c(preds$present)]
+response <- preds$presence
 
-
-preds.rf <- preds[,-3]
+#keep just the environmental vars here
+preds.rf <- preds[,c(2,3,7,8,9,10,11,12,13,15,16,18,21,23,24,35,36,37)]
 rf <- randomForest(preds.rf, response, na.rm=T, importance=T)
-#decided to use variable imp plot based on mean decrease in GINI bc Calle & Urrea (2010) show its rankings are more stable.
-#Also, got explanation from here: http://www.stat.berkeley.edu/~breiman/RandomForests/cc%5Fhome.htm#varimp
+
+# Use variable importance plot based on mean decrease in GINI. Calle & Urrea (2010) show its rankings are more stable.
+#   Explanation here: http://www.stat.berkeley.edu/~breiman/RandomForests/cc%5Fhome.htm#varimp
 varImp <- importance(rf,type = 2)
 
-#FIX TITLES TO INCLUDE SPP AUTOMATICALLY 
+# Plot results
 rf.graph <- paste0(fig.dir, spp, "/", spp, "_varImp_allvars.pdf")
 pdf(file = rf.graph, width=8, height=8)
 par(mar=c(8,6,6,4))
-varImpPlot(rf, type=2,pch=16, col="blue",main=paste("Black-chinned Hummingbird \nRandom Forest Variable Importance", sep=' '))
-#abline(v=abs(min(varImp)), col='red',lty='longdash', lwd=2)
+varImpPlot(rf, type=2,pch=16, col="blue",main=paste(spp, "\nRandom Forest Variable Importance", sep=' '))
 dev.off()
 
 
-#now do RF without location and time to see which env vars show up
-preds.rf2 <- preds[,-c(1:3,15:17)] 
-rf2 <- randomForest(preds.rf2, response, na.rm=T, importance=T)
-varImp2 <- importance(rf2,type = 2)
-
-#FIX TITLES TO INCLUDE SPP AUTOMATICALLY
-rf2.graph <- paste0(fig.dir, spp, "/", spp, "_varImp_envVars.pdf")
-pdf(file = rf2.graph, width=8, height=8 )
-par(mar=c(8,6,6,4))
-varImpPlot(rf2, type=2,pch=16, col="blue",main=paste("Black-chinned Hummingbird \nRandom Forest Variable Importance", sep=' '))
-dev.off()
 ###########################################################################################
 #Now try it with the party package based on this blog http://alandgraf.blogspot.com/2012/07/random-forest-variable-importance.html and the Strobl et al. paper)
 #WOW, this ran for almost 24 hrs and crashed my machine. Need to rethink.
@@ -406,3 +360,32 @@ ggplot(tmp, aes(x = as.factor(present), y = value)) +
   facet_grid(variable ~ .) +
   scale_y_sqrt()
 
+
+###########################################################################################
+# Correlate graphs, omitting NA values
+ann.sub <- ann[,c(6,8,9,11,15:ncol(ann))]
+corr.names <- c("elev","NDVI","EVI","Rugosity","uplift","lwrf","swrf","temp10m","uwind10m","vwind10m")
+yy <- cor(ann.sub, use = "pairwise.complete.obs")
+
+pres.sub <- pres[,c(6,8,9,11,15:ncol(pres))]
+pp <- cor(pres.sub, use = "pairwise.complete.obs")
+
+abs.sub <- abs[,c(6,8,9,11,15:ncol(abs))]
+aa <- cor(abs.sub, use = "pairwise.complete.obs")
+
+rownames(yy) <- corr.names
+colnames(yy) <- corr.names
+rownames(pp) <- corr.names
+colnames(pp) <- corr.names
+rownames(aa) <- corr.names
+colnames(aa) <- corr.names
+
+# Matrix plot of variable correlations ordered by principle components
+circle.corr( yy, order = TRUE, bg = "white",
+             col = colorRampPalette(c("blue","white","red"))(100) )
+
+circle.corr( pp, order = TRUE, bg = "white",
+             col = colorRampPalette(c("blue","white","red"))(100) )
+
+circle.corr( aa, order = TRUE, bg = "white",
+             col = colorRampPalette(c("blue","white","red"))(100) )
