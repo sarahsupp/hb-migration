@@ -85,19 +85,13 @@ for (yr in years) {
 
 ###########################################################################################
 # habitat utilization graphs (i.e. variable histograms)
-#test to see if we can get any signal from swrf - this might be wrong to do, but helps visualization of 
-#density plots - otherwise, the spike at 0 is so great, it's impossible to see what's happening in the rest
-#of the graph.
-#SRS: I think maybe we shouldn't do this, unless 0 represents an inaccurate measure. As long as it is valid,
-# then it is an important part of the comparison. Max swrf seems to increase with day of year and somewhat with latitude, 
-# but freq of 0 remains high year-round. Plus, we lose thousands of rows of data for everything else!
 
 #convert K to celsius
 sf$t10m <- sf$t10m - 273.15
+sf$Temp_sfc <- sf$Temp_sfc - 273.15
 
 sf$occurrence[sf$presence==1] <- "present"
 sf$occurrence[sf$presence==0] <- "absent"
-
 
 #subset by presence, absence
 pres <- sf[sf$occurrence=="present",]
@@ -112,9 +106,12 @@ fall <- sf[sf$season == "fall",]
 seasons <- c("spr", "fall")
 season.titles <- c("Spring", "Fall")
 
-vars <- c("SRTM_elev", "t10m", "EVI", "swrf", "rugosity25", "u10m")
-var.titles <- c("Elevation", "Temperature at 10 m", "EVI", "Downward Shortwave Radiation Flux", "Surface Roughness", "East-West Wind at 10 m")
-xlab.titles <- c("Elevation (m)", expression("Temperature at 10 m" ~ (degree~C)), "EVI", expression("Downward Shortwave Radiation Flux" ~ (W ~ m^-2)), "Surface Roughness", "East-West Wind at 10 m (m/s)")
+vars <- c("t10m", "Temp_sfc", "Total_precipitation_sfc", "EVI", "swrf", "lwrf", "u10m", "uplift", "SRTM_elev")
+var.titles <- c("Temperature at 10 m", "Surface Temperature", "Surface Precipitation", "EVI", "Downward Shortwave Radiation Flux", 
+                "Downward longwave Radiation Flux", "East-West Wind at 10 m", "Uplift", "Elevation")
+xlab.titles <- c(expression("Temperature at 10 m" ~ (degree~C)), expression("Surface Temperature" ~ (degree~C)), "Precipitation (mm)",
+                 "EVI", expression("Downward Shortwave Radiation Flux" ~ (W ~ m^-2)), expression("Downward Longwave Radiation Flux" ~ (W ~ m^-2)), 
+                  "East-West Wind at 10 m (m/s)", "Uplift", "Elevation (m)")
 
 #for each variable, let's look at presence vs. absence in spring and fall
 for (i in 1:length(vars)) {
@@ -124,7 +121,7 @@ for (i in 1:length(vars)) {
     #create graphs for spring presence/absence, spring first
     title <- paste0(season.titles[s], " Rufous Hummingbird Habitat Utilization - \n", var.titles[i])
     outfile <- paste0(fig.dir, season.titles[s], "_ruhu_habitat_utilization_", vars[i], ".pdf")
-    spr.col <- c("gray30","cadetblue")
+    spr.col <- c("gray30","cyan2")
     fall.col <- c("gray30", "orange")
     
     if (seasons[s] == "spr") {
@@ -134,9 +131,9 @@ for (i in 1:length(vars)) {
     }#end color if
     
     pdf(outfile, width=9, height=8)
-    p <- ggplot(get(seasons[s]), aes(x=get(vars[i]),fill=occurrence)) + geom_density(alpha=.4)
+    p <- ggplot(get(seasons[s]), aes(x=get(vars[i]),fill=presence)) + geom_density(alpha=.5)
     p <- p + scale_fill_manual( values = col)
-    p <- p + theme_classic() + theme(text=element_text(size=20))
+    p <- p + theme_classic() + theme(text=element_text(size=14))
     p <- p + ggtitle(title) + xlab(xlab.titles[i])
     print(p)
     
@@ -151,14 +148,13 @@ for (j in 1:length(vars)) {
   title <- paste0("Spring vs. Fall Rufous Hummingbird Habitat Utilization - \n", var.titles[j])
   outfile <- paste0(fig.dir, "ruhu_springVsFall_habitat_utilization_", vars[j], ".pdf")
   pdf(outfile, width=9, height=8)
-  #FIX COLORS
-  p <- ggplot(pres, aes(x=get(vars[j]), fill=season)) + geom_density(alpha=.4)   
-  p <- p + scale_fill_manual( values = c("orange", "cadetblue"))
-  p <- p + theme_classic() + theme(text=element_text(size=20))
+ 
+  p <- ggplot(pres, aes(x=get(vars[j]), fill=season)) + geom_density(alpha=.5)   
+  p <- p + scale_fill_manual( values = c("orange", "cyan2"))
+  p <- p + theme_classic() + theme(text=element_text(size=14))
   p <- p + ggtitle(title) + xlab(xlab.titles[j])
   print(p)
   dev.off()
-
 } #end vars loop
 
 ###########################################################################################
