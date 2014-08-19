@@ -13,7 +13,7 @@ library(lme4)
 function.dir <- "C:/Users/sarah/Documents/github/hb-migration/hb_RS_functions.R"
 agan.dir <- "C:/Users/sarah/Dropbox/ebird_annotated_raw/"
 migtime.dir <- "C:/Users/sarah/Dropbox/ebird_annotated_raw/"
-fig.dir <- "C:/Users/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figues/"
+fig.dir <- "C:/Users/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/"
 
 #function.dir <- "/Users/tcormier/Documents/scripts/git_repos/hb-migration/hb_RS_functions.R"
 #agan.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/downloaded_annotations/"
@@ -88,15 +88,12 @@ for (yr in years) {
 #test to see if we can get any signal from swrf - this might be wrong to do, but helps visualization of 
 #density plots - otherwise, the spike at 0 is so great, it's impossible to see what's happening in the rest
 #of the graph.
-#TODO: I think maybe we shouldn't do this, unless 0 represents an inaccurate measure. As long as it is valid,
+#SRS: I think maybe we shouldn't do this, unless 0 represents an inaccurate measure. As long as it is valid,
 # then it is an important part of the comparison. Max swrf seems to increase with day of year and somewhat with latitude, 
-# but freq of 0 remains high year-round. 
+# but freq of 0 remains high year-round. Plus, we lose thousands of rows of data for everything else!
 
 #convert K to celsius
 sf$t10m <- sf$t10m - 273.15
-
-sf2 <- sf  #create a copy of sf that will hold swrf values == 0
-sf <- sf[sf$swrf != 0,]   # copy of sf that only has swrf > 0
 
 sf$occurrence[sf$presence==1] <- "present"
 sf$occurrence[sf$presence==0] <- "absent"
@@ -146,7 +143,6 @@ for (i in 1:length(vars)) {
     dev.off()
    }#end seasons loop
 } #end vars loop
-#p + scale_fill_manual( values = c("red", "mediumaquamarine"))
 
 
 # Now, look at presence only and the difference between seasons on the same plot
