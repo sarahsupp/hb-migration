@@ -117,10 +117,19 @@ for (spp in unique(spcodes)){
   zscore$year <- as.factor(ann_sub$year)
   zscore$season <- ann_sub$season
 
+  spring <- zscore[zscore$season == "spring",]
+  fall <- zscore[zscore$season == "fall",]
+
+  # run for each season and print results to screen
   fit <- glmer(presence ~ Temp_sfc + t10m + swrf + lwrf + EVI + Total_precipitation_sfc + uplift + SRTM_elev + 
-               (1|year) + (1|season), data = sf, family = "binomial", 
+               (1|year), data = spring, family = "binomial", 
                control = glmerControl(optimizer = "bobyqa"))
-  summary(fit)
-  sink(NULL)
+  print(summary(fit))
+
+  fit <- glmer(presence ~ Temp_sfc + t10m + swrf + lwrf + EVI + Total_precipitation_sfc + uplift + SRTM_elev + 
+               (1|year), data = fall, family = "binomial", 
+               control = glmerControl(optimizer = "bobyqa"))
+  print(summary(fit))
+
 }
 
