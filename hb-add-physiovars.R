@@ -54,7 +54,7 @@ for (spp in unique(spcodes)){
   #calculate physiological demand (Joules) based on Tes (c)
     #   Assume S. rufus BMR = 3.3 mL O2 g-1h-1 (Lasiewski 1963) 
     # Thermoregulation (Joules) = Thermoregulation (mL O2 g-1h-1) * 20.1
-    #TODO: get BMR for other species, or assume all similar to S. rufus (~3 g)?
+    #TODO: get BMR for other species, or assume all similar to S. rufus and C. costae (~3 g)?
   PdJ <- apply (ann, 1, function(x){
     Tes <- as.numeric(x["TesC"])
     if (Tes <= 35){ thermoreg <- 17.8 - (0.396 * Tes) - 3.3 }
@@ -82,4 +82,4 @@ ggplot(abs, aes(abs(u10m), Pdj)) + geom_point(col="red", alpha=0.05) + theme_cla
   geom_point(data=pres, aes(abs(u10m), Pdj), alpha=0.05)
   
 }
-  
+
