@@ -226,3 +226,22 @@ panel.hist <- function(x, ...)
   rect(breaks[-nB], 0, breaks[-1], y, col = "black", ...)
 }
 
+###################################################################################################
+#Filter annotated data - we can add to this as necessary. For now, super simple.
+
+fil_ebird <- function(raw_ann, outfile) {
+  #filter file
+  #filter out all NA values
+  fil1 <- raw_ann[complete.cases(raw_ann),]
+  #Filter out rows where modis veg pixel reliability is anything but 0 (good data). That means
+  #that all pixels used in the generation of this value were high quality (nothing missing, no clouds, no ice).
+  fil2 <- fil1[fil1$VegIndex_pix_reliability == 0,]
+  
+  #write the output file
+  write.csv(fil2, outfile, quote=F, row.names=F)
+  
+  #return fil2 in case we need to do anything else with it
+  return(fil2)
+  
+}#end fil_ebird
+
