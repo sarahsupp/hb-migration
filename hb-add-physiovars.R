@@ -1,4 +1,6 @@
 # Add Physiologically informed variables, based on Don's and Pieter's equations.
+library(sp)
+library(ggplot2)
 
 # define pathnames
 agan.dir <- "C:/Users/sarah/Dropbox/ebird_annotated_raw/"
@@ -20,6 +22,19 @@ for (spp in unique(spcodes)){
   #use only complete data
   ann <- ann[complete.cases(ann[,-4]),]
   
+  #calculate daylength from the dates and locations
+  daylength <- apply(ann, 1, function(x){
+    coords <- matrix(c(as.numeric(x["location.long"]), as.numeric(x["location.lat"])), nrow=1)
+    #coords <- SpatialPoints(coords, proj4string=CRS("+proj=longlat +datum=WGS84"))
+    sunrise <- sunriset(coords, as.POSIXct(x["timestamp"]), direction="sunrise", POSIXct.out=TRUE)
+    sunset <- sunriset(coords, as.POSIXct(x["timestamp"]), direction="sunset", POSIXct.out=TRUE)
+    sunset$time - sunrise$time
+  })
+  
+  
+  #Append daylength to dataframe
+  ann$daylength <- daylength
+  
   #calculate solar zenith (sun angle) and horizontal extraterrestrial radiation
     #coords need to be a spatial points or matrix object
     # apply across all rows of the annotated data
@@ -40,6 +55,7 @@ for (spp in unique(spcodes)){
   
   #calculate standard operative temperature from surface temperature (Te)
   #TODO: wind is in m/s (should we be using absolute value for wind?)
+  #TODO: I used u10m for wind, but should be combined with v10m for actual wind speed? @TinaCormier
   #TODO: Commented out flag for Ta < 263 (but should never get a presence point for such data) - check this is OK
     Tes <- apply (ann, 1, function(x){
       Tes.calc.compl.incl.rad(as.numeric(x["Temp_sfc"]), abs(as.numeric(x["u10m"])), as.numeric(x["lwrf"]), 
