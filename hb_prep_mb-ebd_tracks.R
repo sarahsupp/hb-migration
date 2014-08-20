@@ -13,13 +13,13 @@ library(raster)
 
 #ebird daily observation data
 #ebd.presfiles <- "C:/Share/tcormier/hummingbirds/migration_study/data/ebird/present_points/"
-ebd.presfiles <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/data/ebird/present_points/"
+ebd.presfiles <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/data/ebird/present_points/clipped/"
 
 #ebd.absfiles <- "C:/Share/tcormier/hummingbirds/migration_study/data/ebird/absent_points/"
-ebd.absfiles <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/data/ebird/absent_points/"
+ebd.absfiles <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/data/ebird/absent_points/migrants/clipped_sampled/"
 
 #study area boundary (should be the western flyway, except for Ruby):
-sa.file <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/boundaries/western_flyway_dissolve.shp"
+#sa.file <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/boundaries/western_flyway_dissolve.shp"
   
 #Output movebank tracks file (directory):
 #trackdir <- "C:/Share/tcormier/hummingbirds/migration_study/movebank/track_csvs/"
@@ -27,8 +27,8 @@ trackdir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank
 #lag in days
 lag=0
 
-#spp.list <- c("bchu", "bthu","cahu","rthu","ruhu")
-spp.list <- c("rthu")
+spp.list <- c("bchu", "bthu","cahu","rthu","ruhu")
+#spp.list <- c("rthu")
 ###################################################
  
 
@@ -108,25 +108,22 @@ prepAbs <- function(spp, abs_tbl, lag, outdir, year) {
 
 for (spp in spp.list) {
   #prep and write out pres files
-  pfile <- paste0(ebd.presfiles, spp, ".txt")
+  pfile <- paste0(ebd.presfiles, spp, "_clipflyway.csv")
   tbl <- read.table(pfile, header=TRUE, sep=",", quote='"', fill=TRUE, as.is=TRUE, comment.char="")
-  
-  #first clip pres points to study area boundary (western flyway, except for rthu)
-  
-  
+  print(paste0("working on ", pfile))
   #write out pres track files
   trackdir2 <- paste0(trackdir, spp, "/")
   prepPres(spp, tbl, 0, trackdir2)
   
   #prep and write out Abs files
-  pattern=paste0(spp, "_[0-9]{4}_sub\\.csv")
+  pattern=paste0(spp, "_[0-9]{4}_sample\\.csv")
   afiles <- list.files(path=ebd.absfiles, pattern=pattern, full.names=T)
   
   for (abs_y in afiles) {
     abs_tbl <- read.table(abs_y, header=TRUE, sep=",", quote='"', fill=TRUE, as.is=TRUE, comment.char="")
     year <- regexpr(pattern="[0-9]{4}", text=abs_y)
     year <- regmatches(abs_y, year)
-    
+    print(paste0("working on ", abs_y))
     #Write out Abs track files
     prepAbs(spp, abs_tbl, 0, trackdir2, year)
   }

@@ -1,19 +1,21 @@
 # This script will combine all movebank annotations for a species (all years, all variables) into one 
 # file for analysis.
 ###########################################################################################
+#species
+spp <- "rthu"
 #directory containing annotations
-ann_dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/downloaded_annotations/bchu/"
+ann_dir <- paste0("/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/downloaded_annotations/", spp, "/")
 ###########################################################################################
 #List files in ann_dir
 ann_files <- list.files(ann_dir, pattern="*csv", full.names=T)
 
 #find unique variables
-unq <- unlist(strsplit(ann_files,"_"))
-unq2 <- unlist(strsplit(unique(grep("*.csv", unq, value=T)),"\\."))
-unq3 <- unq2[unq2 != "csv"]
+pattern=paste0("/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/downloaded_annotations/", spp, "//", spp,"_(pres|abs)_[0-9]{4}_lag0_")
+unq <- unlist(strsplit(gsub(pattern = pattern, replacement = "", ann_files), "\\.csv"))
+unq2 <- unique(unq)
 
 #group tables by unique variables and rbind
-for (i in unq3) {
+for (i in unq2) {
   vars <- grep(i, ann_files, value=T)
   #name output tempfile
   nm <- unlist(strsplit(basename(ann_files[1]),"_"))
@@ -25,7 +27,7 @@ for (i in unq3) {
     if ((j == 1) && (grepl("_abs_", vars[j]))) {
       #For first table, pres/abs, then just write it out to csv
       abs <- read.csv(vars[j])
-      abs$present <- 0
+      abs$presence <- 0
       #switch columns around so env vars are at the end
       abs <- abs[,c(1:4,ncol(abs),5:c(ncol(abs)-1))]
       write.csv(abs, out_tmp, quote=F, row.names=F)   
@@ -33,21 +35,21 @@ for (i in unq3) {
     } else if ((j == 1) && (grepl("_pres_", vars[j]))) {
         #For first table, pres/abs, then just write it out to csv
         abs <- read.csv(vars[j])
-        abs$present <- 1
+        abs$presence <- 1
         #switch columns around so env vars are at the end
         abs <- abs[,c(1:4,ncol(abs),5:c(ncol(abs)-1))]
         write.csv(abs, out_tmp, quote=F, row.names=F)   
     
     } else if ((j > 1) && (grepl("_abs_", vars[j]))) {
         abs <- read.csv(vars[j])
-        abs$present <- 0
+        abs$presence <- 0
         #switch columns around so env vars are at the end
         abs <- abs[,c(1:4,ncol(abs),5:c(ncol(abs)-1))]
         write.table(abs, out_tmp, sep=',', quote=F, row.names=F, append=T, col.names=F)
         
     } else if ((j > 1) && (grepl("_pres_", vars[j]))) {
         abs <- read.csv(vars[j])
-        abs$present <- 1
+        abs$presence <- 1
         #switch columns around so env vars are at the end
         abs <- abs[,c(1:4,ncol(abs),5:c(ncol(abs)-1))]
         write.table(abs, out_tmp, sep=',', quote=F, row.names=F, append=T, col.names=F)
@@ -89,3 +91,4 @@ for (tmp in c(1:length(tmp_files))) {
 }#end tmp file loop
 
 write.table(agg, f_name, sep=",", quote=F, row.names=F)
+rm(list=ls())

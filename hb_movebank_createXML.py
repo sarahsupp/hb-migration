@@ -45,13 +45,14 @@ import argparse
 #var_labels = "v_wind_30m,v_wind_725_mb"
 #var_labels = "v_wind_825_mb,v_wind_925_mb"
 #var_labels = "sfc_roughness"
-var_labels = "lwrf_up,swrf_up"
+#var_labels = "lwrf_up,swrf_up"
+var_labels = "VegIndex_pix_reliability"
 ## Interpolation type - one of "inverse-distance-weighted", "bilinear", or "nearest-neighbor"
 int_type = "inverse-distance-weighted"
 
 ## Type Name - need directory and sensor type (e.g. "modis-land/MOD13Q1.005")
-#type_name = "modis-land/MOD13Q1.005"
-type_name = "nomads.ncdc.noaa.gov/NARR"
+type_name = "modis-land/MOD13Q1.005"
+#type_name = "nomads.ncdc.noaa.gov/NARR"
 #type_name = "srtm.csi.cgiar.org/SRTM_v41/derived"
 
 ## Variable names - must be names listed in movebank
@@ -65,7 +66,8 @@ type_name = "nomads.ncdc.noaa.gov/NARR"
 #mb_var_names = "v_wind_30_m_above_gnd,v_wind_725_mb"
 #mb_var_names = "v_wind_825_mb,v_wind_925_mb"
 #mb_var_names = "rugosity15x15"
-mb_var_names = "Upward_long_wave_radiation_flux_sfc,Upward_short_wave_radiation_flux_sfc"
+#mb_var_names = "Upward_long_wave_radiation_flux_sfc,Upward_short_wave_radiation_flux_sfc"
+mb_var_names = "250m 16 days pixel reliability"
 
 ## Set output directory for xml file
 #outdir = "C:/Share/tcormier/hummingbirds/migration_study/movebank/env_request_xmls/"
