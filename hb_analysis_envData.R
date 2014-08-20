@@ -18,17 +18,10 @@ fig.dir <- "C:/Users/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migr
 # source function script
 source(function.dir)
 
-#file to store glmer summary results
-#sink(paste0(fig.dir, "outfile.txt"))
-
 # species codes
 spcodes <- c("rthu", "bchu", "bthu", "cahu", "ruhu")
 
 for (spp in unique(spcodes)){
-  
-#   writeLines(" ")
-#   writeLines(paste0("*****************RUNNING CODE FOR ", spp, "***********************"))
-#   writeLines(" ")
 
   #read in annotaed data
   ann <- read.csv(paste0(agan.dir, spp, "/", spp, "_lag0_allYears.csv"), as.is=T)
@@ -131,16 +124,18 @@ for (spp in unique(spcodes)){
   fall <- zscore[zscore$season == "fall",]
 
   # run for each season and print results to screen
-  fit <- glmer(presence ~ Temp_sfc + t10m + swrf + lwrf + EVI + Total_precipitation_sfc + uplift + SRTM_elev + 
+  fit <- glmer(presence ~ Temp_sfc + swrf_up + swrf + lwrf_up + lwrf + EVI + Total_precipitation_sfc + u10m + uplift + SRTM_elev + 
                (1|year), data = spring, family = "binomial", 
                control = glmerControl(optimizer = "bobyqa"))
-  print(summary(fit))
+  s<-capture.output(summary(fit))
+  write(s, file=paste0(fig.dir, spp, "/", spp, "spring_glmer.txt"))
 
-  fit <- glmer(presence ~ Temp_sfc + t10m + swrf + lwrf + EVI + Total_precipitation_sfc + uplift + SRTM_elev + 
+
+  fit <- glmer(presence ~ Temp_sfc + swrf_up + swrf + lwrf_up + lwrf + EVI + Total_precipitation_sfc + u10m + uplift + SRTM_elev + 
                (1|year), data = fall, family = "binomial", 
                control = glmerControl(optimizer = "bobyqa"))
-  print(summary(fit))
-
+  s<-capture.output(summary(fit))
+  write(s, file=paste0(fig.dir, spp, "/", spp, "fall_glmer.txt"))
 }
 
 #--------------------------------- Plot the data during the migration season
