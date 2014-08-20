@@ -75,13 +75,13 @@ for (spp in unique(spcodes)){
 
 
 #----------------------------------pairwise correlation plot
-  df.cor <- ann[,names(ann) %in% vars]
-  df.cor <- df.cor[complete.cases(df.cor),]
-
-  out <- paste0(fig.dir, spp, "_variable_correlations.png")
-  png(out, width=12, height=12, units="in", res=600)
-  pairs(df.cor, diag.panel=panel.hist, upper.panel=panel.cor)
-  dev.off()
+#   df.cor <- ann[,names(ann) %in% vars]
+#   df.cor <- df.cor[complete.cases(df.cor),]
+# 
+#   out <- paste0(fig.dir, spp, "_variable_correlations.png")
+#   png(out, width=12, height=12, units="in", res=600)
+#   pairs(df.cor, diag.panel=panel.hist, upper.panel=panel.cor)
+#   dev.off()
 
 
 #----------------------------Random forest - for variable importance
