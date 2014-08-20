@@ -15,17 +15,20 @@ agan.dir <- "C:/Users/sarah/Dropbox/ebird_annotated_raw/"
 migtime.dir <- "C:/Users/sarah/Dropbox/ebird_annotated_raw/"
 fig.dir <- "C:/Users/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/"
 
+# source function script
+source(function.dir)
+
 #file to store glmer summary results
-sink(paste0(fig.dir, "outfile.txt"))
+#sink(paste0(fig.dir, "outfile.txt"))
 
 # species codes
 spcodes <- c("rthu", "bchu", "bthu", "cahu", "ruhu")
 
 for (spp in unique(spcodes)){
   
-  writeLines(" ")
-  writeLines(paste0("*****************RUNNING CODE FOR ", spp, "***********************"))
-  writeLines(" ")
+#   writeLines(" ")
+#   writeLines(paste0("*****************RUNNING CODE FOR ", spp, "***********************"))
+#   writeLines(" ")
 
   #read in annotaed data
   ann <- read.csv(paste0(agan.dir, spp, "/", spp, "_lag0_allYears.csv"), as.is=T)
@@ -62,7 +65,11 @@ for (spp in unique(spcodes)){
   
   vars <- c("Temp_sfc", "Total_precipitation_sfc", "EVI", "swrf", "lwrf", "swrf_up", "lwrf_up", 
             "u10m", "uplift", "SRTM_elev")
-
+  
+  # subset data by season  
+  spr <- sf[sf$season == "spring",]
+  fal <- sf[sf$season == "fall",]
+  
   
 #---------------------------------plot doy representation to check that it is similar for pres and abs across the dataset
   pres <- ann[ann$presence == 1,]
@@ -71,14 +78,14 @@ for (spp in unique(spcodes)){
   ggplot(data=pres, aes(doy)) + geom_histogram(fill="red", alpha=0.5) + 
     geom_histogram(data=abs, aes(doy), fill="blue", alpha=0.5) + 
     theme_classic() + ggtitle("blue = absent, red = present")
-  ggsave(filename=paste0(fig.dir, spp, "_doy_hist.png"), width=4, height=3, dpi=600, units="in")
+  ggsave(filename=paste0(fig.dir, spp, "/", spp, "_doy_hist.png"), width=4, height=3, dpi=600, units="in")
 
 
 #----------------------------------pairwise correlation plot
 #   df.cor <- ann[,names(ann) %in% vars]
 #   df.cor <- df.cor[complete.cases(df.cor),]
 # 
-#   out <- paste0(fig.dir, spp, "_variable_correlations.png")
+#   out <- paste0(fig.dir, spp, "/", spp, "_variable_correlations.png")
 #   png(out, width=12, height=12, units="in", res=600)
 #   pairs(df.cor, diag.panel=panel.hist, upper.panel=panel.cor)
 #   dev.off()
@@ -97,7 +104,7 @@ for (spp in unique(spcodes)){
   varImp <- importance(rf,type = 2)
 
   # Plot results
-  rf.graph <- paste0(fig.dir, spp, "_varImp_allvars.pdf")
+  rf.graph <- paste0(fig.dir, spp, "/", spp, "_varImp_allvars.pdf")
   pdf(file = rf.graph, width=8, height=8)
   par(mar=c(8,6,6,4))
   varImpPlot(rf, type=2,pch=16, col="blue",main=paste(spp, "\nRandom Forest Variable Importance", sep=' '))
@@ -105,17 +112,20 @@ for (spp in unique(spcodes)){
 
 
 #--------------------------------- Generalized linear mixed model with year and season as random effects
-  #standardize the data
-  zscore = apply(ann_sub[,names(ann_sub)%in% vars ], 2, function(x) {
+  # using only migration + breeding season data, omit lines with NA for analysis  
+  sf_sub <- na.omit(sf)    
+
+  #center the data
+  zscore = apply(sf_sub[,names(sf_sub)%in% vars ], 2, function(x) {
     y = (x - mean(x))/sd(x)
     return(y)
   })
 
   #make into data frame and add ID and time vars back in
   zscore <- as.data.frame(zscore)
-  zscore$presence <- ann_sub$presence
-  zscore$year <- as.factor(ann_sub$year)
-  zscore$season <- ann_sub$season
+  zscore$presence <- sf_sub$presence
+  zscore$year <- as.factor(sf_sub$year)
+  zscore$season <- sf_sub$season
 
   spring <- zscore[zscore$season == "spring",]
   fall <- zscore[zscore$season == "fall",]
@@ -131,5 +141,20 @@ for (spp in unique(spcodes)){
                control = glmerControl(optimizer = "bobyqa"))
   print(summary(fit))
 
+}
+
+#--------------------------------- Plot the data during the migration season
+#subset data by season
+spr_pres <- spr[spr$presence==1,]
+fal_pres <- fal[fal$presence==1,]
+
+for (i in 1:length(vars)){
+
+p <- ggplot(sf_sub, aes(doy, get(vars[i]))) + geom_point(alpha=0.01) + geom_smooth(col="black") + 
+            geom_smooth(data=spr_pres, aes(doy, get(vars[i])), col="cadetblue", fill="cadetblue") + 
+            geom_smooth(data=fal_pres, aes(doy, get(vars[i])), col="orange", fill="orange") + 
+            theme_classic() + theme(text=element_text(size=14)) + ylab(vars[i]) + #ggtitle(spp) +
+            scale_x_continuous(breaks = seq(0, 365, by = 50), limits = c(0,365)) 
+ggsave(plot=p, filename=paste0(fig.dir, spp, "/", spp,"_", vars[i],".png"), dpi=600, height=4, width=5, units="in")
 }
 
