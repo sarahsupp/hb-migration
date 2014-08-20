@@ -27,30 +27,31 @@ source("/Users/tcormier/Documents/scripts/git_repos/hb-migration/hb_RS_functions
 ###########################################################################################
 # #hardcoded for testing:
 #
+spp <- "ruhu"
 #address to submit request
-url <- ""
+#url <- ""
 
 #CSV file list of track csvs that contain xy locations of points to be annotated. Each track csv must 
 #have the following columns with no spaces: Timestamp, location-long, location-lat, height-above-ellipsoid (optional)
 #xy.csv <- "C:/Share/tcormier/hummingbirds/migration_study/movebank/track_csvs/submit_lists/bchu_lag0_allyrs.csv"
-xy.csv <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/track_csvs/submit_lists/bchu_lag0_allyrs.csv"
+xy.csv <- paste0("/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/track_csvs/submit_lists/",spp,"_lag0_allyrs.csv")
 
 #CSV file list of XMLs containing movebank request details (see hb_movebank_createXML.py)
 #xml.csv <- "C:/Share/tcormier/hummingbirds/migration_study/movebank/env_request_xmls/submit_lists/submit_vars_20140626.csv"
-xml.csv <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/env_request_xmls/submit_lists/submit_allVars_20140721.csv"
+xml.csv <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/env_request_xmls/submit_lists/veg_pixel_reliability_20140814.csv"
   
 #user name
-un <- ""
+#un <- ""
 
 #password
-pw <- ""
+#pw <- ""
 
 #request outdir
 #req.outdir <- "C:/Share/tcormier/hummingbirds/migration_study/movebank/submitted_requests/"
-req.outdir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/submitted_requests/bchu/"
+req.outdir <- paste0("/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/submitted_requests/",spp,"/")
 
 #annotation outdir
-ann.outdir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/downloaded_annotations/bchu/"
+ann.outdir <- paste0("/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/downloaded_annotations/",spp,"/")
 ##########################################################################################
 
 #SKIP DB stuff on arctic for now - can't get it to work on arctic - works on the mac though :)

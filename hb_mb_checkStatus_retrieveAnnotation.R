@@ -9,7 +9,7 @@ con <- dbConnect(drv="PostgreSQL", port="5433",host="fusion", dbname="tcormier")
 #select requests that are not "downloaded"
 #FIX this to non-test table when script is stable and production-ready
 #options(digits=22)
-status.query <- "SELECT * FROM access_key_lut WHERE status != 'delivered' AND status != 'failed';"
+status.query <- "SELECT * FROM access_key_lut WHERE status != 'delivered' AND status != 'failed' AND status != 'old';"
 check.list <- dbGetQuery(con,status.query)
 
 #Now check status of these acess keys. If available, download it and record to db.
