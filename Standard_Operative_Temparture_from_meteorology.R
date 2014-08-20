@@ -54,8 +54,8 @@ Te.calc <- function(Ta, Rabs, ra, sigma = 5.67e-8, epsilon = 0.95, rhoCp = 1200)
   # Returns:
   #  Operative temperature
   
-  if (Ta < 263){cat("STOP !!! Ta needs to be provided in K !!!\n");
-                cat("provided Ta range is: ",range(Ta,na.rm=T),"\n");browser()}
+#   if (Ta < 263){cat("STOP !!! Ta is likely in error !!!\n");
+#                 cat("provided Ta range is: ",range(Ta,na.rm=T),"\n")}
   Te <- Ta + (Rabs - sigma*epsilon*(Ta^4))/(rhoCp / 4*sigma*(Ta^3) + ra)
   return(Te)
 }
@@ -109,7 +109,7 @@ Tes.calc.compl.incl.rad <- function(Ta, u, Li, Rsurface, R_extra_terr,solarzen){
   #   Standard operative temperature
   
   #load the function SpSd.calc
-  source("Diffuse_fraction_of_solar_radiation.R")
+  #source("Diffuse_fraction_of_solar_radiation.R")
   SpSd <- SpSd.calc(Rsurface=Rsurface,R_extra_terr=R_extra_terr,solarzen=solarzen)
   #win.graph();par(mfrow=c(2,2))
   #hist(Rsurface);hist(R_extra_terr);hist(SpSd[,1]);hist(SpSd[,2])
