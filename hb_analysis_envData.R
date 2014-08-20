@@ -136,20 +136,20 @@ for (spp in unique(spcodes)){
                control = glmerControl(optimizer = "bobyqa"))
   s<-capture.output(summary(fit))
   write(s, file=paste0(fig.dir, spp, "/", spp, "fall_glmer.txt"))
-}
+
 
 #--------------------------------- Plot the data during the migration season
-#subset data by season
-spr_pres <- spr[spr$presence==1,]
-fal_pres <- fal[fal$presence==1,]
+  #subset data by season
+  spr_pres <- spr[spr$presence==1,]
+  fal_pres <- fal[fal$presence==1,]
 
-for (i in 1:length(vars)){
-
-p <- ggplot(sf_sub, aes(doy, get(vars[i]))) + geom_point(alpha=0.01) + geom_smooth(col="black") + 
-            geom_smooth(data=spr_pres, aes(doy, get(vars[i])), col="cadetblue", fill="cadetblue") + 
-            geom_smooth(data=fal_pres, aes(doy, get(vars[i])), col="orange", fill="orange") + 
-            theme_classic() + theme(text=element_text(size=14)) + ylab(vars[i]) + #ggtitle(spp) +
-            scale_x_continuous(breaks = seq(0, 365, by = 50), limits = c(0,365)) 
-ggsave(plot=p, filename=paste0(fig.dir, spp, "/", spp,"_", vars[i],".png"), dpi=600, height=4, width=5, units="in")
+  for (i in 1:length(vars)){
+  
+    p <- ggplot(sf_sub, aes(doy, get(vars[i]))) + geom_point(alpha=0.01) + geom_smooth(col="black") + 
+      geom_smooth(data=spr_pres, aes(doy, get(vars[i])), col="cadetblue", fill="cadetblue") + 
+      geom_smooth(data=fal_pres, aes(doy, get(vars[i])), col="orange", fill="orange") + 
+      theme_classic() + theme(text=element_text(size=14)) + ylab(vars[i]) + #ggtitle(spp) +
+      scale_x_continuous(breaks = seq(0, 365, by = 50), limits = c(0,365)) 
+    ggsave(plot=p, filename=paste0(fig.dir, spp, "/", spp,"_", vars[i],".png"), dpi=600, height=4, width=5, units="in")
+  }
 }
-
