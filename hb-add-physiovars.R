@@ -28,6 +28,19 @@ for (spp in unique(spcodes)){
     sunset$time - sunrise$time
   })
   
+  # TODO: Test to make sure windspeed and winddir work
+  #calculate windspeed (m/s) from the east-west(u10m) and north-south(v10m) wind components
+  windspeed <- apply(ann, 1, function(x){
+    speed = sqrt( x["u10m"]^2 + x["v10m"]^2 ) 
+    print(speed)
+  })
+  
+  #calculate wind direction from the east-west(u10m) and north-south(v10m) wind components 
+  winddir <- apply(ann, 1, function(x){
+    dir = atan( x["v10m"]/x["u10m"] ) 
+    print(dir)
+  })
+  
   #calculate solar zenith (sun angle) and horizontal extraterrestrial radiation
     #coords need to be a spatial points or matrix object
     # apply across all rows of the annotated data
@@ -45,6 +58,8 @@ for (spp in unique(spcodes)){
   ann$solarzen <- solarzen
   ann$R_extra_terr <- R_extra_terr
   ann$daylength <- daylength
+  ann$windspeed <- windspeed
+  ann$winddir <- winddir
   
   #calculate standard operative temperature from surface temperature (Te)
   #TODO: wind is in m/s (should we be using absolute value for wind?)
