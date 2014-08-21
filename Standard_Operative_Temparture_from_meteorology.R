@@ -24,7 +24,7 @@ ra.calc <- function(u){
   return(ra)
 }  
 
-Rabs.calc <- function(Sp, Sd, Li, ApOVERA = 0.25, aS = 0.89, aL = 0.9){
+Rabs.calc <- function(Sp, Sd, Li, ApOVERA = 0.25, aS = 0.89, aL = 0.97){
   #Calculate long + shortwave radiation absorbed
   # Args:
   #  Sp: direct shortwave radiation (W m^(-2))
@@ -47,7 +47,7 @@ Te.calc <- function(Ta, Rabs, ra, sigma = 5.67e-8, epsilon = 0.95, rhoCp = 1200)
   # Args:
   #  Ta: ambient T
   #  Rabs: long-wave+shortwave radiation absorbed (W m-2)
-  #  sigma: 5.67e-8, i.e. Stefan Boltman constant W m^(-2) K^(-4)
+  #  sigma: 5.67e-8, i.e. Stefan Boltzman constant W m^(-2) K^(-4)
   #  epsilon: 3missivity of the bird's surface
   #  rhoCp: product of the density and specific heat capacity of air (J m-3 K^(-1))
   #  ra: aerodynamic resistance to convective heat transfer (s m-1)
