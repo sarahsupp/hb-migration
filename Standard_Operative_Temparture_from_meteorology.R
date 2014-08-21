@@ -20,7 +20,7 @@ ra.calc <- function(u){
   # Args: u: wind speed in m/s
   # Returns: aerodynamic resistance to convective heat transfer (s m-1)
   
-  ra <- 37.76*u^(-0.945)
+  ra <- 37.76 * u^(-0.945)
   return(ra)
 }  
 
@@ -36,7 +36,7 @@ Rabs.calc <- function(Sp, Sd, Li, ApOVERA = 0.25, aS = 0.89, aL = 0.9){
   #   aL: mean longwave absorptivity. Don will find value 0.9 is place holder !!!!!!
   #   Li: incoming longwave radiation
   
-  Rabs.shortwave <- ((Sp*ApOVERA) + Sd) * aS
+  Rabs.shortwave <- ((Sp * ApOVERA) + Sd) * aS
   Rabs.longwave <-  Li * aL
   Rabs <- Rabs.shortwave + Rabs.longwave
   return(Rabs)
@@ -69,7 +69,7 @@ Tes.calc <- function(Te, Tb, u){
   # Returns
   #   Standard Operative Temperature
   
-  Tes <- Tb - (1 + (0.26 * sqrt(u))*(Tb-Te))
+  Tes <- Tb - (1 + (0.26 * sqrt(u)) * (Tb-Te))
   return(Tes)
 }
 
@@ -89,8 +89,8 @@ Tes.calc.compl <- function(Ta, u, Sp, Sd, Li, Tb=315){
   ra <- ra.calc(u=u)
   #calc longwave+shortwave radiation absorbed
   Rabs <- Rabs.calc(Sp=Sp, Sd=Sd, Li=Li) 
-  Te <- Te.calc(Ta=Ta,ra=ra,Rabs=Rabs)
-  Tes <- Tes.calc(Te,Tb=Tb,u=u)
+  Te <- Te.calc(Ta=Ta, ra=ra, Rabs=Rabs)
+  Tes <- Tes.calc(Te, Tb=Tb, u=u)
   return(Tes)
 }
 
@@ -110,10 +110,10 @@ Tes.calc.compl.incl.rad <- function(Ta, u, Li, Rsurface, R_extra_terr,solarzen){
   
   #load the function SpSd.calc
   #source("Diffuse_fraction_of_solar_radiation.R")
-  SpSd <- SpSd.calc(Rsurface=Rsurface,R_extra_terr=R_extra_terr,solarzen=solarzen)
+  SpSd <- SpSd.calc(Rsurface=Rsurface, R_extra_terr=R_extra_terr, solarzen=solarzen)
   #win.graph();par(mfrow=c(2,2))
   #hist(Rsurface);hist(R_extra_terr);hist(SpSd[,1]);hist(SpSd[,2])
-  Tes <- Tes.calc.compl(Ta=Ta,u=u,Sp=SpSd[,1],Sd=SpSd[,2],Li=Li)
+  Tes <- Tes.calc.compl(Ta=Ta, u=u, Sp=SpSd[,1], Sd=SpSd[,2], Li=Li)
   return(Tes)
 }
 
