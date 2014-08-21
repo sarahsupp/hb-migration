@@ -3,7 +3,7 @@ library(sp)
 library(ggplot2)
 
 # define pathnames
-agan.dir <- "C:/Users/sarah/Dropbox/ebird_annotated_raw/"
+file.dir <- "C:/Users/sarah/Dropbox/hb_migration_data/ebird_annotated_fil/"
 function.dir <- "C:/Users/sarah/Documents/github/hb-migration/"
 
 # source function script
@@ -17,10 +17,7 @@ spcodes <- c("rthu", "bchu", "bthu", "cahu", "ruhu")
 for (spp in unique(spcodes)){
   
   #read in annotaed data
-  ann <- read.csv(paste0(agan.dir, spp, "/", spp, "_lag0_allYears.csv"), as.is=T)
-  
-  #use only complete data
-  ann <- ann[complete.cases(ann[,-4]),]
+  ann <- read.csv(paste0(file.dir, spp, "/", spp, "_lag0_allYears_fil.csv"), as.is=T)
   
   #calculate daylength from the dates and locations
   daylength <- apply(ann, 1, function(x){
@@ -30,10 +27,6 @@ for (spp in unique(spcodes)){
     sunset <- sunriset(coords, as.POSIXct(x["timestamp"]), direction="sunset", POSIXct.out=TRUE)
     sunset$time - sunrise$time
   })
-  
-  
-  #Append daylength to dataframe
-  ann$daylength <- daylength
   
   #calculate solar zenith (sun angle) and horizontal extraterrestrial radiation
     #coords need to be a spatial points or matrix object
@@ -45,28 +38,27 @@ for (spp in unique(spcodes)){
   
     R_extra_terr <- apply(ann, 1, function(x){
       date <- as.Date(x[1], format='%Y-%m-%d %H:%M:%S.000')
-      mean(R_extra_terr.calc(date, as.numeric(x["location.lat"]))) #TODO: output is Ret for 24 hours. Use mean? max? mode?
+      mean(R_extra_terr.calc(date, as.numeric(x["location.lat"]))) #TODO: output is Ret for 24 hours. Use mean? max? mode? noon?
     })
-    
-  #Append solar zen and R_extra_terr to dataframe
+  
+  #Append new variables to dataframe
   ann$solarzen <- solarzen
   ann$R_extra_terr <- R_extra_terr
-  
+  ann$daylength <- daylength
   
   #calculate standard operative temperature from surface temperature (Te)
   #TODO: wind is in m/s (should we be using absolute value for wind?)
   #TODO: I used u10m for wind, but should be combined with v10m for actual wind speed? @TinaCormier
-  #TODO: Commented out flag for Ta < 263 (but should never get a presence point for such data) - check this is OK
+  #TODO: Commented out flag for Ta < 263 (but should never get a presence point for such data) - check this is OK - maybe do an additional filter on presence data where extremely cold
     Tes <- apply (ann, 1, function(x){
       Tes.calc.compl.incl.rad(as.numeric(x["Temp_sfc"]), abs(as.numeric(x["u10m"])), as.numeric(x["lwrf"]), 
                               as.numeric(x["swrf"]), as.numeric(x["R_extra_terr"]), as.numeric(x["solarzen"]))
     })
   
-    #Append Tes to data frame and convert Tes (K) to Celsius
+  #Append Tes in K and C to dataframe
   ann$TesK <- Tes  
-  ann$TesC <- ann$Tes - 273.15
+  ann$TesC <- ann$Tes - 273.15 #convert Tes (K) to Celsius
     
-  
   #calculate physiological demand (Joules) based on Tes (c)
     #   Assume S. rufus BMR = 3.3 mL O2 g-1h-1 (Lasiewski 1963) 
     # Thermoregulation (Joules) = Thermoregulation (mL O2 g-1h-1) * 20.1
@@ -80,6 +72,9 @@ for (spp in unique(spcodes)){
   
   # append physiological demand in Joules to the dataframe
   ann$Pdj <- PdJ
+  
+  #write new dataframe to file
+  write.csv(ann, file=paste0(file.dir, spp, "/", spp, "_lag0_allYears_fil_phys.csv"), sep=",", row.names=FALSE)
   
   
 #----------------------------- Plot the physiological data

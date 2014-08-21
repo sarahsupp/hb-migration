@@ -11,8 +11,8 @@ library(lme4)
 
 # define pathnames
 function.dir <- "C:/Users/sarah/Documents/github/hb-migration/hb_RS_functions.R"
-agan.dir <- "C:/Users/sarah/Dropbox/ebird_annotated_raw/"
-migtime.dir <- "C:/Users/sarah/Dropbox/ebird_annotated_raw/"
+agan.dir <- "C:/Users/sarah/Dropbox/hb_migration_data/ebird_annotated_fil/"
+migtime.dir <- "C:/Users/sarah/Dropbox/hb_migration_data/ebird_annotated_fil/"
 fig.dir <- "C:/Users/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/"
 
 # source function script
@@ -24,7 +24,7 @@ spcodes <- c("rthu", "bchu", "bthu", "cahu", "ruhu")
 for (spp in unique(spcodes)){
 
   #read in annotaed data
-  ann <- read.csv(paste0(agan.dir, spp, "/", spp, "_lag0_allYears.csv"), as.is=T)
+  ann <- read.csv(paste0(agan.dir, spp, "/", spp, "_lag0_allYears_fil_phys.csv"), as.is=T)
   
   # set column types and add new date columns
   ann$timestamp <- as.Date(ann$timestamp, format='%Y-%m-%d %H:%M:%S.000')
