@@ -57,7 +57,8 @@ for (spp in unique(spcodes)){
   sf$Temp_sfc <- sf$Temp_sfc - 273.15
   
   #TODO: double check main vars to use, update here and elsewhere throughout code
-  vars <- c("t10m", "EVI", "swrf", "lwrf",  "u10m", "v10m", "uplift", "SRTM_elev", "pdj", "windspeed", "winddir", "Tes")
+  vars <- c("t10m", "EVI", "swrf", "lwrf", "swrf_up", "lwrf_up", "u10m", "v10m", "uplift", "SRTM_elev", 
+            "pdj", "windspeed", "winddir", "Tes")
   
   # subset data by season  
   spr <- sf[sf$season == "spring",]
@@ -120,14 +121,14 @@ for (spp in unique(spcodes)){
   fall <- zscore[zscore$season == "fall",]
 
   # run for each season and print results to screen
-  fit <- glmer(presence ~ Temp_sfc + swrf_up + swrf + lwrf_up + lwrf + EVI + Total_precipitation_sfc + u10m + uplift + SRTM_elev + 
+  fit <- glmer(presence ~ Temp_sfc + swrf_up + swrf + lwrf_up + lwrf + EVI + u10m + uplift + SRTM_elev + 
                (1|year), data = spring, family = "binomial", 
                control = glmerControl(optimizer = "bobyqa"))
   s<-capture.output(summary(fit))
   write(s, file=paste0(fig.dir, spp, "/", spp, "spring_glmer.txt"))
 
 
-  fit <- glmer(presence ~ Temp_sfc + swrf_up + swrf + lwrf_up + lwrf + EVI + Total_precipitation_sfc + u10m + uplift + SRTM_elev + 
+  fit <- glmer(presence ~ Temp_sfc + swrf_up + swrf + lwrf_up + lwrf + EVI + u10m + uplift + SRTM_elev + 
                (1|year), data = fall, family = "binomial", 
                control = glmerControl(optimizer = "bobyqa"))
   s<-capture.output(summary(fit))
