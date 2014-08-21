@@ -62,11 +62,12 @@ for (spp in unique(spcodes)){
   ann$winddir <- winddir
   
   #calculate standard operative temperature from surface temperature (Te)
+  #Use temperature and wind at 10m for consistency. Hb are typically observed by bird watchers at relatively low heights.
   #TODO: wind is in m/s (should we be using absolute value for wind?)
   #TODO: u10m should be combined with v10m for actual wind speed (new windspeed variable)? @TinaCormier
   #TODO: Commented out flag for Ta < 263 (but should never get a presence point for such data) - check this is OK - maybe do an additional filter on presence data where extremely cold
     Tes <- apply (ann, 1, function(x){
-      Tes.calc.compl.incl.rad(as.numeric(x["Temp_sfc"]), abs(as.numeric(x["windspeed"])), as.numeric(x["lwrf"]), 
+      Tes.calc.compl.incl.rad(as.numeric(x["t10m"]), abs(as.numeric(x["windspeed"])), as.numeric(x["lwrf"]), 
                               as.numeric(x["swrf"]), as.numeric(x["R_extra_terr"]), as.numeric(x["solarzen"]))
     })
   
@@ -96,11 +97,11 @@ for (spp in unique(spcodes)){
 pres = ann[ann$presence==1,]
 abs = ann[ann$presence==0,]
 
-ggplot(pres, aes(Temp_sfc, TesK)) + geom_point(alpha=0.05) + theme_classic()
+ggplot(pres, aes(t10m, TesK)) + geom_point(alpha=0.05) + theme_classic()
 ggplot(pres, aes(abs(windspeed), TesK)) + geom_point(alpha=0.05) + theme_classic()
 
-ggplot(abs, aes(Temp_sfc - 273.15, Pdj)) + geom_point(col="red", alpha=0.05) + theme_classic() + 
-  ylab ("Physiological demand (Joules)") + xlab("Surface Temperature (C)") + 
+ggplot(abs, aes(t10m - 273.15, Pdj)) + geom_point(col="red", alpha=0.05) + theme_classic() + 
+  ylab ("Physiological demand (Joules)") + xlab("Temperature (C) at 10 m") + 
   geom_point(data=pres, aes(Temp_sfc - 273.15, Pdj), alpha=0.05)
 
 ggplot(abs, aes(abs(windspeed), Pdj)) + geom_point(col="red", alpha=0.05) + theme_classic() + 

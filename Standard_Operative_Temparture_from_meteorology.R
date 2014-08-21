@@ -30,10 +30,10 @@ Rabs.calc <- function(Sp, Sd, Li, ApOVERA = 0.25, aS = 0.89, aL = 0.9){
   #  Sp: direct shortwave radiation (W m^(-2))
   #  ApOVERA: ratio of projected shadow area to total surface area. 
   #           This is basically used to measure how much of the surface area is 
-  #           directly absorbing shortwave radiation. 0.25 is a conservative starting estimate
+  #           directly absorbing shortwave radiation. 0.25 is a conservative starting estimate; Greek et al. 1989
   #   Sd: diffuse shortwave radiation. This is usually measured with a shadow radiometer
-  #   aS: mean shortwave absorptivity. 0.89 was estimated for 2 bird species
-  #   aL: mean longwave absorptivity. Don will find value 0.9 is place holder !!!!!!
+  #   aS: mean shortwave absorptivity. 0.89 was estimated for 2 bird species; Greek et al. 1989
+  #   aL: mean longwave absorptivity. 0.97; Walsberg 1992
   #   Li: incoming longwave radiation
   
   Rabs.shortwave <- ((Sp * ApOVERA) + Sd) * aS
