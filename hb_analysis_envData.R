@@ -56,8 +56,8 @@ for (spp in unique(spcodes)){
   sf$t10m <- sf$t10m - 273.15
   sf$Temp_sfc <- sf$Temp_sfc - 273.15
   
-  vars <- c("Temp_sfc", "Total_precipitation_sfc", "EVI", "swrf", "lwrf", "swrf_up", "lwrf_up", 
-            "u10m", "uplift", "SRTM_elev")
+  #TODO: double check main vars to use, update here and elsewhere throughout code
+  vars <- c("t10m", "EVI", "swrf", "lwrf",  "u10m", "v10m", "uplift", "SRTM_elev", "pdj", "windspeed", "winddir", "Tes")
   
   # subset data by season  
   spr <- sf[sf$season == "spring",]
