@@ -76,7 +76,6 @@ for (spp in unique(spcodes)){
 
 #----------------------------------pairwise correlation plot
 #   df.cor <- ann[,names(ann) %in% vars]
-#   df.cor <- df.cor[complete.cases(df.cor),]
 # 
 #   out <- paste0(fig.dir, spp, "/", spp, "_variable_correlations.png")
 #   png(out, width=12, height=12, units="in", res=600)
@@ -85,11 +84,10 @@ for (spp in unique(spcodes)){
 
 
 #----------------------------Random forest - for variable importance
-  ann_sub <- na.omit(ann)  
-  response <- ann_sub$presence
+  response <- ann$presence
 
   #keep just the environmental vars here
-  preds.rf <- ann_sub[,c(4:ncol(ann_sub))]
+  preds.rf <- ann[,c(4:ncol(ann))]
   rf <- randomForest(preds.rf, response, na.rm=T, importance=T)
 
   # Use variable importance plot based on mean decrease in GINI. Calle & Urrea (2010) show its rankings are more stable.
@@ -104,21 +102,19 @@ for (spp in unique(spcodes)){
   dev.off()
 
 
-#--------------------------------- Generalized linear mixed model with year and season as random effects
-  # using only migration + breeding season data, omit lines with NA for analysis  
-  sf_sub <- na.omit(sf)    
-
+#--------------------------------- Generalized linear mixed model with year as random effect
+  # using only migration + breeding season data
   #center the data
-  zscore = apply(sf_sub[,names(sf_sub)%in% vars ], 2, function(x) {
+  zscore = apply(sf[,names(sf)%in% vars ], 2, function(x) {
     y = (x - mean(x))/sd(x)
     return(y)
   })
 
   #make into data frame and add ID and time vars back in
   zscore <- as.data.frame(zscore)
-  zscore$presence <- sf_sub$presence
-  zscore$year <- as.factor(sf_sub$year)
-  zscore$season <- sf_sub$season
+  zscore$presence <- sf$presence
+  zscore$year <- as.factor(sf$year)
+  zscore$season <- sf$season
 
   spring <- zscore[zscore$season == "spring",]
   fall <- zscore[zscore$season == "fall",]
@@ -136,6 +132,12 @@ for (spp in unique(spcodes)){
                control = glmerControl(optimizer = "bobyqa"))
   s<-capture.output(summary(fit))
   write(s, file=paste0(fig.dir, spp, "/", spp, "fall_glmer.txt"))
+
+
+#--------------------------------- Generalized additive mixed model with year as random effect
+  # using all data to plot how conditions change across flying during the seasons and across years
+  #TODO: This part needs work
+  daygam <- gamm(doy~t10m + swrf + lwrf + EVI + u10m + v10m + windspeed + pdj + (1|year), data=ann)
 
 
 #--------------------------------- Plot the data during the migration season
