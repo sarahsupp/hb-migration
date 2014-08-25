@@ -1,6 +1,7 @@
 # Add Physiologically informed variables, based on Don's and Pieter's equations.
 library(sp)
 library(ggplot2)
+library(maptools)
 
 # define pathnames
 file.dir <- "C:/Users/sarah/Dropbox/hb_migration_data/ebird_annotated_fil/"
@@ -18,6 +19,8 @@ for (spp in unique(spcodes)){
   
   #read in annotaed data
   ann <- read.csv(paste0(file.dir, spp, "/", spp, "_lag0_allYears_fil.csv"), as.is=T)
+  ann$timestamp <- as.POSIXct(ann$timestamp)#, format='%Y-%m-%d %H:%M:%S') #format time variables TODO: extract time variables
+  ann$time <- factor(format(ann$timestamp, "%H:%M:%S"), ordered=T) #TODO: Check that these times are OK and make sense - filter data with "bad"/unlikely times
   
   #calculate daylength from the dates and locations
   daylength <- apply(ann, 1, function(x){
@@ -28,7 +31,7 @@ for (spp in unique(spcodes)){
     sunset$time - sunrise$time
   })
   
-  # TODO: Test to make sure windspeed and winddir work
+  # TODO: Test to make sure windspeed and winddir work correctly
   #calculate windspeed (m/s) from the east-west(u10m) and north-south(v10m) wind components
   windspeed <- apply(ann, 1, function(x){
     speed = sqrt( x["u10m"]^2 + x["v10m"]^2 ) 
@@ -40,6 +43,13 @@ for (spp in unique(spcodes)){
     dir = atan( x["v10m"]/x["u10m"] ) 
     print(dir)
   })
+  
+#   #TODO: Incorporate this into above wind calculation:
+#   windDir <- function(u, v) {
+#     if(v > 0)         ((180 / pi) * atan(u/v) + 180)
+#     if(u < 0 & v < 0) ((180 / pi) * atan(u/v) + 0)
+#     if(u > 0 & v < 0) ((180 / pi) * atan(u/v) + 360)
+#   }
   
   #calculate solar zenith (sun angle) and horizontal extraterrestrial radiation
     #coords need to be a spatial points or matrix object
