@@ -2,6 +2,7 @@
 library(sp)
 library(ggplot2)
 library(maptools)
+library(plyr)
 
 # define pathnames
 file.dir <- "C:/Users/sarah/Dropbox/hb_migration_data/ebird_annotated_fil/"
@@ -19,8 +20,8 @@ for (spp in unique(spcodes)){
   
   #read in annotaed data
   ann <- read.csv(paste0(file.dir, spp, "/", spp, "_lag0_allYears_fil.csv"), as.is=T)
-  ann$timestamp <- as.POSIXct(ann$timestamp)#, format='%Y-%m-%d %H:%M:%S') #format time variables TODO: extract time variables
-  ann$time <- factor(format(ann$timestamp, "%H:%M:%S"), ordered=T) #TODO: Check that these times are OK and make sense - filter data with "bad"/unlikely times
+  tstamp <- as.POSIXct(ann$timestamp, format='%Y-%m-%d %H:%M:%S') #format time variables TODO: extract time variables
+  ann$time <- factor(format(tstamp, "%H:%M:%S"), ordered=T) #TODO: Check that these times are OK and make sense - filter data with "bad"/unlikely times
   
   #calculate daylength from the dates and locations
   daylength <- apply(ann, 1, function(x){
@@ -31,25 +32,22 @@ for (spp in unique(spcodes)){
     sunset$time - sunrise$time
   })
   
-  # TODO: Test to make sure windspeed and winddir work correctly
   #calculate windspeed (m/s) from the east-west(u10m) and north-south(v10m) wind components
   windspeed <- apply(ann, 1, function(x){
-    speed = sqrt( x["u10m"]^2 + x["v10m"]^2 ) 
-    print(speed)
+    speed = sqrt( as.numeric(x["u10m"])^2 + as.numeric(x["v10m"])^2 ) 
   })
   
-  #calculate wind direction from the east-west(u10m) and north-south(v10m) wind components 
+  #calculate wind direction from the east-west(U) and north-south(V) wind components 
+  # where  with 0° or 360° indicating a wind blowing to the north, 90° indicating a wind blowing to the east, 
+  # 180° indicating a wind blowing to the south and 270° indicating a wind blowing to the west.
+  windir <- function(U, V){
+    dir = (270 - atan2(V,U) * 180/pi)%%360
+    return(dir)
+  }
+  
   winddir <- apply(ann, 1, function(x){
-    dir = atan( x["v10m"]/x["u10m"] ) 
-    print(dir)
+    dir = windir(as.numeric(x["u10m"]), as.numeric(x["v10m"])) 
   })
-  
-#   #TODO: Incorporate this into above wind calculation:
-#   windDir <- function(u, v) {
-#     if(v > 0)         ((180 / pi) * atan(u/v) + 180)
-#     if(u < 0 & v < 0) ((180 / pi) * atan(u/v) + 0)
-#     if(u > 0 & v < 0) ((180 / pi) * atan(u/v) + 360)
-#   }
   
   #calculate solar zenith (sun angle) and horizontal extraterrestrial radiation
     #coords need to be a spatial points or matrix object
@@ -59,24 +57,27 @@ for (spp in unique(spcodes)){
     solarzen.calc(coords, as.POSIXct(x["timestamp"]))
   })
   
-    R_extra_terr <- apply(ann, 1, function(x){
-      date <- as.Date(x[1], format='%Y-%m-%d %H:%M:%S.000')
-      mean(R_extra_terr.calc(date, as.numeric(x["location.lat"]))) #TODO: output is Ret for 24 hours. Use mean? max? mode? noon?
-    })
+  R_extra_terr <- apply(ann, 1, function(x){
+    date <- as.Date(x[1], format="%Y-%m-%d %H:%M:%S.000")
+    Ret_hrs <- R_extra_terr.calc(date, as.numeric(x["location.lat"])) #TODO: Get Time data for absent checklists!
+    #print(Ret_hrs)
+    tt <- strptime(x[1], format="%Y-%m-%d %H:%M:%S.000")
+    roundtime <- as.numeric(format(round(tt, units="hours"), format="%H"))
+    return(Ret_hrs[,roundtime])
+  })
   
   #Append new variables to dataframe
-  ann$solarzen <- solarzen
-  ann$R_extra_terr <- R_extra_terr
   ann$daylength <- daylength
   ann$windspeed <- windspeed
   ann$winddir <- winddir
+  ann$solarzen <- solarzen
+  ann$R_extra_terr <- R_extra_terr
   
   #calculate standard operative temperature from surface temperature (Te)
   #Use temperature and wind at 10m for consistency. Hb are typically observed by bird watchers at relatively low heights.
-  #TODO: wind is in m/s (should we be using absolute value for wind?)
-  #TODO: u10m should be combined with v10m for actual wind speed (new windspeed variable)? @TinaCormier
   #TODO: Commented out flag for Ta < 263 (but should never get a presence point for such data) - check this is OK - maybe do an additional filter on presence data where extremely cold
-    Tes <- apply (ann, 1, function(x){
+  #TODO: ERROR if swrf == 0 AND R_extra_terr == 0: Stop calc, assume kt==0 or skip these values? 1112 rows.  
+  Tes <- apply (ann, 1, function(x){
       Tes.calc.compl.incl.rad(as.numeric(x["t10m"]), abs(as.numeric(x["windspeed"])), as.numeric(x["lwrf"]), 
                               as.numeric(x["swrf"]), as.numeric(x["R_extra_terr"]), as.numeric(x["solarzen"]))
     })

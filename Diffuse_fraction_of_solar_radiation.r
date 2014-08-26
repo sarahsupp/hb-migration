@@ -48,10 +48,14 @@ SpSd.calc <- function(Rsurface,R_extra_terr,solarzen){
   #  R_extra_terr: horizontal extraterrestrial radiation 
   #  solarzen: solar zenith angle in radians
   # Returns:
-  #  A two-column matrix giving incoming direct [,1], and diffuse [,2] radiationd at the surface
+  #  A two-column matrix giving incoming direct [,1], and diffuse [,2] radiation at the surface
   
   if (solarzen > 2*pi){cat("STOP STOP STOP provide solarzenith in radiance to SpSd.calc\n");browser()}
   kt <- Rsurface/R_extra_terr
+  #TODO: Added this check (e.g. if Rsurface and R_extra_terr == 0, kt == NaN which is a problem)
+  if (is.na(kt)){
+    kt = 0
+  }
   #the formula in Lanini 2010 p1 is
   #kt <- Rsurface/(Io*cos(solarzen))
   #but this is for Io*cos(solarzen) being the horizontal extraterrestrial radiation
@@ -108,11 +112,10 @@ R_extra_terr.calc<-function(thisdate,lat.in.deg){
   R_extra_terr[[2]] <- conv.fac.hourly *  R_extra_terr[[2]]
   #set negative hourly extrat irrad to 0
   #R_exta_terr <- R_exta_terr[[2]]
-  R_extra_terr[[2]][R_extra_terr[[2]]<0]<-0
+  R_extra_terr[[2]][R_extra_terr[[2]]<0] <- 0
   R_extra_terr <- R_extra_terr[[2]]
   R_extra_terr <- matrix(R_extra_terr,ncol=24)
-  cat("calculated 24hrs of extraterrestrial irradiance for\n"
-      ,nrow(R_extra_terr)," latitude-date combinations\n")
+  #cat("calculated 24hrs of extraterrestrial irradiance for\n", nrow(R_extra_terr)," latitude-date combinations\n")
   #output is hourly starting at solar midning
   return(R_extra_terr)
 }
