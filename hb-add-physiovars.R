@@ -63,7 +63,8 @@ for (spp in unique(spcodes)){
     #print(Ret_hrs)
     tt <- strptime(x[1], format="%Y-%m-%d %H:%M:%S.000")
     roundtime <- as.numeric(format(round(tt, units="hours"), format="%H"))
-    return(Ret_hrs[,roundtime])
+    Ret <- as.numeric(Ret_hrs[,roundtime])
+    return(Ret)
   })
   
   #Append new variables to dataframe
@@ -71,7 +72,7 @@ for (spp in unique(spcodes)){
   ann$windspeed <- windspeed
   ann$winddir <- winddir
   ann$solarzen <- solarzen
-  ann$R_extra_terr <- R_extra_terr
+  ann$R_extra_terr <- 
   
   #calculate standard operative temperature from surface temperature (Te)
   #Use temperature and wind at 10m for consistency. Hb are typically observed by bird watchers at relatively low heights.
@@ -83,7 +84,7 @@ for (spp in unique(spcodes)){
   
   #Append Tes in K and C to dataframe
   ann$TesK <- Tes  
-  ann$TesC <- ann$Tes - 273.15 #convert Tes (K) to Celsius
+  ann$TesC <- ann$TesK - 273.15 #convert Tes (K) to Celsius
     
   #calculate physiological demand (Joules) based on Tes (c)
     #   Assume S. rufus BMR = 3.3 mL O2 g-1h-1 (Lasiewski 1963) 
@@ -101,21 +102,25 @@ for (spp in unique(spcodes)){
   ann$Pdj <- PdJ
   
   #write new dataframe to file
-  write.csv(ann, file=paste0(file.dir, spp, "/", spp, "_lag0_allYears_fil_phys.csv"), sep=",", row.names=FALSE)
+  write.table(ann, file=paste(file.dir, spp, "/", spp, "_lag0_allYears_fil_phys.csv", sep=""), sep=",", row.names=FALSE)
   
   
 #----------------------------- Plot the physiological data
 pres = ann[ann$presence==1,]
 abs = ann[ann$presence==0,]
 
-ggplot(pres, aes(t10m, TesK)) + geom_point(alpha=0.05) + theme_classic()
-ggplot(pres, aes(abs(windspeed), TesK)) + geom_point(alpha=0.05) + theme_classic()
+ggplot(ann, aes(t10m, TesK)) + geom_point(alpha=0.05) + theme_classic()
+ggplot(ann, aes(windspeed, TesK)) + geom_point(alpha=0.05) + theme_classic()
+
+ggplot(abs, aes(TesC, Pdj)) + geom_point(alpha=0.05, col="red") + theme_classic() +
+  ylab ("Physiological demand (Joules)") + xlab("Operative Temperature (C) at 10 m") + 
+  geom_point(data=pres, aes(TesC, Pdj), alpha=0.05)
 
 ggplot(abs, aes(t10m - 273.15, Pdj)) + geom_point(col="red", alpha=0.05) + theme_classic() + 
-  ylab ("Physiological demand (Joules)") + xlab("Temperature (C) at 10 m") + 
+  ylab ("Physiological demand (Joules)") + xlab("Ambient Temperature (C) at 10 m") + 
   geom_point(data=pres, aes(Temp_sfc - 273.15, Pdj), alpha=0.05)
 
-ggplot(abs, aes(abs(windspeed), Pdj)) + geom_point(col="red", alpha=0.05) + theme_classic() + 
+ggplot(abs, aes(windspeed, Pdj)) + geom_point(col="red", alpha=0.05) + theme_classic() + 
   ylab ("Physiological demand (Joules)") + xlab("wind speed at 10 m (m/s)") + 
   geom_point(data=pres, aes(abs(windspeed), Pdj), alpha=0.05)
   
