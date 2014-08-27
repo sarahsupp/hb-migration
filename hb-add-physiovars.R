@@ -59,7 +59,7 @@ for (spp in unique(spcodes)){
   
   R_extra_terr <- apply(ann, 1, function(x){
     date <- as.Date(x[1], format="%Y-%m-%d %H:%M:%S.000")
-    Ret_hrs <- R_extra_terr.calc(date, as.numeric(x["location.lat"])) #TODO: Get Time data for absent checklists!
+    Ret_hrs <- R_extra_terr.calc(date, as.numeric(x["location.lat"])) 
     #print(Ret_hrs)
     tt <- strptime(x[1], format="%Y-%m-%d %H:%M:%S.000")
     roundtime <- as.numeric(format(round(tt, units="hours"), format="%H"))
@@ -72,7 +72,7 @@ for (spp in unique(spcodes)){
   ann$windspeed <- windspeed
   ann$winddir <- winddir
   ann$solarzen <- solarzen
-  ann$R_extra_terr <- 
+  ann$R_extra_terr <- as.vector(R_extra_terr)
   
   #calculate standard operative temperature from surface temperature (Te)
   #Use temperature and wind at 10m for consistency. Hb are typically observed by bird watchers at relatively low heights.
