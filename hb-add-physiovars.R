@@ -75,8 +75,7 @@ for (spp in unique(spcodes)){
   
   #calculate standard operative temperature from surface temperature (Te)
   #Use temperature and wind at 10m for consistency. Hb are typically observed by bird watchers at relatively low heights.
-  #TODO: Commented out flag for Ta < 263 (but should never get a presence point for such data) - check this is OK - maybe do an additional filter on presence data where extremely cold
-  #TODO: ERROR if swrf == 0 AND R_extra_terr == 0: Stop calc, assume kt==0 or skip these values? 1112 rows.  
+  #TODO: Commented out flag for Ta < 263 (but should never get a presence point for such data) - check this is OK - maybe do an additional filter on presence data where extremely cold 
   Tes <- apply (ann, 1, function(x){
       Tes.calc.compl.incl.rad(as.numeric(x["t10m"]), abs(as.numeric(x["windspeed"])), as.numeric(x["lwrf"]), 
                               as.numeric(x["swrf"]), as.numeric(x["R_extra_terr"]), as.numeric(x["solarzen"]))
@@ -94,7 +93,8 @@ for (spp in unique(spcodes)){
     Tes <- as.numeric(x["TesC"])
     if (Tes <= 35){ thermoreg <- 17.8 - (0.396 * Tes) - 3.3 }
     else if (Tes > 35){ thermoreg <- (0.214 * Tes) - 7.49 }
-    thermoreg * 20.1
+    Joules = thermoreg * 20.1
+    return(Joules)
   })
   
   # append physiological demand in Joules to the dataframe

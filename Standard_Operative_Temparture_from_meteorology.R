@@ -101,8 +101,9 @@ Tes.calc.compl.incl.rad <- function(Ta, u, Li, Rsurface, R_extra_terr,solarzen){
   # Args:
   #   Ta: ambient T (Kelvin)
   #   u: wind speed (m/s)
-  #   Li: incoming longwave radition (W m^(-2))
-  #   RSurface: incoming shortwave radiation at the surface
+  #   Li: incoming (downward) longwave radition (W m^(-2))
+  #   RSurface: incoming (downward) shortwave radiation at the surface
+  #   Rup: upward shortwave radiation, which should be added to diffuse radiation calculated from downward shortwave radiation
   #   R_extra_terr: horizontal extraterrestrial radiation 
   #   solarzen:  solar zenith angle in radians
   # Returns:
@@ -110,7 +111,7 @@ Tes.calc.compl.incl.rad <- function(Ta, u, Li, Rsurface, R_extra_terr,solarzen){
   
   #load the function SpSd.calc
   #source("Diffuse_fraction_of_solar_radiation.R")
-  SpSd <- SpSd.calc(Rsurface=Rsurface, R_extra_terr=R_extra_terr, solarzen=solarzen)
+  SpSd <- SpSd.calc(Rsurface=Rsurface, R_extra_terr=R_extra_terr, solarzen=solarzen, Rup=Rup)
   #win.graph();par(mfrow=c(2,2))
   #hist(Rsurface);hist(R_extra_terr);hist(SpSd[,1]);hist(SpSd[,2])
   Tes <- Tes.calc.compl(Ta=Ta, u=u, Sp=SpSd[,1], Sd=SpSd[,2], Li=Li)

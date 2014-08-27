@@ -40,11 +40,12 @@ IdoverI.calc <- function(kt,solarzen){
   return(IdoverI)
 }
 
-SpSd.calc <- function(Rsurface,R_extra_terr,solarzen){
+SpSd.calc <- function(Rsurface, R_extra_terr, solarzen, Rup){
   #calculate direct (Sp) and diffuse (Sd) radiation from global radiation
   #and horizontal extraterrestrial radiation 
   # Args: 
   #  Rsurface: incoming shortwave radiation at the surface
+  #  Rup: upward shortwave radiation, which should be added to diffuse radiation calculated from downward shortwave radiation
   #  R_extra_terr: horizontal extraterrestrial radiation 
   #  solarzen: solar zenith angle in radians
   # Returns:
@@ -64,6 +65,7 @@ SpSd.calc <- function(Rsurface,R_extra_terr,solarzen){
   IdoverI <- IdoverI.calc(kt,solarzen)
   IdoverI[IdoverI < 0] <- 0 ; IdoverI[IdoverI > 1] <- 1
   SpSd <- Rsurface * cbind(1-IdoverI,IdoverI)
+  SpSd[2] <- SpSd[2] + Rup
   return(SpSd)
 }
 
