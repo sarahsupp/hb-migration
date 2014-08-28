@@ -57,29 +57,44 @@ for (spp in unique(spcodes)){
     solarzen.calc(coords, as.POSIXct(x["timestamp"]))
   })
   
-  R_extra_terr <- apply(ann, 1, function(x){
-    date <- as.Date(x[1], format="%Y-%m-%d %H:%M:%S.000")
+  #TODOD: Somehow, this gets output as a list, which then messes up ann when appended. And it can't be written to file.
+  #FIXME: need ann to be a file so it can be written to csv, and analyzed in next script
+  R_extra_terr <- apply(ann, 1, function(x) {
+    date <- as.Date(as.character(x["timestamp"]), format="%Y-%m-%d %H:%M:%S.000")
     Ret_hrs <- R_extra_terr.calc(date, as.numeric(x["location.lat"])) 
-    #print(Ret_hrs)
+    Ret_hrs <- unlist(Ret_hrs) #convert to a matrix
     tt <- strptime(x[1], format="%Y-%m-%d %H:%M:%S.000")
     roundtime <- as.numeric(format(round(tt, units="hours"), format="%H"))
-    Ret <- as.numeric(Ret_hrs[,roundtime])
-    return(Ret)
+    R_extra_terr <- as.numeric(Ret_hrs[1,roundtime])
+    return(unlist(R_extra_terr))
   })
+  
+  #FIXME: ONe alternative solution (but doesn't wokr)
+  myF<-function(x) {
+    date <- as.Date(as.character(x["timestamp"]), format="%Y-%m-%d %H:%M:%S.000")
+    Ret_hrs <- R_extra_terr.calc(date, as.numeric(x["location.lat"])) 
+    #Ret_hrs <- unlist(Ret_hrs) #convert to a matrix
+    tt <- strptime(x[1], format="%Y-%m-%d %H:%M:%S.000")
+    roundtime <- as.numeric(format(round(tt, units="hours"), format="%H"))
+    R_extra_terr <- as.numeric(Ret_hrs[1,roundtime])
+  }
+  
+  ann$R_extra_terr <- apply(ann,1,myF)
   
   #Append new variables to dataframe
   ann$daylength <- daylength
   ann$windspeed <- windspeed
   ann$winddir <- winddir
   ann$solarzen <- solarzen
-  ann$R_extra_terr <- as.vector(R_extra_terr)
+  ann$R_extra_terr <- R_extra_terr
   
   #calculate standard operative temperature from surface temperature (Te)
   #Use temperature and wind at 10m for consistency. Hb are typically observed by bird watchers at relatively low heights.
   #TODO: Commented out flag for Ta < 263 (but should never get a presence point for such data) - check this is OK - maybe do an additional filter on presence data where extremely cold 
   Tes <- apply (ann, 1, function(x){
       Tes.calc.compl.incl.rad(as.numeric(x["t10m"]), abs(as.numeric(x["windspeed"])), as.numeric(x["lwrf"]), 
-                              as.numeric(x["swrf"]), as.numeric(x["R_extra_terr"]), as.numeric(x["solarzen"]))
+                              as.numeric(x["swrf"]), as.numeric(x["R_extra_terr"]), as.numeric(x["solarzen"]), 
+                              as.numeric(x["swrf_up"]))
     })
   
   #Append Tes in K and C to dataframe

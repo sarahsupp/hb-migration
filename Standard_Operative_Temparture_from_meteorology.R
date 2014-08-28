@@ -95,7 +95,7 @@ Tes.calc.compl <- function(Ta, u, Sp, Sd, Li, Tb=315){
 }
 
 
-Tes.calc.compl.incl.rad <- function(Ta, u, Li, Rsurface, R_extra_terr,solarzen){
+Tes.calc.compl.incl.rad <- function(Ta, u, Li, Rsurface, R_extra_terr, solarzen, Rup){
   #A comprensive function to estimate standard operative temperature from basic meteo. variables,
   #and raw radiation data (drawing on functions in Diffuse_fraction_of_solar_radiation.r)
   # Args:
