@@ -1,6 +1,12 @@
 # This code is for mapping North American hummingbird banding data from the Bird Banding 
 # Laboratory (BBL). Recapture data is available through 2013 and was last updated 11 April 2014. 
-# Data is shared with permission from the USGS Bird Banding Laboratory
+# BBL Data is shared with permission from the USGS Bird Banding Laboratory
+# BBL 1991-2012 summaries of bander data is shared with permission of USGS, 
+#     emailed by Danny Bystrak, 29 Sep 2014
+#     bander summary data uses the 39th parallel as the northern boundary and Louisiana, 
+#     Arkansas, Missouri as the western end to define the "Southeast". 
+#     The first table are all bandings all year (not just wintering birds). 
+#     The second is wintering only (November through March).
 #(c) 2014 Sarah Supp, modified from Marisa Lim, Stony Brook University
 # Makes the figures for Appendix A for the manuscript 
 # "Citizen-science data provides new insight into annual and seasonal variation in migration patterns"
@@ -16,10 +22,21 @@ library(mapdata)
 # set working directory
 wd <- "C:/Users/sarah/Dropbox/Hummingbirds/NASA_Anusha/MarisaRAstuff/BBLrecapproj"
 figpath <- "C:/Users/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/Figures"
+datpath <- "/Users/sarah/Desktop/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/data/BBL_data/"
 setwd(wd)
 
 # import the data
 BBLdat <- read.csv("11April14_BBLdata.csv", sep=",", header=T)
+year = read.csv(paste(datpath, "fullyear-banding-1991-2012.csv", sep=""), header=T)
+winter = read.csv(paste(datpath, "winterbanding-1991-2012.csv", sep=""), header=T)
+
+
+#Plot the number of banders for the winter season
+num_banders = ggplot(winter, aes(yr, num_banders)) + geom_line() + theme_classic() + 
+  xlab("year") + ylab("number of registered banders")
+ggsave(filename=paste(figpath,"figA4_winterbanders.png", sep=""), plot=num_banders, dpi=600, height=3, width=4)
+ggplot(year, aes(yr, num_banders)) + geom_line() + theme_bw()
+
 
 # First, let's clean up the data. Information that needs to be cleaned: (quick filter check of excel file shows that these need cleaning)
 # 1. incorrect months of year (in ENCOUNTER_MONTH)
