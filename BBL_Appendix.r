@@ -33,9 +33,11 @@ winter = read.csv(paste(datpath, "winterbanding-1991-2012.csv", sep=""), header=
 
 #Plot the number of banders for the winter season
 num_banders = ggplot(winter, aes(yr, num_banders)) + geom_line() + theme_classic() + 
-  xlab("year") + ylab("number of registered banders")
+  xlab("year") + ylab("number of banders submitting data") 
 ggsave(filename=paste(figpath,"figA4_winterbanders.png", sep=""), plot=num_banders, dpi=600, height=3, width=4)
-ggplot(year, aes(yr, num_banders)) + geom_line() + theme_bw()
+
+yr_num_banders = ggplot(year, aes(yr, num_banders)) + geom_line() + theme_classic() + 
+  xlab("year") + ylab("number of banders submitting data")
 
 
 # First, let's clean up the data. Information that needs to be cleaned: (quick filter check of excel file shows that these need cleaning)
