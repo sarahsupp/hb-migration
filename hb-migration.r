@@ -905,3 +905,53 @@ for (f in 1:length(cfiles)){
   multiplot(seasons, cols = 1)
   dev.off()
 }
+
+
+
+#---------------------------------
+#       Figure B1 for appendix, total eBird effort 2004-2013
+#---------------------------------
+
+#find the number of obs in each cell
+t = table(as.factor(effort$POLYFID))
+
+#Merge the count data for the hexes with all the hexes in the map
+df = data.frame(POLYFID = names(t), count=as.numeric(t))
+df2 = data.frame(POLYFID = unique(hexgrid$POLYFID))
+df3 = merge(df2, df, all.x=TRUE)
+
+#matches colors with the number of observations
+#   # Set colors and legend scale by all species (e.g. some will be red, some will be shades of yellow)
+yltord = colorRampPalette(brewer.pal(9, "YlOrRd"))(length(unique(df3$count)))
+cols = data.frame(id=c(NA,sort(unique(df3$count))), cols=yltord, stringsAsFactors=FALSE)
+df4 = merge(df3, cols, by.x="count", by.y="id")
+df5 = merge(hexgrid, df4, by.x="POLYFID", by.y="POLYFID", all.x=TRUE)
+
+#   #set scale for legend
+vls = sort(unique(round(cols$id/500)*500))
+vls[1] = 1
+cols2 = rev(heat.colors(length(vls)))
+
+#hexes with no counts are white
+df5$cols = ifelse(is.na(df5$count), "white", df5$cols)
+df5 = df5[order(df5$POLYFID),]
+
+#make a map with hexes colored by the number of times the species was observed in a given hex
+setEPS()
+postscript(file = paste(figpath, "/FigureB1.eps", sep=""), width = 5.5, height = 4)
+plot(NA, NA, xlim = c(-170,-50), ylim=c(15,75),xlab="", ylab="", axes=FALSE)
+plot(hexgrid, col=df5$cols, border = "white", lwd = 0.25, las=1, add=TRUE)
+map("worldHires", c("usa", "canada", "mexico"), add=TRUE, cex = 0.25)
+dev.off()
+
+#plot the legend separately
+setEPS()
+postscript(file = paste(figpath, "/figB1_col1_legend.eps", sep=""), width = 3, height = 3)
+plot(NA, NA, xlim = c(0,5), ylim=c(0,5), axes=FALSE, xlab = "", ylab="")
+legend.col(col = cols[,2], lev = sort(unique(df4$count)))
+dev.off()
+
+
+
+
+
