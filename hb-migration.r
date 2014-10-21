@@ -952,6 +952,26 @@ legend.col(col = cols[,2], lev = sort(unique(df4$count)))
 dev.off()
 
 
+#--------------------------------------------------
+#   wrt question about number of obs in eastern US
+#--------------------------------------------------
+for (f in 1:length(files)){
+  humdat = read.table(files[f], header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")
 
+  names(humdat) = c("SCI_NAME", "PRIMARY_COM_NAME","YEAR", "DAY", "TIME", "GROUP_ID", "PROTOCOL_ID",
+                  "PROJ_ID", "DURATION_HRS", "EFFORT_DISTANCE_KM", "EFFORT_AREA_HA", "NUM_OBSERVERS",
+                  "LATITUDE", "LONGITUDE", "SUB_ID", "POLYFID", "MONTH")
 
+  humdat$MONTH = factor(humdat$MONTH, levels=c(1:12), ordered=TRUE)
+
+  #grab species name for later identification
+  species = humdat$SCI_NAME[1]
+
+  #subset eastern observations
+  east = subset(humdat, LONGITUDE > -103)
+  eastwinter = subset(east, MONTH %in% c(11, 12, 1, 2, 3))
+  plot(table(east$YEAR), main=species)
+  plot(table(eastwinter$YEAR), main=species)
+}
+  
 
