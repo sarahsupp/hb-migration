@@ -975,3 +975,48 @@ for (f in 1:length(files)){
 }
   
 
+#----------------------------------------------
+#       Reviewer comment: detecting trends
+#----------------------------------------------
+
+#aggregate all the dates files
+for (f in 1:length(mfiles)){
+  dates = read.table(mfiles[f], header=TRUE, sep=" ", as.is=TRUE, fill=TRUE, comment.char="")
+  if (f == 1) { d = dates }
+  else { d = rbind(d, dates) }
+}
+d = d[,-2]
+d = subset(d, year > 2007)
+names(d) = c("spring_begin", "peak_latitude", "autumn_end", "species", "year")
+
+#plot the data
+ggplot(d, aes(year, spring_begin, group=species)) + geom_line(aes(col=species)) + geom_point(aes(col=species)) + theme_bw()
+ggplot(d, aes(year, peak_latitude, group=species)) + geom_line(aes(col=species)) + geom_point(aes(col=species)) + theme_bw()
+ggplot(d, aes(year, autumn_end, group=species)) + geom_line(aes(col=species)) + geom_point(aes(col=species)) + theme_bw()
+
+library(plyr)
+# Break up d by species, then fit the specified model to each piece and return a list
+# SPRING
+models <- dlply(d, "species", function(df) 
+  lm(spring_begin ~ year, data = df))
+# Apply coef to each model and return a data frame
+ldply(models, coef)
+# Print the summary of each model
+l_ply(models, anova, .print = TRUE)
+l_ply(models, summary, .print = TRUE)
+
+# PEAK LAT
+models <- dlply(d, "species", function(df) 
+  lm(peak_latitude ~ year, data = df))
+# Apply coef to each model and return a data frame
+ldply(models, coef)
+# Print the summary of each model
+l_ply(models, anova, .print = TRUE)
+
+# AUTUMN
+models <- dlply(d, "species", function(df) 
+  lm(autumn_end ~ year, data = df))
+# Apply coef to each model and return a data frame
+ldply(models, coef)
+# Print the summary of each model
+l_ply(models, anova, .print = TRUE)
