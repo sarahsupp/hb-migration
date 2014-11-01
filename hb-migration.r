@@ -990,9 +990,17 @@ d = subset(d, year > 2007)
 names(d) = c("spring_begin", "peak_latitude", "autumn_end", "species", "year")
 
 #plot the data
-ggplot(d, aes(year, spring_begin, group=species)) + geom_line(aes(col=species)) + geom_point(aes(col=species)) + theme_bw()
-ggplot(d, aes(year, peak_latitude, group=species)) + geom_line(aes(col=species)) + geom_point(aes(col=species)) + theme_bw()
-ggplot(d, aes(year, autumn_end, group=species)) + geom_line(aes(col=species)) + geom_point(aes(col=species)) + theme_bw()
+spring = ggplot(d, aes(year, spring_begin, group=species)) + geom_line(aes(linetype=species)) + 
+  theme_bw() + ylab("begin spring migration")
+breed = ggplot(d, aes(year, peak_latitude, group=species)) + geom_line(aes(linetype=species)) + 
+  theme_bw() + ylab("reach peak latitude")
+autumn = ggplot(d, aes(year, autumn_end, group=species)) + geom_line(aes(linetype=species)) + 
+   theme_bw() + ylab("end autumn migration")
+
+pdf(file = paste(figpath, "/migration_trends.pdf", sep=""), width = 6, height = 7)
+  multiplot(spring, breed, autumn, cols=1)
+dev.off()
+
 
 library(plyr)
 # Break up d by species, then fit the specified model to each piece and return a list
