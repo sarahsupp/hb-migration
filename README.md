@@ -33,6 +33,7 @@ Data is currently privately housed, but may be requested for the purposes of rep
 
 * `hb-migration.r` script -- cleans up the trait and community datasets, runs descriptive analyses, and outputs figures.
 * `migration-fxns.r` script -- stores functions for subsetting, analyzing, and plotting the data.
+* `hb-gbif.r` script -- loops through the species to identify observed wintering locations in Central America from GBIF data online.
 * `hb-physiological-demand.r` -- Calculates standard operative temperature (Te), cost of thermoregulation (Ct) and cost of transport/flight (Cf) from the environmental and geographic variables.
 * `Standard_Operative_Temperature_from_meteorology.R` -- Functions to calculate standard operative temperature from radiation, temperature and geographic variables for individuals.
 * `Diffuse_fraction_of_solar_radiation.r` -- Functions to calculate diffuse fraction of solar radiation, solar zenith, and other variables needed for incorporating radiation into standard operative temperature measures.
