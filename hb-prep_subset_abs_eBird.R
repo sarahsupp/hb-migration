@@ -4,19 +4,22 @@
 library(sp)
 library(maptools)
 library(rgeos)
+library(raster)
+library(rgdal)
 #
 source("/Users/tcormier/Documents/scripts/git_repos/hb-migration/migration-fxns.r")
 source("/Users/tcormier/Documents/scripts/git_repos/hb-migration/hb_RS_functions.R")
 #source("/mnt/d/temp/tcormier/820_hummingbirds/migration_study/hb-migration/migration-fxns.r")
 #source("/mnt/d/temp/tcormier/820_hummingbirds/migration_study/hb-migration/hb_RS_functions.R")
-#for reproducibility
+# for reproducibility
 set.seed(55)
 
 wd = "/Users/tcormier/Documents/820_Hummingbirds/migration_study/data/ebird/"
 #wd = "/mnt/d/temp/tcormier/820_hummingbirds/migration_study/data/ebird/"
 setwd(wd)
 
-#study area boundary (should be the western flyway, except for Ruby):
+# study area boundary (should be the western flyway, except for Ruby): **THIS SHOULD BE JUST THE DIRECTORY!
+# SCRIPT LOGIC FOR WHICH FLYWAY TO USE DEPENDING ON SPP.
 sa.file <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/boundaries/western_flyway_dissolve_envelope.shp"
 #sa.file <- "/mnt/d/temp/tcormier/820_hummingbirds/migration_study/boundaries/western_flyway_dissolve_envelope.shp"
 
@@ -52,7 +55,7 @@ spp <- "ruhu"
   pdata = read.table(pfile, header=TRUE, sep=",", quote='"', fill=TRUE, as.is=TRUE, comment.char="")
   adata = read.table(afile, header=TRUE, sep="\t", quote="", fill=TRUE, as.is=TRUE, comment.char="")
   
-  #Do this once for pdata - then can comment out if you need to run this again.
+  # Make eBird data spatial.
   coordinates(pdata) <- ~LONGITUDE+LATITUDE
   coordinates(adata) <- ~LONGITUDE+LATITUDE
 
@@ -60,9 +63,8 @@ spp <- "ruhu"
   proj4string(pdata) <- CRS("+proj=longlat +datum=WGS84")
   proj4string(adata) <- CRS("+proj=longlat +datum=WGS84")
 
-  # Clip observations to flyway polygons. 
-  # This function is from rgeos, and I can't get it installed with R 3.1.2 and/or Yosemite.
-  # pdata.clip <- clipPoints(pdata, sa, "LONGITUDE", "LATITUDE"). Redoing with sp package.
+  # Clip observations to flyway polygons - **ADD IN LOGIC FOR RUHU (NEED TO DO ONCE BY
+  # WESTERN FLYWAY, THEN AGAIN BY EASTERN). 
   pdata.clip <- over(pdata, sa)
   ptid <- na.omit(pdata.clip) 
   pt.poly <- pdata[as.numeric(as.character(row.names(ptid))),]  
@@ -70,7 +72,7 @@ spp <- "ruhu"
   #write out clipped present points as shapefiles
   out_pdata <- paste0(dirname(pfile), "/",unlist(strsplit(basename(pfile), "\\."))[1], "_clipflyway.shp")
   #write.csv(pdata.clip, file=out_pdata, quote=F, row.names=F)
-  
+  shapefile(pt.poly, filename=out_pdata)
   #rm(pdata)
   
   #formatting the adata date in various ways
