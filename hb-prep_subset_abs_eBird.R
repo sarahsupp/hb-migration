@@ -1,40 +1,50 @@
 # Subset absent data based on number of present points - for data reduction!
+# 1. Clip by flyway
 
 library(sp)
 library(maptools)
 library(rgeos)
 #
-# source("/Users/tcormier/Documents/scripts/git_repos/hb-migration/migration-fxns.r")
-# source("/Users/tcormier/Documents/scripts/git_repos/hb-migration/hb_RS_functions.R")
-source("/mnt/d/temp/tcormier/820_hummingbirds/migration_study/hb-migration/migration-fxns.r")
-source("/mnt/d/temp/tcormier/820_hummingbirds/migration_study/hb-migration/hb_RS_functions.R")
+source("/Users/tcormier/Documents/scripts/git_repos/hb-migration/migration-fxns.r")
+source("/Users/tcormier/Documents/scripts/git_repos/hb-migration/hb_RS_functions.R")
+#source("/mnt/d/temp/tcormier/820_hummingbirds/migration_study/hb-migration/migration-fxns.r")
+#source("/mnt/d/temp/tcormier/820_hummingbirds/migration_study/hb-migration/hb_RS_functions.R")
 #for reproducibility
 set.seed(55)
 
-#wd = "/Users/tcormier/Documents/820_Hummingbirds/migration_study/data/ebird/"
-wd = "/mnt/d/temp/tcormier/820_hummingbirds/migration_study/data/ebird/"
+wd = "/Users/tcormier/Documents/820_Hummingbirds/migration_study/data/ebird/"
+#wd = "/mnt/d/temp/tcormier/820_hummingbirds/migration_study/data/ebird/"
 setwd(wd)
 
 #study area boundary (should be the western flyway, except for Ruby):
-#sa.file <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/boundaries/eastern_flyway_dissolve_envelope.shp"
-sa.file <- "/mnt/d/temp/tcormier/820_hummingbirds/migration_study/boundaries/western_flyway_dissolve_envelope.shp"
+sa.file <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/boundaries/western_flyway_dissolve_envelope.shp"
+#sa.file <- "/mnt/d/temp/tcormier/820_hummingbirds/migration_study/boundaries/western_flyway_dissolve_envelope.shp"
 
 #spp (this is how we look for input and name output files)
 #spp.list <- c("bchu", "bthu","cahu","rthu","ruhu")
 #spp.list <- c("ruhu")
-spp <- "cahu"
+spp <- "bchu"
 # List present and absent files
-abs_files = list.files(path = sprintf("%sabsent_points/",wd), pattern = "*\\.txt", recursive=FALSE, full.names=TRUE)
+abs_files = list.files(path = sprintf("%sabsent_points/migrants/original/",wd), pattern = "*\\.txt", recursive=FALSE, full.names=TRUE)
 pres_files = list.files(path = sprintf("%spresent_points/",wd), pattern = "*\\.txt", recursive=FALSE, full.names=TRUE)
+
+#directory containing files with spring and fall migration dates (from Ecosphere paper)
+mig.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/data/supp_migration/" 
 
 ############# One-TIME operation on absent points - then can comment out ############
 #Sarah already grouped the present points by Group ID. Need to do the same for absent points
 #sent by FAL (ONE-TIME) 
 
-#study area boundary
+# study area boundary
 sa <- readShapePoly(sa.file)
 
-#spp <- "ruhu"
+# Assign projection
+proj4string(sa) <- CRS("+proj=longlat +datum=WGS84")
+
+spp <- "ruhu"
+
+# loop over spp (note that for ruhu, need some logic to split eBird obs by western flyway,
+# then by eastern flyway).
 #for (spp in spp.list) {
   print(paste0("working on ", spp))
   pfile <- grep(pattern=spp,x=pres_files,value=T)
@@ -43,11 +53,25 @@ sa <- readShapePoly(sa.file)
   adata = read.table(afile, header=TRUE, sep="\t", quote="", fill=TRUE, as.is=TRUE, comment.char="")
   
   #Do this once for pdata - then can comment out if you need to run this again.
-  pdata.clip <- clipPoints(pdata, sa, "LONGITUDE", "LATITUDE")
-  #write out clipped present points
-  out_pdata <- paste0(dirname(pfile), "/",unlist(strsplit(basename(pfile), "\\."))[1], "_clipflyway.csv")
-  write.csv(pdata.clip, file=out_pdata, quote=F, row.names=F)
-  rm(pdata)
+  coordinates(pdata) <- ~LONGITUDE+LATITUDE
+  coordinates(adata) <- ~LONGITUDE+LATITUDE
+
+  # Assign projection
+  proj4string(pdata) <- CRS("+proj=longlat +datum=WGS84")
+  proj4string(adata) <- CRS("+proj=longlat +datum=WGS84")
+
+  # Clip observations to flyway polygons. 
+  # This function is from rgeos, and I can't get it installed with R 3.1.2 and/or Yosemite.
+  # pdata.clip <- clipPoints(pdata, sa, "LONGITUDE", "LATITUDE"). Redoing with sp package.
+  pdata.clip <- over(pdata, sa)
+  ptid <- na.omit(pdata.clip) 
+  pt.poly <- pdata[as.numeric(as.character(row.names(ptid))),]  
+
+  #write out clipped present points as shapefiles
+  out_pdata <- paste0(dirname(pfile), "/",unlist(strsplit(basename(pfile), "\\."))[1], "_clipflyway.shp")
+  #write.csv(pdata.clip, file=out_pdata, quote=F, row.names=F)
+  
+  #rm(pdata)
   
   #formatting the adata date in various ways
   adata$DAY <- format(adata$DAY, format="%j")
