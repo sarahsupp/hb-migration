@@ -245,3 +245,23 @@ fil_ebird <- function(raw_ann, outfile) {
   
 }#end fil_ebird
 
+###################################################################################################
+# Clip points with a polygon
+PointsPolyIntersect <- function(points, polygon) {
+  data.clip <- over(points, polygon)
+  ptid <- na.omit(data.clip) 
+  pt.poly <- points[as.numeric(as.character(row.names(ptid))),]  
+  return(pt.poly)
+}
+###################################################################################################
+#formatting the eBird absent data date in various ways
+formatAbsent <- function(adata) {
+  adata$DAY <- format(adata$DAY, format="%j")
+  adata$YEAR <- format(adata$YEAR, format="%Y")
+  dt <- paste(adata$DAY, adata$YEAR, sep="_")
+  d2 <- as.Date(dt, "%j_%Y")
+  adata$DATE <- d2
+  adata$MONTH <- format(adata$DATE, "%m")
+  adata$DOM <- format(adata$DATE, "%d")
+  return(adata)
+}
