@@ -1,0 +1,87 @@
+---
+title: Preparing eBird presence and absence data for annotating environmental data
+  in movebank
+author: "Sarah Supp, Tina Cormier, Frank LaSorte"
+date: "December 17, 2014"
+output: html_document
+---
+**inputs:** Files for each species containing eBird observation dates and locations. Files for each species containing dates and locations for complete checklists submitted to eBird where each species was NOT seen. Files for each species containing dates for the start of spring migration, peak latitude, and the end of autumn migration for each year 2008-2014 (using methods from Supp et al. 2014, Ecosphere, found in hb-migration.R)
+
+**actions:** Use the migration dates to group each year into 7-day chunks, beginning one week before the onset of spring migration and ending approximately one week after the end of autumn migration. For each week period, calculate the alpha hull for the observation points. 
+
+**output:** For each species: Presence dataset with the observation locations for the migration and breeding time period. Three pseudoabsence datasets with points from the complete checklists sampled within each week-long alpha hull from the presence data, and from the week period previous to and after the target week. These 4 datasets will be sent to www.movebank.org to be annotated with remotely sensed environmental data. 
+
+Import the packages needed to run the script
+```{r, warning=FALSE, message=FALSE}
+library(rgeos)
+library(alphahull)
+library(sp)
+library(rgdal)
+library(maptools)
+```
+
+Define pathnames for importing the data
+```{r, warning=FALSE, message=FALSE}
+# define pathnames
+function.dir <- "/Users/sarah/Documents/github/hb-migration/hb_RS_functions.R"
+agan.dir <- "/Users/sarah/Desktop/Dropbox/Hummingbirds/hb_migration_data/ebird_annotated_fil/"
+data.dir <- "/Users/sarah/Desktop/Dropbox/Hummingbirds/hb_migration_data/"
+fig.dir <- "/Users/sarah/Desktop/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/"
+```
+
+Source the script containing the functions, and define the species names we will need to access the files
+```{r, echo=FALSE}
+source(function.dir)
+spcodes <- c("rthu", "bchu", "bthu", "cahu", "ruhu")
+```
+
+For each species, lets bring in the eBird data, and clip it to the migration season. For this task, migration will be defined within each year, using the dates from the analysis in Supp et al. 2015 (Ecosphere). We will begin one week prior to the onset of spring migration date. Counting forward, we will end one week after the week that contains the end of fall migration. The data will be returned to a new folder called "ebird_weeks" in the data directory, where it can be used later.
+```{r, echo=FALSE}
+for (spp in unique(spcodes)){
+
+  # read in raw data
+  dat <- read.table(paste0(data.dir, "ebird_raw/", spp, ".txt"), header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")
+
+  #clean up the column names
+  names(dat) = c("SCI_NAME", "PRIMARY_COM_NAME","YEAR", "DAY", "TIME", "GROUP_ID", "PROTOCOL_ID",
+                    "PROJ_ID", "DURATION_HRS", "EFFORT_DISTANCE_KM", "EFFORT_AREA_HA", "NUM_OBSERVERS",
+                    "LATITUDE", "LONGITUDE", "SUB_ID", "POLYFID", "MONTH")
+
+  dat$MONTH = factor(dat$MONTH, levels=c(1:12), ordered=TRUE)
+  
+  #only use years after 2007
+  dat = dat[dat$YEAR>2007,]
+  
+  # read in the migration dates
+  migtime <- read.table(paste0(data.dir, "migration_dates/west_migration_", spp, ".txt"), header=T, sep=" ")
+  names(migtime) <- c("spr_begin", "peak_lat", "fal_end", "species", "year")
+  
+  years = unique(dat$YEAR)
+  
+  #trim data from the beginning of the year up to 1 week before the onset of spring migration and at least 1 full week past the end of autumn migration
+  #start is defined as one week before the onset of spring migration
+  #end is defined as one week past the week that contains the end of autumn migration
+  #new columns will be added for increment (number of days since "start") and week (weeks since "start")
+  sf <- as.data.frame(matrix(data=NA, nrow=0, ncol=ncol(dat)+2))
+  names(sf) <- c(names(dat), "increment", "week")
+  
+  for (yr in years){
+      dat.yr <- dat[dat$YEAR == yr,]
+      start <-  migtime$spr_begin[migtime$year == yr] - 7
+      n.weeks <- floor(((migtime$fal_end[migtime$year == yr] - start)/7) + 2)
+      end <- start + n.weeks * 7
+      dat.sf <- dat.yr[dat.yr$DAY >= start & dat.yr$DAY <= end,]
+      dat.sf$increment <- dat.sf$DAY - start + 1
+      dat.sf$week <- ceiling(dat.sf$increment/7)
+      
+      sf=rbind(sf, dat.sf)
+  }
+  write.table(sf, file = paste(data.dir, "/ebird_weeks/", spp, "_by_week.txt", sep=""), 
+                  append=FALSE,row.names=FALSE)
+}  
+```
+
+Now, for each week in each year, for each species, we will calculate the polygon that represents the alpha hull
+```{r}
+
+```
