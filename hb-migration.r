@@ -598,6 +598,9 @@ for (f in 1:length(cfiles)){
 }
 dev.off()
 
+#latlon = ggplot(migpreds2, aes(lon_se, lat_se)) + xlab("estimated longitude standard error") + 
+#ylab("estimated latitude standard error") + geom_point(alpha=0.5, aes(col=cutoff)) + 
+#theme_bw() + facet_grid(year~spname) + theme(text=element_text(size=12)) + guides(colour=FALSE)
 
 #---------------------------------
 #       plot standard error in predicted centroids across years, by julian date
