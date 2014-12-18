@@ -76,12 +76,34 @@ for (spp in unique(spcodes)){
       
       sf=rbind(sf, dat.sf)
   }
-  write.table(sf, file = paste(data.dir, "/ebird_weeks/", spp, "_by_week.txt", sep=""), 
-                  append=FALSE,row.names=FALSE)
+  sf2 = sf[,c(1,2,13,14,3,4,18,5,17,19)] #take out all the extra columns that we don't really need here
+  
+  #write to file
+  write.table(sf2, file = paste(data.dir, "/ebird_weeks/", spp, "_by_week.txt", sep=""), sep=",", row.names=FALSE, append=FALSE)
+  rm(c(dat, dat.yr, dat.sf, sf2)) 
 }  
 ```
 
 Now, for each week in each year, for each species, we will calculate the polygon that represents the alpha hull
 ```{r}
+for (spp in unique(spcodes)){
+
+  # read in clipped week data  #FIXME: reads in with extra quotes and X. in colname
+  clip <- read.table(paste0(data.dir, "ebird_weeks/", spp, "_by_week.txt"), header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")
+  
+# loop through years
+# loop through weeks
+# save alpha hulls, linked to each week and year to query the complete checklist.
+#    new dataframe should have columns for year, week, startofweekday, alphahull polygon coords.
+
+## https://stat.ethz.ch/pipermail/r-sig-geo/2012-March/014409.html
+source("ahull-to-polygon.r")
+ 
+hull <- ahull(x=locs$lon, y=locs$lat, alpha=alpha)
+phull <- ah2sp(hull)
+phull <- as(phull, "SpatialPolygons")
+proj4string(phull) <- CRS("+proj=longlat +datum=WGS84")
+writeOGR(phull, dsn = “.”, layer = “ahull”, driver = “ESRI Shapefile”)
+writeSpatialShape(phull, “ahull”)
 
 ```
