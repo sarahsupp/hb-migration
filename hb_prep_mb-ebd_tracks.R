@@ -34,7 +34,7 @@ spp.list <- c("bchu", "bthu","cahu","rthu","ruhu")
 
 #function to prep present data
 #lag is in days - 0 if no lag.
-prepPres <- function(spp, spp_tbl, lag, outdir) {
+prepPres <- function(spp, spp_tbl, lag=0, outdir) {
   #format as text file to submit to movebank
   ebd_names <- c("timestamp", "location-long", "location-lat", "height-above-ellipsoid")
   
@@ -73,7 +73,7 @@ prepPres <- function(spp, spp_tbl, lag, outdir) {
 #lag is in days - 0 if no lag.
 #could consolidate pres and abs function into one with some logic. 
 #Just rushing right now!
-prepAbs <- function(spp, abs_tbl, lag, outdir, year) {
+prepAbs <- function(spp, abs_tbl, lag=0, outdir, year) {
   #format as text file to submit to movebank
   ebd_names <- c("timestamp", "location-long", "location-lat", "height-above-ellipsoid")
   ebd <- as.data.frame(matrix(data=NA, nrow=nrow(abs_tbl),ncol=length(ebd_names),))
@@ -85,7 +85,7 @@ prepAbs <- function(spp, abs_tbl, lag, outdir, year) {
   #incorporate lag if requested
   d2 <- d2-lag
   #Frank did not provide time with the absent points. Prob not important in this analysis.
-  ts <- "12:00:00.000"
+  ts <- abs_tbl$TIME
   dt <- paste(d2, ts)
   
   #fill in ebd df
