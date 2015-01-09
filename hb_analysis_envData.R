@@ -10,10 +10,10 @@ library(Rarity)
 library(lme4)
 
 # define pathnames
-function.dir <- "C:/Users/sarah/Documents/github/hb-migration/hb_RS_functions.R"
-agan.dir <- "C:/Users/sarah/Dropbox/hb_migration_data/ebird_annotated_fil/"
-migtime.dir <- "C:/Users/sarah/Dropbox/hb_migration_data/ebird_annotated_fil/"
-fig.dir <- "C:/Users/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/"
+function.dir <- "/Users/sarah/Documents/github/hb-migration/hb_RS_functions.R"
+agan.dir <- "/Users/sarah/Desktop/Dropbox/Hummingbirds/hb_migration_data/ebird_annotated_fil/"
+migtime.dir <- "/Users/sarah/Desktop/Dropbox/Hummingbirds/hb_migration_data/ebird_annotated_fil/"
+fig.dir <- "/Users/sarah/Desktop/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/"
 
 # source function script
 source(function.dir)
@@ -24,7 +24,7 @@ spcodes <- c("rthu", "bchu", "bthu", "cahu", "ruhu")
 for (spp in unique(spcodes)){
 
   #read in annotaed data
-  ann <- read.csv(paste0(agan.dir, spp, "/", spp, "_lag0_allYears_fil_phys.csv"), as.is=T)
+  ann <- read.csv(paste0(agan.dir, spp, "/", spp, "_lag0_allYears_fil.csv"), as.is=T)
   
   # set column types and add new date columns
   ann$timestamp <- as.Date(ann$timestamp, format='%Y-%m-%d %H:%M:%S.000')
@@ -35,8 +35,9 @@ for (spp in unique(spcodes)){
   ann$doy <- as.numeric(format(ann$timestamp, "%j"))
   
   #keep only the columns we need for analysis
-  ann <- ann[,names(ann) %in% c("location.long", "location.lat", "presence", "lwrf", "swrf", "t10m", "u10m", "lwrf_up", "swrf_up",
-                                "EVI", "SRTM_elev", "Temp_sfc", "Total_precipitation_sfc", "uplift", "month", "year", "doy")]
+  ann <- ann[,names(ann) %in% c("location.long", "location.lat", "presence", "lwrf", "swrf", "t10m", "u10m", 
+                                "lwrf_up", "swrf_up", "EVI", "SRTM_elev", "Total_precipitation_sfc", 
+                                "month", "year", "doy")]
   
   #Separate by season using the migration timing table from the previous hb study
   migtime <- read.table(paste0(migtime.dir, spp, "/", "west_migration_", spp, ".txt"), header=T, sep=" ")
@@ -54,12 +55,12 @@ for (spp in unique(spcodes)){
 
   #convert K to celsius
   sf$t10m <- sf$t10m - 273.15
-  sf$Temp_sfc <- sf$Temp_sfc - 273.15
   
   #TODO: double check main vars to use, update here and elsewhere throughout code
-  vars <- c("t10m", "EVI", "swrf", "lwrf", "swrf_up", "lwrf_up", "u10m", "v10m", "uplift", "SRTM_elev", 
-            "pdj", "windspeed", "winddir", "Tes")
-  
+#  vars <- c("t10m", "EVI", "swrf", "lwrf", "swrf_up", "lwrf_up", "u10m", "v10m", "uplift", "SRTM_elev", 
+#            "pdj", "windspeed", "winddir", "Tes")
+  vars <- c("t10m", "EVI", "SRTM_elev")
+
   # subset data by season  
   spr <- sf[sf$season == "spring",]
   fal <- sf[sf$season == "fall",]
@@ -148,10 +149,12 @@ for (spp in unique(spcodes)){
 
   for (i in 1:length(vars)){
   
-    p <- ggplot(sf_sub, aes(doy, get(vars[i]))) + geom_point(alpha=0.01) + geom_smooth(col="black") + 
-      geom_smooth(data=spr_pres, aes(doy, get(vars[i])), col="cadetblue", fill="cadetblue") + 
-      geom_smooth(data=fal_pres, aes(doy, get(vars[i])), col="orange", fill="orange") + 
-      theme_classic() + theme(text=element_text(size=14)) + ylab(vars[i]) + #ggtitle(spp) +
+    p <- ggplot(sf, aes(doy, get(vars[i]))) + geom_point(alpha=0.01) + geom_smooth(col="black") + 
+      geom_smooth(data=spr_pres, aes(doy, get(vars[i]), group=year), col="cadetblue", fill="cadetblue") + 
+      geom_smooth(data=fal_pres, aes(doy, get(vars[i]), group=year), col="orange", fill="orange") + 
+      geom_vline(data=migtime, aes(xintercept=spr_begin), col="cadetblue") +
+      geom_vline(data=migtime, aes(xintercept=fal_end), col="orange") +
+      theme_classic() + theme(text=element_text(size=14)) + ylab(vars[i]) + ggtitle(spp) +
       scale_x_continuous(breaks = seq(0, 365, by = 50), limits = c(0,365)) 
     ggsave(plot=p, filename=paste0(fig.dir, spp, "/", spp,"_", vars[i],".png"), dpi=600, height=4, width=5, units="in")
   }
