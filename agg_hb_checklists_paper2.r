@@ -17,7 +17,6 @@ GroupDuplicates = function(humdat) {
   #gets rid of duplicate records that are part of the same group. 
   #Takes only the first record to move to analysis, keeps all single records that are not part of a group.
   gid = sort(unique(humdat$GROUP_ID))
-  #gid = gid[which(gid!=NA)]
   
   #open start a new dataframe with same columns as the main dataframe
   keep = humdat[1,]
@@ -27,12 +26,8 @@ GroupDuplicates = function(humdat) {
     out = out + 1
     tmp = humdat[which(humdat$GROUP_ID == gid[g]),]
     #record the first line of the data (assume the group has the same information)
-    if (nrow(tmp) == 1) { 
-      keep[out,] = tmp
-    }
-    else{
-      keep[out,] = tmp[1,]
-    }
+    if (nrow(tmp) == 1) { keep[out,] = tmp }
+    else{ keep[out,] = tmp[1,] }
   }
   
   keepnongroup = humdat[which(is.na(humdat$GROUP_ID)),]
@@ -52,14 +47,11 @@ for (f in 1:length(files)){
   MONTH = rep(MONTH, nrow(data))
   data = cbind(data, MONTH)
   
-  if (f == 1) {
-    agg_data = data
-  }
-  else{
-    agg_data = rbind(agg_data, data)
-  }
+  if (f == 1) { agg_data = data }
+  else{ agg_data = rbind(agg_data, data) }
   print (paste("file", f, "is completed:", basename(file_path_sans_ext(files[f]))))
 }
+
 
 # print the species names
 unique(agg_data$SCI_NAME)
