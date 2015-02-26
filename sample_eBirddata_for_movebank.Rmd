@@ -5,9 +5,9 @@ author: "Sarah Supp, Tina Cormier, Frank LaSorte"
 date: "December 17, 2014"
 output: html_document
 ---
-**inputs:** Files for each species containing eBird observation dates and locations. Files for each species containing dates and locations for complete checklists submitted to eBird where each species was NOT seen. Files for each species containing dates for the start of spring migration, peak latitude, and the end of autumn migration for each year 2008-2014 (using methods from Supp et al. 2014, Ecosphere, found in hb-migration.R)
+**inputs:** Files for each species containing eBird observation dates and locations. Files for each species containing dates and locations for complete checklists submitted to eBird where each species was NOT seen. Files for each species containing dates for the start of spring migration, peak latitude, and the end of autumn migration for each year 2008-2014 (using methods from Supp et al. 2015 Ecosphere, found in hb-migration.R)
 
-**actions:** Use the migration dates to group each year into 7-day chunks, beginning one week before the onset of spring migration and ending approximately one week after the end of autumn migration. For each week period, calculate the alpha hull for the observation points. 
+**actions:** Use the migration dates to group each year into 7-day chunks, beginning one week before the onset of spring migration and ending approximately one week after the end of autumn migration (the last week should be the first 7-day period that does not include the date for the end of autumn migration). For each week period, calculate the alpha hull for the observation points. 
 
 **output:** For each species: Presence dataset with the observation locations for the migration and breeding time period. Three pseudoabsence datasets with points from the complete checklists sampled within each week-long alpha hull from the presence data, and from the week period previous to and after the target week. These 4 datasets will be sent to www.movebank.org to be annotated with remotely sensed environmental data. 
 
@@ -35,7 +35,7 @@ source(function.dir)
 spcodes <- c("rthu", "bchu", "bthu", "cahu", "ruhu")
 ```
 
-For each species, lets bring in the eBird data, and clip it to the migration season. For this task, migration will be defined within each year, using the dates from the analysis in Supp et al. 2015 (Ecosphere). We will begin one week prior to the onset of spring migration date. Counting forward, we will end one week after the week that contains the end of fall migration. The data will be returned to a new folder called "ebird_weeks" in the data directory, where it can be used later.
+For each species, let's bring in the eBird data, and clip it to the migration season. For this task, migration will be defined within each year, using the dates from the analysis in Supp et al. 2015 (Ecosphere). We will begin one week prior to the onset of spring migration date. Counting forward, we will end one week after the week that contains the end of fall migration. The data will be returned to a new folder called "ebird_weeks" in the data directory, where it can be used later. (SRS)
 ```{r, echo=FALSE}
 for (spp in unique(spcodes)){
 
@@ -49,7 +49,7 @@ for (spp in unique(spcodes)){
 
   dat$MONTH = factor(dat$MONTH, levels=c(1:12), ordered=TRUE)
   
-  #only use years after 2007
+  #only use years after 2007 (2008-2014)
   dat = dat[dat$YEAR>2007,]
   
   # read in the migration dates
@@ -85,6 +85,7 @@ for (spp in unique(spcodes)){
 ```
 
 Now, for each week in each year, for each species, we will calculate the polygon that represents the alpha hull
+TINA AND KEVIN SHOULD WORK ON THIS CODE CHUNK FOR ALPHA HULLS 
 ```{r}
 for (spp in unique(spcodes)){
 
@@ -107,3 +108,8 @@ writeOGR(phull, dsn = “.”, layer = “ahull”, driver = “ESRI Shapefile�
 writeSpatialShape(phull, “ahull”)
 
 ```
+
+Plot the distribution of observations by day and by week across the 7 years
+```{r}
+```
+
