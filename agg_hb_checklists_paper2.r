@@ -3,13 +3,11 @@
 # files in "eBird_checklists_2008-2014
 # SRS 25 Feb 2015
 
-library(chron)
 library(tools)
-
 
 #path to files
 filepath = "/home/sarah/Dropbox/Hummingbirds/hb_migration_data/ebird_raw/eBird_checklists_2008-2014/"
-writepath = "/home/sarah/Dropbox/Hummingbirds/hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregated_by_species/"
+writepath = "/home/sarah/Dropbox/Hummingbirds/hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/"
 
 
 #----------------------------------------------------FUNCTIONS
@@ -62,6 +60,9 @@ ruhu = GroupDuplicates(agg_data[which(agg_data$SCI_NAME == "Selasphorus rufus"),
 bthu = GroupDuplicates(agg_data[which(agg_data$SCI_NAME == "Selasphorus platycercus"),])
 rthu = GroupDuplicates(agg_data[which(agg_data$SCI_NAME == "Archilochus colubris"),])
 cahu = GroupDuplicates(agg_data[which(agg_data$SCI_NAME == "Selasphorus calliope"),])
+
+print(paste0("There are ", nrow(cahu), " CAHU, ", nrow(rthu), " RTHU, ", nrow(bthu), " BTHU, ", nrow(ruhu), " RUHU, and ",
+             nrow(bchu), " BCHU, and ", nrow(cahu) + nrow(rthu) + nrow(bthu) + nrow(ruhu) + nrow(bchu), " total observations"))
 
 #write the files to the folder for output
 write.table(bchu, file = paste(writepath,"bchu08-14.txt", sep=""), row.names=FALSE, sep=",")
