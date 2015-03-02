@@ -3,7 +3,6 @@
 # files in "eBird_checklists_2008-2014
 # SRS 25 Feb 2015
 
-library(chron)
 library(tools)
 
 
@@ -37,7 +36,7 @@ GroupDuplicates = function(humdat) {
 
 
 #------------------------------------------------ AGGREGATE THE FILES
-files = list.files(path = filepath, pattern = "eBird_checklists_*", recursive=TRUE, full.names=TRUE)
+files = list.files(path = filepath, pattern = "eBird_checklists_*", recursive=FALSE, full.names=TRUE)
 
 for (f in 1:length(files)){
   data = read.table(files[f], header=TRUE, sep="\t", quote="", fill=TRUE, as.is=TRUE, comment.char="")
