@@ -4,6 +4,7 @@
 # SRS 25 Feb 2015
 
 library(tools)
+library(maptools)
 
 #path to files
 filepath = "/home/sarah/Dropbox/Hummingbirds/hb_migration_data/ebird_raw/eBird_checklists_2008-2014/"
@@ -77,7 +78,7 @@ write.table(cahu, file = paste(writepath,"cahu08-14.txt", sep=""), row.names=FAL
 
 #----------------------------------- GET DESCRIPTIVE DATA AND MIGRATION DATES FOR EACH SPECIES
 # read in summary of effort data (Number of eBird checklists submitted per day per year), and hexgrid for mapping
-effort = read.table("FAL_hummingbird_data/checklist_12_2004-2013wh_grp.txt", header=TRUE, as.is=TRUE)
+effort = read.table(paste0(writepath, "eBird_checklists_effort.txt"), header=TRUE, as.is=TRUE)
 hexgrid = readShapePoly(paste(hexpath, "/data/icosahedron_land_and_sea/icosahedron.shp", sep="")) #hex with land and sea, cropped to North America
 
 #make a list of the file names to loop through
@@ -152,3 +153,13 @@ for (f in 1:length(files)){
   
   #ADD CODE FOR SAVING THE DATAFRAMES FOR EACH SPECIES AND WRITING TO FILE.
   
+#--------- MAY NOT NEED, SIMILAR CODE EXISTS IN RMD FILE...
+  #prints a list of the start dates for each of the weeks for the analysis,
+  #continuing for a full week after teh week that contains end autumn date.
+  plus7 = function(start, end){
+    t = start-7
+    while (t < end + 8){
+      print (t)
+      t = t + 7
+    }
+  }
