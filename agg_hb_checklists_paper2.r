@@ -208,7 +208,7 @@ for (f in 1:length(files)){
     }
     
     #Collect data for EAST of 103 W Longitude (eastern + central flyway), where species had > 5000 obs 
-    if (spcode %in% c("bchu", "ruhu", "rthu")) {
+    if (spcode %in% c("bchu", "rthu")) {
       #only use data west of the 103rd meridian (western flyway)
       east_yrdat = yrdat[which(yrdat$LONGITUDE > -103),]
       east_meanlocs = AlternateMeanLocs(east_yrdat, spcode, hexgrid, yreffort)
@@ -227,7 +227,7 @@ for (f in 1:length(files)){
       }
       else{
         east_pred_data = rbind(east_pred_data, east_preds)
-        east_dates = c(west_migration[[1]], east_migration[[2]], east_migration[[3]], east_speed[1], east_speed[2], species, years[y])
+        east_dates = c(east_migration[[1]], east_migration[[2]], east_migration[[3]], east_speed[1], east_speed[2], species, years[y])
         east_mig_data = rbind(east_mig_data, east_dates)
         east_humdat = rbind(east_humdat, ID_weeks(east_yrdat, east_migration[[1]], east_migration[[2]], east_migration[[3]]))
         
