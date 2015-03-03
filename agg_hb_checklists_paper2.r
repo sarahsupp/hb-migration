@@ -35,6 +35,36 @@ GroupDuplicates = function(humdat) {
   return(keep)
 }
 
+
+ID_weeks = function(yeardat, spring, peak, fall){
+  # yeardat: a data.frame subsetted for a single year
+  # spring: date for onset of spring migration
+  # peak: date for peak latitude for the population
+  # fall: date for end of fall migration
+  
+  yeardat$increment = 0
+  yeardat$week = 0
+  yeardat$season="winter"
+  
+  if(fall < spring | fall < peak) {
+    print(paste0("ERROR: migration dates do not make sense, check data ", yeardat$SCI_NAME[1], yeardat$YEAR[1]))
+    return(yeardat)
+  }
+  
+  start <-  spring - 7
+  n.weeks <- floor(((fall - start)/7) + 2)
+  mid.week <- ceiling((peak - start)/7)
+  end <- start + n.weeks * 7
+
+  yeardat[yeardat$DAY >= start & yeardat$DAY < end,]$increment <- yeardat[yeardat$DAY >= start & yeardat$DAY < end,]$DAY-start + 1
+  yeardat[yeardat$DAY >= start & yeardat$DAY < end,]$week <- ceiling(yeardat[yeardat$DAY >= start & yeardat$DAY < end,]$increment/7)
+  yeardat[yeardat$DAY >= start & yeardat$DAY < end & yeardat$week < mid.week,]$season <- "spring"
+  yeardat[yeardat$DAY >= start & yeardat$DAY < end & yeardat$week > mid.week,]$season <- "fall"
+  yeardat[yeardat$DAY >= start & yeardat$DAY < end & yeardat$week == mid.week,]$season <- "breeding"
+  
+  return(yeardat)
+}
+
 #--------------------------------------------------------------------------------------------------------
 #------------------------------------------------ AGGREGATE THE FILES -----------------------------------
 #--------------------------------------------------------------------------------------------------------
@@ -159,24 +189,28 @@ for (f in 1:length(files)){
         west_pred_data = west_preds
         west_mig_data = data.frame("spr_begin" = west_migration[[1]], "peak_lat" = west_migration[[2]], 
                               "fal_end" = west_migration[[3]], "spr_spd" = west_speed[1], "fal_spd" = west_speed[2],
-                              "species" = species, "year" = years[y])      
+                              "species" = species, "year" = years[y])    
+        west_humdat = ID_weeks(west_yrdat, west_migration[[1]], west_migration[[2]], west_migration[[3]])
       }
       else{
         west_pred_data = rbind(west_pred_data, west_preds)
         west_dates = c(west_migration[[1]], west_migration[[2]], west_migration[[3]], west_speed[1], west_speed[2], species, years[y])
         west_mig_data = rbind(west_mig_data, west_dates)
+        west_humdat = rbind(west_humdat, ID_weeks(west_yrdat, west_migration[[1]], west_migration[[2]], west_migration[[3]]))
         
         if (y == length(years)){
           write.table(west_pred_data, file = paste0(writepath, spcode, "_preds_west.txt"), append=FALSE,row.names=FALSE)
           write.table(west_mig_data, file = paste0(writepath, spcode, "_migration_west.txt"), append=FALSE, row.names=FALSE)
+          write.table(west_humdat, file = paste0(writepath, spcode, "_humdat_west.txt"), append=FALSE, row.names=FALSE)
+          
         }
       }
     }
     
     #Collect data for EAST of 103 W Longitude (eastern + central flyway), where species had > 5000 obs 
-    if (spcode %in% c("bchu", "ruhu" "rthu",)) {
+    if (spcode %in% c("bchu", "ruhu", "rthu")) {
       #only use data west of the 103rd meridian (western flyway)
-      east_yrdat = yrdat[which(yrdat$LONGITUDE <= -103),]
+      east_yrdat = yrdat[which(yrdat$LONGITUDE > -103),]
       east_meanlocs = AlternateMeanLocs(east_yrdat, spcode, hexgrid, yreffort)
       east_preds = EstimateDailyLocs(east_meanlocs)
         east_preds$year = years[y]
@@ -188,23 +222,32 @@ for (f in 1:length(files)){
         east_pred_data = east_preds
         east_mig_data = data.frame("spr_begin" = east_migration[[1]], "peak_lat" = east_migration[[2]], 
                                    "fal_end" = east_migration[[3]], "spr_spd" = east_speed[1], "fal_spd" = east_speed[2],
-                                   "species" = species, "year" = years[y])      
+                                   "species" = species, "year" = years[y])    
+        east_humdat = ID_weeks(east_yrdat, east_migration[[1]], east_migration[[2]], east_migration[[3]])
       }
       else{
         east_pred_data = rbind(east_pred_data, east_preds)
         east_dates = c(west_migration[[1]], east_migration[[2]], east_migration[[3]], east_speed[1], east_speed[2], species, years[y])
         east_mig_data = rbind(east_mig_data, east_dates)
+        east_humdat = rbind(east_humdat, ID_weeks(east_yrdat, east_migration[[1]], east_migration[[2]], east_migration[[3]]))
+        
         
         if (y == length(years)){
           write.table(east_pred_data, file = paste0(writepath, spcode, "_preds_east.txt"), append=FALSE,row.names=FALSE)
           write.table(east_mig_data, file = paste0(writepath, spcode, "_migration_east.txt"), append=FALSE, row.names=FALSE)
+          write.table(east_humdat, file = paste0(writepath, spcode, "_humdat_east.txt"), append=FALSE, row.names=FALSE)
         }
       }
     }
   }
 }
-  #ADD CODE FOR SAVING THE DATAFRAMES FOR EACH SPECIES AND WRITING TO FILE.
-  
+
+
+
+# clears the memory of everything except the file list, iterator, and base map
+rm(list=ls()[!ls() %in% c("f", "files", "noam", "hexgrid", "effort", "pred_data", "migdates", 
+                          "wd", "main", "gitpath","figpath", "USAborder", "Mexborder", "Canborder", "elev", "myext")])   
+
 #--------- MAY NOT NEED, SIMILAR CODE EXISTS IN RMD FILE...
   #prints a list of the start dates for each of the weeks for the analysis,
   #continuing for a full week after teh week that contains end autumn date.
