@@ -96,11 +96,11 @@ for (f in 1:length(files)){
   require(segmented)
   source(paste(gitpath, "/migration-fxns.r", sep=""))
   
-  humdat = read.table(files[f], header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")
+  humdat = read.table(paste0(writepath, files[f]), header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")
   
   names(humdat) = c("SCI_NAME", "PRIMARY_COM_NAME","YEAR", "DAY", "TIME", "GROUP_ID", "PROTOCOL_ID",
                     "PROJ_ID", "DURATION_HRS", "EFFORT_DISTANCE_KM", "EFFORT_AREA_HA", "NUM_OBSERVERS",
-                    "LATITUDE", "LONGITUDE", "SUB_ID", "MONTH")
+                    "LATITUDE", "LONGITUDE", "SUB_ID", "POLYFID","MONTH")
   humdat$MONTH = factor(humdat$MONTH, levels=c(1:12), ordered=TRUE)
   
   #grab species name for setting directory paths and naming figures, identify years
@@ -126,6 +126,24 @@ for (f in 1:length(files)){
     dist = DailyTravel(preds, 4, 5, species, years[y], migration) #Great Circle distances traveled between predicted daily locations
     speed = MigrationSpeed(dist, migration) #estimate migration speed for spring and fall
     
+    if (y == 1){
+      pred_data = preds
+      mig_data = data.frame("spr_begin" = migration[[1]], "peak_lat" = migration[[2]], 
+                            "fal_end" = migration[[3]], "spr_spd" = speed[1], "fal_spd" = speed[2],
+                            "species" = species, "year" = years[y])      
+    }
+    else{
+      pred_data = rbind(pred_data, preds)
+      dates = c(migration[[1]], migration[[2]], migration[[3]], speed[1], speed[2], species, years[y])
+      mig_data = rbind(mig_data, dates)
+      
+      if (y == length(years)){
+        write.table(pred_data, file = paste0(writepath, spcode, "_preds.txt"), append=FALSE,row.names=FALSE)
+        write.table(mig_data, file = paste0(writepath, spcode, "_migration.txt"), append=FALSE, row.names=FALSE)
+      }
+    }
+
+    
     #Collect data for WEST of 103 W Longitude
     if (spcode %in% c("bchu", "bthu", "ruhu", "cahu")) {
       #only use data west of the 103rd meridian (western flyway), where species had > 5000 obs 
@@ -136,6 +154,23 @@ for (f in 1:length(files)){
       west_migration = round(Est3MigrationDates(west_meanlocs))
       west_dist = DailyTravel(west_preds, 4, 5, spcode, years[y], west_migration)
       west_speed = MigrationSpeed(west_dist, west_migration)
+      
+      if (y == 1){
+        west_pred_data = west_preds
+        west_mig_data = data.frame("spr_begin" = west_migration[[1]], "peak_lat" = west_migration[[2]], 
+                              "fal_end" = west_migration[[3]], "spr_spd" = west_speed[1], "fal_spd" = west_speed[2],
+                              "species" = species, "year" = years[y])      
+      }
+      else{
+        west_pred_data = rbind(west_pred_data, west_preds)
+        west_dates = c(west_migration[[1]], west_migration[[2]], west_migration[[3]], west_speed[1], west_speed[2], species, years[y])
+        west_mig_data = rbind(west_mig_data, west_dates)
+        
+        if (y == length(years)){
+          write.table(west_pred_data, file = paste0(writepath, spcode, "_preds_west.txt"), append=FALSE,row.names=FALSE)
+          write.table(west_mig_data, file = paste0(writepath, spcode, "_migration_west.txt"), append=FALSE, row.names=FALSE)
+        }
+      }
     }
     
     #Collect data for EAST of 103 W Longitude (eastern + central flyway), where species had > 5000 obs 
@@ -148,9 +183,26 @@ for (f in 1:length(files)){
       east_migration = round(Est3MigrationDates(east_meanlocs))
       east_dist = DailyTravel(east_preds, 4, 5, spcode, years[y], east_migration)
       east_speed = MigrationSpeed(east_dist, east_migration)
+     
+      if (y == 1){
+        east_pred_data = east_preds
+        east_mig_data = data.frame("spr_begin" = east_migration[[1]], "peak_lat" = east_migration[[2]], 
+                                   "fal_end" = east_migration[[3]], "spr_spd" = east_speed[1], "fal_spd" = east_speed[2],
+                                   "species" = species, "year" = years[y])      
+      }
+      else{
+        east_pred_data = rbind(east_pred_data, east_preds)
+        east_dates = c(west_migration[[1]], east_migration[[2]], east_migration[[3]], east_speed[1], east_speed[2], species, years[y])
+        east_mig_data = rbind(east_mig_data, east_dates)
+        
+        if (y == length(years)){
+          write.table(east_pred_data, file = paste0(writepath, spcode, "_preds_east.txt"), append=FALSE,row.names=FALSE)
+          write.table(east_mig_data, file = paste0(writepath, spcode, "_migration_east.txt"), append=FALSE, row.names=FALSE)
+        }
+      }
     }
   }
-  
+}
   #ADD CODE FOR SAVING THE DATAFRAMES FOR EACH SPECIES AND WRITING TO FILE.
   
 #--------- MAY NOT NEED, SIMILAR CODE EXISTS IN RMD FILE...
