@@ -23,10 +23,10 @@ library(maptools)
 Define pathnames for importing the data
 ```{r, warning=FALSE, message=FALSE}
 # define pathnames
-function.dir <- "/Users/sarah/Documents/github/hb-migration/hb_RS_functions.R"
-agan.dir <- "/Users/sarah/Desktop/Dropbox/Hummingbirds/hb_migration_data/ebird_annotated_fil/"
-data.dir <- "/Users/sarah/Desktop/Dropbox/Hummingbirds/hb_migration_data/"
-fig.dir <- "/Users/sarah/Desktop/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/"
+function.dir <- "/home/sarah/Documents/GitHub/hb-migration/hb_RS_functions.R"
+agan.dir <- "/home/sarah/Dropbox/Hummingbirds/hb_migration_data/ebird_annotated_fil/"
+data.dir <- "/home/sarah/Dropbox/Hummingbirds/hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/"
+fig.dir <- "/home/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/"
 ```
 
 Source the script containing the functions, and define the species names we will need to access the files
@@ -40,7 +40,7 @@ For each species, let's bring in the eBird data, and clip it to the migration se
 for (spp in unique(spcodes)){
 
   # read in raw data
-  dat <- read.table(paste0(data.dir, "ebird_raw/", spp, ".txt"), header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")
+  dat <- read.table(paste0(data.dir, spp, "08-14.txt"), header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")
 
   #clean up the column names
   names(dat) = c("SCI_NAME", "PRIMARY_COM_NAME","YEAR", "DAY", "TIME", "GROUP_ID", "PROTOCOL_ID",
@@ -53,7 +53,7 @@ for (spp in unique(spcodes)){
   dat = dat[dat$YEAR>2007,]
   
   # read in the migration dates
-  migtime <- read.table(paste0(data.dir, "migration_dates/west_migration_", spp, ".txt"), header=T, sep=" ")
+  migtime <- read.table(paste0(data.dir, spp, "_migration_west.txt"), header=T, sep=" ")
   names(migtime) <- c("spr_begin", "peak_lat", "fal_end", "species", "year")
   
   years = unique(dat$YEAR)
