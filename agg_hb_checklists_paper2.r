@@ -242,19 +242,3 @@ for (f in 1:length(files)){
   }
 }
 
-
-
-# clears the memory of everything except the file list, iterator, and base map
-rm(list=ls()[!ls() %in% c("f", "files", "noam", "hexgrid", "effort", "pred_data", "migdates", 
-                          "wd", "main", "gitpath","figpath", "USAborder", "Mexborder", "Canborder", "elev", "myext")])   
-
-#--------- MAY NOT NEED, SIMILAR CODE EXISTS IN RMD FILE...
-  #prints a list of the start dates for each of the weeks for the analysis,
-  #continuing for a full week after teh week that contains end autumn date.
-  plus7 = function(start, end){
-    t = start-7
-    while (t < end + 8){
-      print (t)
-      t = t + 7
-    }
-  }
