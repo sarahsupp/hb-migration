@@ -134,6 +134,16 @@ for (f in 1:length(files)){
   
   #make the column names look nicer
   names(humdat) = gsub('.{1}$', '', substring(names(humdat),3))
+  
+  #strip extra "" and "\\" from fields
+  humdat$SCI_NAME = gsub("\"", "", humdat$SCI_NAME, fixed=TRUE) 
+  humdat$PRIMARY_COM_NAME = gsub("\"", "", humdat$PRIMARY_COM_NAME, fixed=TRUE) 
+  humdat$GROUP_ID = gsub("\"", "", humdat$GROUP_ID, fixed=TRUE) 
+  humdat$PROJ_ID = gsub("\"", "", humdat$PROJ_ID, fixed=TRUE) 
+  humdat$SUB_ID = gsub("\"", "", humdat$SUB_ID, fixed=TRUE) 
+  humdat$PROTOCOL_ID = gsub("\"", "", humdat$PROTOCOL_ID, fixed=TRUE) 
+  humdat$TIME = gsub("\"", "", humdat$TIME, fixed=TRUE) 
+  
   #make sure month is read as an ordered factor
   humdat$MONTH = factor(humdat$MONTH, levels=c(1:12), ordered=TRUE)
   
@@ -188,19 +198,24 @@ for (f in 1:length(files)){
       west_migration = round(Est3MigrationDates(west_meanlocs))
       west_dist = DailyTravel(west_preds, 4, 5, spcode, years[y], west_migration)
       west_speed = MigrationSpeed(west_dist, west_migration)
+      #append migration dates (repated across the year for later use)
+      west_yrdat$spr = west_migration[[1]]
+      west_yrdat$peak = west_migration[[2]]
+      west_yrdat$fal = west_migration[[3]]
       
       if (y == 1){
         west_pred_data = west_preds
         west_mig_data = data.frame("spr_begin" = west_migration[[1]], "peak_lat" = west_migration[[2]], 
                               "fal_end" = west_migration[[3]], "spr_spd" = west_speed[1], "fal_spd" = west_speed[2],
                               "species" = species, "year" = years[y])    
-        west_humdat = ID_windows(west_yrdat, west_migration[[1]], west_migration[[2]], west_migration[[3]], 3)
+        west_humdat = west_yrdat
+        
       }
       else{
         west_pred_data = rbind(west_pred_data, west_preds)
         west_dates = c(west_migration[[1]], west_migration[[2]], west_migration[[3]], west_speed[1], west_speed[2], species, years[y])
         west_mig_data = rbind(west_mig_data, west_dates)
-        west_humdat = rbind(west_humdat, ID_windows(west_yrdat, west_migration[[1]], west_migration[[2]], west_migration[[3]], 3))
+        west_humdat = rbind(west_humdat, west_yrdat)
         
         if (y == length(years)){
           write.table(west_pred_data, file = paste0(writepath, spcode, "_preds_west.txt"), append=FALSE,row.names=FALSE, sep=",")
@@ -221,19 +236,23 @@ for (f in 1:length(files)){
       east_migration = round(Est3MigrationDates(east_meanlocs))
       east_dist = DailyTravel(east_preds, 4, 5, spcode, years[y], east_migration)
       east_speed = MigrationSpeed(east_dist, east_migration)
+      #append migration dates (repated across the year for later use)
+      east_yrdat$spr = east_migration[[1]]
+      east_yrdat$peak = east_migration[[2]]
+      east_yrdat$fal = east_migration[[3]]
      
       if (y == 1){
         east_pred_data = east_preds
         east_mig_data = data.frame("spr_begin" = east_migration[[1]], "peak_lat" = east_migration[[2]], 
                                    "fal_end" = east_migration[[3]], "spr_spd" = east_speed[1], "fal_spd" = east_speed[2],
                                    "species" = species, "year" = years[y])    
-        east_humdat = ID_windows(east_yrdat, east_migration[[1]], east_migration[[2]], east_migration[[3]], 3)
+        east_humdat = east_yrdat
       }
       else{
         east_pred_data = rbind(east_pred_data, east_preds)
         east_dates = c(east_migration[[1]], east_migration[[2]], east_migration[[3]], east_speed[1], east_speed[2], species, years[y])
         east_mig_data = rbind(east_mig_data, east_dates)
-        east_humdat = rbind(east_humdat, ID_windows(east_yrdat, east_migration[[1]], east_migration[[2]], east_migration[[3]], 3))
+        east_humdat = rbind(east_humdat, east_yrdat)
         
         
         if (y == length(years)){
@@ -255,13 +274,32 @@ for (f in 1:length(files)){
 #make a list of the file names to loop through
 files = list.files(path=writepath, pattern = "_humdat_")
 
+#specify time frame (number of days) to group observations
+timeframe = 3
+
 for (f in 1:length(files)){
   
   #read in humdat files created during migration paths
   humdat = read.table(paste0(writepath, files[f]), header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")
+  names(humdat) = gsub('.{1}$', '', substring(names(humdat),3))  #make the column names look nicer
+ 
+  years = unique(humdat$YEAR)
   
-  #make the column names look nicer
-  names(humdat) = gsub('.{1}$', '', substring(names(humdat),3))
-  
+  for (y in 1:length(years)){
+    yrdat = humdat[humdat$YEAR == years[y],]
+    #assign time frames for making alpha hulls (the last value is the desired time frame)
+    humdat_win = ID_windows(yrdat, yrdat[1,]$spr, yrdat[1,]$peak, yrdat[1,]$fal, timeframe)
+
+    if (y == 1){
+      humwindows = humdat_win
+    }
+    else{
+      humwindows = rbind(humwindows, humdat_win)
+      
+      if (y == length(years)){
+        write.table(humwindows, file = paste0(writepath, files[f], "_t", timeframe), append=FALSE, row.names=FALSE, sep=",")
+      }
+    }
+  }
 }
 
