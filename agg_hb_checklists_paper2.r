@@ -36,14 +36,18 @@ GroupDuplicates = function(humdat) {
 }
 
 
-ID_weeks = function(yeardat, spring, peak, fall){
-  # yeardat: a data.frame subsetted for a single year
-  # spring: date for onset of spring migration
-  # peak: date for peak latitude for the population
-  # fall: date for end of fall migration
+ID_windows = function(yeardat, spring, peak, fall, timewindow){
+  # This function separates each year into a given number of time windows, where window 2 (w2) begins 
+  # on the date for the onset of spring migration and the last window (wn) ends in the time frame that 
+  # follows the time frame containing the date for the end of fall migration (wn-1)
+    # yeardat: a data.frame subsetted for a single year
+    # spring: date for onset of spring migration
+    # peak: date for peak latitude for the population
+    # fall: date for end of fall migration
+    # timewindow: numeric value indicating the time window used to aggregate observation data (e.g. 7 would define a week)
   
   yeardat$increment = 0
-  yeardat$week = 0
+  yeardat$window = 0
   yeardat$season="winter"
   
   if(fall < spring | fall < peak) {
@@ -51,16 +55,16 @@ ID_weeks = function(yeardat, spring, peak, fall){
     return(yeardat)
   }
   
-  start <-  spring - 7
-  n.weeks <- floor(((fall - start)/7) + 2)
-  mid.week <- ceiling((peak - start)/7)
-  end <- start + n.weeks * 7
+  start <-  spring - timewindow
+  n.windows <- floor(((fall - start)/timewindow) + 2)
+  mid.window <- ceiling((peak - start)/timewindow)
+  end <- start + n.windows * timewindow
 
   yeardat[yeardat$DAY >= start & yeardat$DAY < end,]$increment <- yeardat[yeardat$DAY >= start & yeardat$DAY < end,]$DAY-start + 1
-  yeardat[yeardat$DAY >= start & yeardat$DAY < end,]$week <- ceiling(yeardat[yeardat$DAY >= start & yeardat$DAY < end,]$increment/7)
-  yeardat[yeardat$DAY >= start & yeardat$DAY < end & yeardat$week < mid.week,]$season <- "spring"
-  yeardat[yeardat$DAY >= start & yeardat$DAY < end & yeardat$week > mid.week,]$season <- "fall"
-  yeardat[yeardat$DAY >= start & yeardat$DAY < end & yeardat$week == mid.week,]$season <- "breeding"
+  yeardat[yeardat$DAY >= start & yeardat$DAY < end,]$window <- ceiling(yeardat[yeardat$DAY >= start & yeardat$DAY < end,]$increment/timewindow)
+  yeardat[yeardat$DAY >= start & yeardat$DAY < end & yeardat$window < mid.window,]$season <- "spring"
+  yeardat[yeardat$DAY >= start & yeardat$DAY < end & yeardat$window > mid.window,]$season <- "fall"
+  yeardat[yeardat$DAY >= start & yeardat$DAY < end & yeardat$window == mid.window,]$season <- "breeding"
   
   return(yeardat)
 }
@@ -128,9 +132,9 @@ for (f in 1:length(files)){
   
   humdat = read.table(paste0(writepath, files[f]), header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")
   
-  names(humdat) = c("SCI_NAME", "PRIMARY_COM_NAME","YEAR", "DAY", "TIME", "GROUP_ID", "PROTOCOL_ID",
-                    "PROJ_ID", "DURATION_HRS", "EFFORT_DISTANCE_KM", "EFFORT_AREA_HA", "NUM_OBSERVERS",
-                    "LATITUDE", "LONGITUDE", "SUB_ID", "POLYFID","MONTH")
+  #make the column names look nicer
+  names(humdat) = gsub('.{1}$', '', substring(names(humdat),3))
+  #make sure month is read as an ordered factor
   humdat$MONTH = factor(humdat$MONTH, levels=c(1:12), ordered=TRUE)
   
   #grab species name for setting directory paths and naming figures, identify years
@@ -168,8 +172,8 @@ for (f in 1:length(files)){
       mig_data = rbind(mig_data, dates)
       
       if (y == length(years)){
-        write.table(pred_data, file = paste0(writepath, spcode, "_preds.txt"), append=FALSE,row.names=FALSE)
-        write.table(mig_data, file = paste0(writepath, spcode, "_migration.txt"), append=FALSE, row.names=FALSE)
+        write.table(pred_data, file = paste0(writepath, spcode, "_preds.txt"), append=FALSE,row.names=FALSE, sep=",")
+        write.table(mig_data, file = paste0(writepath, spcode, "_migration.txt"), append=FALSE, row.names=FALSE, sep=",")
       }
     }
 
@@ -190,18 +194,18 @@ for (f in 1:length(files)){
         west_mig_data = data.frame("spr_begin" = west_migration[[1]], "peak_lat" = west_migration[[2]], 
                               "fal_end" = west_migration[[3]], "spr_spd" = west_speed[1], "fal_spd" = west_speed[2],
                               "species" = species, "year" = years[y])    
-        west_humdat = ID_weeks(west_yrdat, west_migration[[1]], west_migration[[2]], west_migration[[3]])
+        west_humdat = ID_windows(west_yrdat, west_migration[[1]], west_migration[[2]], west_migration[[3]], 3)
       }
       else{
         west_pred_data = rbind(west_pred_data, west_preds)
         west_dates = c(west_migration[[1]], west_migration[[2]], west_migration[[3]], west_speed[1], west_speed[2], species, years[y])
         west_mig_data = rbind(west_mig_data, west_dates)
-        west_humdat = rbind(west_humdat, ID_weeks(west_yrdat, west_migration[[1]], west_migration[[2]], west_migration[[3]]))
+        west_humdat = rbind(west_humdat, ID_windows(west_yrdat, west_migration[[1]], west_migration[[2]], west_migration[[3]], 3))
         
         if (y == length(years)){
-          write.table(west_pred_data, file = paste0(writepath, spcode, "_preds_west.txt"), append=FALSE,row.names=FALSE)
-          write.table(west_mig_data, file = paste0(writepath, spcode, "_migration_west.txt"), append=FALSE, row.names=FALSE)
-          write.table(west_humdat, file = paste0(writepath, spcode, "_humdat_west.txt"), append=FALSE, row.names=FALSE)
+          write.table(west_pred_data, file = paste0(writepath, spcode, "_preds_west.txt"), append=FALSE,row.names=FALSE, sep=",")
+          write.table(west_mig_data, file = paste0(writepath, spcode, "_migration_west.txt"), append=FALSE, row.names=FALSE, sep=",")
+          write.table(west_humdat, file = paste0(writepath, spcode, "_humdat_west.txt"), append=FALSE, row.names=FALSE, sep=",")
           
         }
       }
@@ -223,22 +227,41 @@ for (f in 1:length(files)){
         east_mig_data = data.frame("spr_begin" = east_migration[[1]], "peak_lat" = east_migration[[2]], 
                                    "fal_end" = east_migration[[3]], "spr_spd" = east_speed[1], "fal_spd" = east_speed[2],
                                    "species" = species, "year" = years[y])    
-        east_humdat = ID_weeks(east_yrdat, east_migration[[1]], east_migration[[2]], east_migration[[3]])
+        east_humdat = ID_windows(east_yrdat, east_migration[[1]], east_migration[[2]], east_migration[[3]], 3)
       }
       else{
         east_pred_data = rbind(east_pred_data, east_preds)
         east_dates = c(east_migration[[1]], east_migration[[2]], east_migration[[3]], east_speed[1], east_speed[2], species, years[y])
         east_mig_data = rbind(east_mig_data, east_dates)
-        east_humdat = rbind(east_humdat, ID_weeks(east_yrdat, east_migration[[1]], east_migration[[2]], east_migration[[3]]))
+        east_humdat = rbind(east_humdat, ID_windows(east_yrdat, east_migration[[1]], east_migration[[2]], east_migration[[3]], 3))
         
         
         if (y == length(years)){
-          write.table(east_pred_data, file = paste0(writepath, spcode, "_preds_east.txt"), append=FALSE,row.names=FALSE)
-          write.table(east_mig_data, file = paste0(writepath, spcode, "_migration_east.txt"), append=FALSE, row.names=FALSE)
-          write.table(east_humdat, file = paste0(writepath, spcode, "_humdat_east.txt"), append=FALSE, row.names=FALSE)
+          write.table(east_pred_data, file = paste0(writepath, spcode, "_preds_east.txt"), append=FALSE,row.names=FALSE, sep=",")
+          write.table(east_mig_data, file = paste0(writepath, spcode, "_migration_east.txt"), append=FALSE, row.names=FALSE, sep=",")
+          write.table(east_humdat, file = paste0(writepath, spcode, "_humdat_east.txt"), append=FALSE, row.names=FALSE, sep=",")
         }
       }
     }
   }
+}
+
+
+
+#----------------------------------- ASSIGN TIME WINDOWS FOR EACH SPECIES
+# Use the humdat files made above and annoate with time windows. 
+# Keeping it separate allows you to skip repeating the time-consuming step of the gamms and estimating migration dates
+
+#make a list of the file names to loop through
+files = list.files(path=writepath, pattern = "_humdat_")
+
+for (f in 1:length(files)){
+  
+  #read in humdat files created during migration paths
+  humdat = read.table(paste0(writepath, files[f]), header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")
+  
+  #make the column names look nicer
+  names(humdat) = gsub('.{1}$', '', substring(names(humdat),3))
+  
 }
 
