@@ -272,7 +272,7 @@ for (f in 1:length(files)){
 # Keeping it separate allows you to skip repeating the time-consuming step of the gamms and estimating migration dates
 
 #make a list of the file names to loop through
-files = list.files(path=writepath, pattern = "_humdat_")
+files = list.files(path=writepath, pattern = "_humdat_.*\\.*st.txt$")
 
 #specify time frame (number of days) to group observations
 timeframe = 3
@@ -297,7 +297,7 @@ for (f in 1:length(files)){
       humwindows = rbind(humwindows, humdat_win)
       
       if (y == length(years)){
-        write.table(humwindows, file = paste0(writepath, files[f], "_t", timeframe), append=FALSE, row.names=FALSE, sep=",")
+        write.table(humwindows, file = paste0(writepath, "t", timeframe, "_", files[f]), append=FALSE, row.names=FALSE, sep=",")
       }
     }
   }
