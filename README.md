@@ -51,7 +51,9 @@ Data is currently privately housed, but may be requested for the purposes of rep
 * `hb_analysis_envData.R` script --
 * `hb_explore_envData.R` script --
 * `hb_alpha_hulls.R` script -- calculates alpha hulls for each species, year and week for the day of observation, preceeding week and following week. Generates csv file to be submitted to movebank.
-* `hb_alpha_functions.R` script -- Functions that are useful for the alpha hull calculation script. Included are functions for: - converting alpha hulls to spatial polygon data frames - converting a date (m/d/y) to day of year
+* `hb_alpha_functions.R` script -- Functions that are useful for the alpha hull calculation script. Included are functions for: 
+	- converting alpha hulls to spatial polygon data frames 
+	- converting a date (m/d/y) to day of year
 
 *Extra scripts from exploratory or past analyses*
 * `eBird-effort.r` script -- makes maps of total citizen science checklist effort per hex cell for each year, using the effort file downloaded from the eBird portal. Contains daily data. (not needed)
