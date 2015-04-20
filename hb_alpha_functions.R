@@ -129,3 +129,24 @@ hb.get.3.week <- function(x){
   # return dataframe
   df
 }
+
+# convert factor to numeric
+as.num <- function(x){
+  as.numeric(as.character(x))
+}
+
+# convert columns in a dataframe to character or numeric types based on input string
+df.col.class <- function(x,y){
+  if(ncol(x) != length(y)){
+    print(paste('length of arguements not equal: x=', ncol(x), ' y=', length(y)))
+  }
+  else{
+    for(i in 1:ncol(x)){
+      x[,i] <- as.character(x[,i])
+      if(y[i] == 'n'){
+        x[,i] <- as.numeric(x[,i])
+      }
+    }
+  }
+  x
+}
