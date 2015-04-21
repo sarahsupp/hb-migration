@@ -85,7 +85,14 @@ hb.ah2sp <- function(x, increment=360, rnd=10, proj4string=CRS(as.character(NA))
     names(df) <- c("HID","Area")
     rownames(df) <- df$HID
     res <- SpatialPolygonsDataFrame(sppolys, data=df)
-    res <- res[which(res@data$Area > 0),]
+    # added by KG to check for:
+    # Error in if (is.numeric(i) && i < 0) { : 
+    #  missing value where TRUE/FALSE needed 
+    if(length(which(res@data$Area > 0)) != 0){
+      res <- res[which(res@data$Area > 0),]
+    }else{
+      res <- -1
+    }
   }  
   return(res)
 }
