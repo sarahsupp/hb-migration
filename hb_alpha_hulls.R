@@ -1,25 +1,20 @@
 # Compute weekly alpha hulls from ebird data
-# The main code will be within a function s.t. it can be adapted for each species
+# Extract presence and absence points from hull to submit to MoveBank.org for
+#  sampling
 
 # Kevin Guay (kguay@whrc.org)
 # on 13 Apr 2015
-# mo 20 Apr 2015
-
-# log
-# version   m   d   y     notes
-# -------   --  --  --    -----
-# 1.0.0     4   20  15    working copy. submitted to repo
+# mo 02 May 2015
 
 # load required packages
 require(plyr)
 require(rworldmap)
 require(alphahull)
 
-################################### I N P U T ###################################
+################################### I N P U T ##################################
 # number of days in the time window
 period <- 5
-#################################################################################
-
+################################################################################
 
 # set base path depending on OS (Windows/ Unix)
 if(Sys.info()['sysname'] == 'Windows'){
@@ -38,11 +33,9 @@ write.df <- function(x, filename){
   write.csv(x, filename, quote=F, row.names=F)
 }
 
-# init a map
+# initialize a map
 newmap <- getMap(resolution = "low")
-
 # ------------------------------------------------------------------------------
-
 
 # loop through species
 for(species.code in c('bchu','bthu', 'cahu','ruhu')){ 
@@ -92,10 +85,11 @@ for(species.code in c('bchu','bthu', 'cahu','ruhu')){
       # get the absense points that are from the same days as the presence window
       abs.window <- subset(abs.year, abs.year$DAY %in% unique(prs.window$DAY))
       
-      
+      # get the presence point coordinates and metadata (info)
       prs.window.coords <- as.data.frame(cbind(LONGITUDE=prs.window$LONGITUDE, LATITUDE=prs.window$LATITUDE))
       prs.window.info <- as.data.frame(cbind(YEAR=prs.window$YEAR, DAY=prs.window$DAY, TIME=prs.window$TIME))
       
+	  # get the absense point coordinates and metadata (info)
       abs.window.coords <- as.data.frame(cbind(LONGITUDE=abs.window$LONGITUDE, LATITUDE=abs.window$LATITUDE))
       abs.window.info   <- as.data.frame(cbind(YEAR=abs.window$YEAR, DAY=abs.window$DAY, TIME=as.character(abs.window$TIME)))
       
@@ -104,18 +98,22 @@ for(species.code in c('bchu','bthu', 'cahu','ruhu')){
         
         # spdf <- SpatialPointsDataFrame(prs.window.coords, prs.window.info)
         
-        # Itterate the value of alpha until it produces x% outliers
+        # Itterate the value of alpha until it produces 10% outliers
         # ---------------------------------------------------------
         # determine the ideal number of outliers
         outlier.goal <- nrow(prs.window.coords) %/% 10
         inside.goal <- nrow(prs.window.coords) - outlier.goal
         
+		# starting alpha
         a <- 1.3
         go <- T # keep going until go == FALSE
         a.increment <- 0.1
         rep.last <- 0
+		# variables to keep track of outliers and alpha values.
+		# init with low, desperate, values so that loop is prematurly halted.
         history <- c(seq(0,1,1/30))
         history.a <- c(seq(0,1,1/30))
+		
         while(go){        
           # calculate alpha hull for those observations
           hull <- ahull(unique(prs.window.coords), alpha=a)
@@ -154,17 +152,16 @@ for(species.code in c('bchu','bthu', 'cahu','ruhu')){
             
             # extract points that fall within hull
             hull.pts <- SpatialPointsDataFrame(prs.window.coords, prs.window.info)
-            
             hull.pts <- hull.pts[!is.na(over(hull.pts,as(hull.shp,"SpatialPolygons"))),]
             
           }
-          
-          # in.hull <- apply(prs.window.coords, 1, iah, hull)
-          # hull.pts.2 <- subset(hull.pts, in.hull)
-          
+		  
+          # If there is a repeating pattern of outliers (e.g. 4,5,4,5,4,5),
+		  #  decrease the increment value.
           if( ( (history[1] == history[3]) & (history[1] != history[2]) & (history[2] != history[3]) ) | (length(unique(history[1:30]))==1) | (nrow(hull.pts) < history[1]) ){
             a.increment <- 0.01
             rep.last <- rep.last + 1
+			# if the repeating has lasted for 5 itterations, then halt the loop
             if(rep.last > 5 | (nrow(hull.pts) < history[1])){
               if((abs(history[1] - inside.goal) < abs(history[2] - inside.goal))  ){
                 a <- history.a[1]
@@ -176,7 +173,8 @@ for(species.code in c('bchu','bthu', 'cahu','ruhu')){
             }
           }
           
-          # if the number of points in the hull does not equal the inside.goal, adjust alpha
+          # if the number of points in the hull does not equal the inside.goal,
+		  #  adjust alpha
           if((nrow(hull.pts) > (inside.goal+1)) & go){
             a <- a - a.increment
           }else if((nrow(hull.pts) < (inside.goal-1) )  & go){
@@ -185,10 +183,11 @@ for(species.code in c('bchu','bthu', 'cahu','ruhu')){
             go <- F
           }
           
+		  # update the history information (number of points and alpha) 
+		  #  determine when to halt loop
           history <- c(nrow(hull.pts), history)
           history.a <- c(a, history.a)
           
-          #print(paste('  ',inside.goal,history[1],a, a.increment, rep.last, '\t', history[2], history[3], history[4], history[20], (length(unique(history[1:30]))==1 & !is.na(history[1])), nrow(hull.pts) < history[1], sep='  '))
         } # end while go
         
       } # end if
@@ -215,7 +214,8 @@ for(species.code in c('bchu','bthu', 'cahu','ruhu')){
         hull.pts <- hull.pts[!is.na(over(hull.pts,as(hull.shp,"SpatialPolygons"))),]
         
       }
-      # ABSENSE
+	  
+      # ABSENSE POINTS
       # -------
       # extract absense points from hull
       abs.hull <- SpatialPointsDataFrame(abs.window.coords, abs.window)
@@ -245,14 +245,15 @@ for(species.code in c('bchu','bthu', 'cahu','ruhu')){
       prs.df.p3 <- rbind(prs.df.p3, data.frame(timestamp=paste(as.Date(as.num(hull.pts$DAY)+3, origin = paste(year, "-01-01", sep='')), ' ', as.character(hull.pts$TIME), '.000', sep=''), 
                                                location.long=as.num(hull.pts@coords[,1]), location.lat=as.num(hull.pts@coords[,2]), height.above.ellipsoid='' ))
       
-      
+	  # compile metadata
       total <- SpatialPointsDataFrame(prs.window.coords, prs.window.info)
       outl <- total[is.na(over(total,as(hull.shp,"SpatialPolygons"))),]    
       inh <- total[!is.na(over(total,as(hull.shp,"SpatialPolygons"))),]        
       
-      
+      # add to the metadata dataframe
       meta.df <- rbind(meta.df, data.frame(species=species.code, year=year, w=w, alpha=a, in.hull=length(hull.pts), outlier=length(outl), total=nrow(unique(prs.window.coords))))
       
+	  # Output a plot of the data for testing purposes
 #       png(paste('~/Desktop/hb_hull_plots/hull_plot_',w,'.png', sep=''))
 #       
 #       plot(newmap, xlim = c(-115, -108), ylim = c(30,55), asp = 1)
@@ -269,6 +270,7 @@ for(species.code in c('bchu','bthu', 'cahu','ruhu')){
 #       text(-127,30,paste('outliers:',round(length(outl)/(length(total))*100, digits=0), '%' ), pos=4)               
 #       
 #       dev.off()
+
     } # end window
   } # end year
   
@@ -281,47 +283,4 @@ for(species.code in c('bchu','bthu', 'cahu','ruhu')){
   write.csv(meta.df, paste(path.prefix, 'Share/kguay/hummingbird/movebank/submit_csv/meta/', species.code, '_meta.csv', sep=''), quote=F, row.names=F)
 
 } # end species
-
-# 
-# require(geosphere)
-# 
-# data.df <- as.data.frame(hull.pts@coords)
-# coords <- hull.pts@coords
-# # Make a list, each element of the list has one SpatialPolygons polygon (one circle)
-# # Here, coords is a data.frame with the lon and lat of each point.
-# list.poly=list()
-# for (i in 1:length(coords[,1])) {
-#   myCircle = data.frame(matrix(NA,361,2))
-#   for (angle in 0:360) { myCircle[(angle+1),] = destPoint(coords[i,],angle,100000) }
-#   list.poly[i] = SpatialPolygons(list(Polygons(list(Polygon(SpatialPoints(myCircle))),1))) }
-# 
-# #----------------------------
-# # Get the ID names of each polygon...intially they are all the same, but each polygon needs a unique ID:
-# IDs <- sapply(list.poly, function(x) slot(slot(x, "polygons")[[1]], "ID"))
-# # Give each polygon a unique ID  (1: number of list elements)
-# Spol1 <- SpatialPolygons(lapply(1:length(list.poly), function(i) {
-#   Pol <- slot(list.poly[[i]], "polygons")[[1]]
-#   slot(Pol, "ID") <- as.character(i)
-#   Pol } ) )
-# # Get the IDs, and set the row.names of the polygons as these IDs
-# IDs = sapply(slot(Spol1, "polygons"), function(x) slot(x, "ID"))
-# row.names(Spol1) = IDs
-# #As a check, this should be true now:
-# length(unique(IDs)) == length(list.poly)
-# 
-# 
-# #----------------------------
-# # Build a data.frame to attach to the SpatialPolyons
-# data.df = data.frame(IDs);  row.names(data.df)=IDs
-# spol.df = SpatialPolygonsDataFrame(Spol1,data = data.df)
-# projection(spol.df) = CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0")
-# #assign the final variable, "polys.wgs84.35m" as the spatial polygons dataframe:
-# polys.wgs84.35m=spol.df
-# 
-# unionSpatialPolygons(spol.df, IDs)
-# 
-# 
-
-
-
 
