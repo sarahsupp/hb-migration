@@ -6,7 +6,7 @@
 # on 13 Apr 2015
 # mo 02 May 2015
 
-# load required packages
+# load required packages 
 require(plyr)
 require(rworldmap)
 require(alphahull)
