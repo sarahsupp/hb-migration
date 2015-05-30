@@ -10,10 +10,10 @@ library(Rarity)
 library(lme4)
 
 # define pathnames
-function.dir <- "C:/Users/sarah/Documents/github/hb-migration/hb_RS_functions.R"
-agan.dir <- "C:/Users/sarah/Dropbox/ebird_annotated_raw/"
-migtime.dir <- "C:/Users/sarah/Dropbox/ebird_annotated_raw/"
-fig.dir <- "C:/Users/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/"
+function.dir <- "/home/sarah/Documents/GitHub/hb-migration/hb_RS_functions.R"
+agan.dir <- "/home/sarah/Dropbox/Hummingbirds/hb_migration_data/ebird_annotated_raw/combined/"
+#migtime.dir <- "C:/Users/sarah/Dropbox/ebird_annotated_raw/"
+fig.dir <- "/home/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/"
 
 #function.dir <- "/Users/tcormier/Documents/scripts/git_repos/hb-migration/hb_RS_functions.R"
 #agan.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/downloaded_annotations/"
@@ -21,6 +21,50 @@ fig.dir <- "C:/Users/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migr
 #fig.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/figures/ruhu/"
 
 source(function.dir)
+
+###########################################################################################
+#SRS started working in this section 5/30/15
+#list of species codes
+species <- c("bchu", "bthu", "cahu", "ruhu", "rthu")
+
+files = list.files(path = agan.dir, pattern = glob2rx("ruhu*.RData"), recursive=FALSE, full.names=TRUE)
+
+for (sp in species){
+  spfiles = list.files(path = agan.dir, pattern = glob2rx(paste0(sp,"*.RData")), recursive=FALSE, full.names=TRUE)
+  #load all the files into a list
+  #datlist <- sapply(spfiles, function(x) get(load(x)), simplify = FALSE) 
+  abs = get(load(spfiles[1]))
+  pres = get(load(spfiles[2]))
+  min = get(load(spfiles[3]))
+  pls = get(load(spfiles[4]))
+  
+  abs$pres = 0
+  pres$pres = 1
+  min$pres = -1
+  pls$pres = 2  
+  pa = rbind(pres, abs)
+  pmin = rbind(pres, min)
+  ppls = rbind(pres, pls)
+  
+  ggplot(pres, aes(timestamp, EVI)) + geom_point(aes(col=t10m))
+  
+  ggplot(pmin, aes(timestamp, EVI)) + geom_point(aes(col=as.factor(pres)), alpha=0.5)
+  
+  ggplot(abs, aes(timestamp, EVI)) + geom_point(col="gray", alpha=0.5) + 
+    geom_point(data=pres, aes(timestamp, EVI))
+  
+  plot(pres$EVI, min$EVI, pch=19)
+  abline(a=0, b=1, col="red")
+  
+  plot(pres$EVI, pls$EVI, pch=19)
+  abline(a=0, b=1, col="red")
+  
+  plot(pres$EVI, pls$EVI, pch=19)
+  abline(a=0, b=1, col="blue", lwd=2)
+}
+
+
+
 
 ###########################################################################################
 #spp abbreviation (same one used in file paths and names)
