@@ -8,11 +8,12 @@ library(ggplot2)
 library(ltm)
 library(Rarity)
 library(lme4)
+library(lubridate)
 
 # define pathnames
 function.dir <- "/home/sarah/Documents/GitHub/hb-migration/hb_RS_functions.R"
 agan.dir <- "/home/sarah/Dropbox/Hummingbirds/hb_migration_data/ebird_annotated_raw/combined/"
-#migtime.dir <- "C:/Users/sarah/Dropbox/ebird_annotated_raw/"
+migtime.dir <- "/home/sarah/Dropbox/Hummingbirds/hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/"
 fig.dir <- "/home/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/"
 
 #function.dir <- "/Users/tcormier/Documents/scripts/git_repos/hb-migration/hb_RS_functions.R"
@@ -29,29 +30,126 @@ species <- c("bchu", "bthu", "cahu", "ruhu", "rthu")
 
 files = list.files(path = agan.dir, pattern = glob2rx("ruhu*.RData"), recursive=FALSE, full.names=TRUE)
 
+
 for (sp in species){
   spfiles = list.files(path = agan.dir, pattern = glob2rx(paste0(sp,"*.RData")), recursive=FALSE, full.names=TRUE)
+  mfiles = list.files(path = migtime.dir, pattern = glob2rx(paste0(sp,"*migration*")), recursive=FALSE, full.names=TRUE)
+  
   #load all the files into a list
   #datlist <- sapply(spfiles, function(x) get(load(x)), simplify = FALSE) 
   abs = get(load(spfiles[1]))
   pres = get(load(spfiles[2]))
   min = get(load(spfiles[3]))
   pls = get(load(spfiles[4]))
+
+  if(sp == "rthu"){ migdates = read.table(mfiles[1], header=TRUE, sep="\t", quote="", fill=TRUE, as.is=TRUE, comment.char="")}
+  else{ migdates = read.table(mfiles[2], header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")}
   
-  abs$pres = 0
-  pres$pres = 1
-  min$pres = -1
-  pls$pres = 2  
+  #strip extra "" and "\\" from fields
+  names(migdates) = gsub('.{1}$', '', substring(names(migdates),3))   #make the column names look nicer
+  migdates$spr_begin = as.numeric(gsub("\"", "", migdates$spr_begin, fixed=TRUE))
+  migdates$peak_lat = as.numeric(gsub("\"", "", migdates$peak_lat, fixed=TRUE))
+  migdates$fal_end = as.numeric(gsub("\"", "", migdates$fal_end, fixed=TRUE))
+  migdates$spr_spd = as.numeric(gsub("\"", "", migdates$spr_spd, fixed=TRUE))
+  migdates$fal_spd = as.numeric(gsub("\"", "", migdates$fal_spd, fixed=TRUE))
+  migdates$species = gsub("\"", "", migdates$species, fixed=TRUE)
+  migdates$year = as.factor(gsub("\"", "", migdates$year, fixed=TRUE))
+
+  abs$pres = as.factor(0)
+  pres$pres = as.factor(1)
+  min$pres = as.factor(-1) #note all days are -3 from matching pres points, with the same locations
+  pls$pres = as.factor(2)  #note all days are +3 from matching pres points, with the same locations
+  #add rownames as a column for later matching
+  abs$id = as.factor(row.names(abs))
+  pres$id = as.factor(row.names(pres))
+  min$id = as.factor(row.names(min))
+  pls$id = as.factor(row.names(pls))
+  
+  all = rbind(pres, abs, min, pls)
+  
+  #lubridate to pull month and year from filename
+  all$month = as.factor(month(as.Date(all$timestamp)))
+  all$year =  as.factor(year(as.Date(all$timestamp)))
+  all$yday = as.numeric(yday(as.Date(all$timestamp)))
+  
+  pres = subset(all, pres==1)
+  abs = subset(all, pres==0)
+  
+  #assign time windows based on presence and absence data, and label by season
+  years = unique(migdates$year)
+  for (y in years){
+    yrdat = pres[pres$year == y,]
+    absdat = abs[abs$year == y,]
+    yrmig = migdates[migdates$year == y,]
+    #assign time frames from the alpha hulls (the last value is the desired time frame)
+    yrdat_win = ID_windows(yrdat, spring=yrmig[1,1], peak=yrmig[1,2], fall=yrmig[1,3], timewindow=3)
+    absdat_win = ID_windows(absdat, spring=yrmig[1,1], peak=yrmig[1,2], fall=yrmig[1,3], timewindow=3)
+    
+    if (y == years[1]){
+      yrwindows = yrdat_win
+      abswindows = absdat_win
+    }
+    else{ yrwindows = rbind(yrwindows, yrdat_win) 
+          abswindows = rbind(abswindows, absdat_win)}
+    }
+
+  minpls = subset(all, pres %in% c(-1, 2))
+  pminpls = merge(minpls, yrwindows[,c(15,19,20,21)], by = c("id", "id"))
+  pminpls = rbind(pminpls, yrwindows)
+  pminpls = subset(pminpls, season %in% c("spring", "fall", "breeding"))
+  pres_ssn = subset(yrwindows, season %in% c("spring", "fall", "breeding"))
+  
+  #plot environmental patterns for locations that birds were seen at (3 connected dots for location trajectories)
+  ggplot(pminpls, aes(yday, EVI)) + geom_point(aes(col=EVI), alpha=0.5) + 
+    geom_line(aes(group=id, col=EVI), alpha=0.5) +
+    stat_smooth(data=pres_ssn, method="gam", formula = y~s(x, k=10), col="black") +
+    scale_color_gradient(low="moccasin", high="chartreuse4") +
+    xlab("Julian Day of the Year") + ylab("EVI") + theme_bw() + 
+    facet_wrap(~year)
+  
+  ggplot(pminpls, aes(yday, t10m-273.15)) + geom_point(aes(col=t10m-273.15), alpha=0.5) + 
+    geom_line(aes(group=id,col=t10m-273.15), alpha=0.5) +
+    stat_smooth(data=pres_ssn, method="gam", formula = y~s(x, k=10), col="black") +  
+    scale_color_gradient(low="blue", high="firebrick") +
+    xlab("Julian Day of the Year") + ylab("Temperature (C)") + theme_bw() +
+    facet_wrap(~year)
+  
+  ggplot(pminpls, aes(yday, SRTM_elev)) + geom_point(aes(col=rh2m),alpha=0.5) + geom_line(aes(group=id, col=rh2m)) +
+    stat_smooth(data=pres_ssn, method="gam", formula = y~s(x, k=10), col="black") + facet_wrap(~year)+  
+    scale_color_gradient(low="moccasin", high="navy") + theme_bw()
+  
+  ggplot(pminpls, aes(yday, swrf)) + geom_point(aes(col=rh2m),alpha=0.5) + geom_line(aes(group=id, col=rh2m)) +
+    stat_smooth(data=pres_ssn, method="gam", formula = y~s(x, k=10), col="black") + facet_wrap(~year)+  
+    scale_color_gradient(low="moccasin", high="navy") + theme_bw()
+  
   pa = rbind(pres, abs)
   pmin = rbind(pres, min)
   ppls = rbind(pres, pls)
+
   
-  ggplot(pres, aes(timestamp, EVI)) + geom_point(aes(col=t10m))
+  #lubridate to pull month and year from filename
+  all$month = as.factor(month(as.Date(all$timestamp)))
+  all$year =  as.factor(year(as.Date(all$timestamp)))
+  all$yday = as.numeric(yday(as.Date(all$timestamp)))
   
-  ggplot(pmin, aes(timestamp, EVI)) + geom_point(aes(col=as.factor(pres)), alpha=0.5)
+  pa = subset(all, pres %in% c(0,1))
+  pmin = subset(all, pres %in% c(1,-1))
+  ppls = subset(all, pres %in% c(1,2))
   
-  ggplot(abs, aes(timestamp, EVI)) + geom_point(col="gray", alpha=0.5) + 
-    geom_point(data=pres, aes(timestamp, EVI))
+  ggplot(pres, aes(as.Date(timestamp), EVI)) + geom_point(aes(col=t10m - 273.15)) + 
+    scale_color_gradient(low="blue", high="firebrick")
+  
+  ggplot(pmin, aes(yday, EVI, col=pres)) + geom_point(alpha=0.75) + 
+    stat_smooth(method="gam", formula = y ~ s(x, k=20)) + facet_wrap(~year) +
+    scale_color_manual(values = c("indianred", "gray"))
+  
+  ggplot(ppls, aes(yday, EVI, col=pres)) + geom_point(alpha=0.5) + 
+    stat_smooth(method="loess") + facet_wrap(~year) +
+    scale_color_manual(values = c("indianred", "gray"))
+  
+  ggplot(pa, aes(yday, EVI, col=pres)) + geom_point(alpha=0.5) + 
+    stat_smooth(method="gam", formula = y ~ s(x, k=20)) + facet_wrap(~year)  +
+    scale_color_manual(values = c("indianred", "gray"))
   
   plot(pres$EVI, min$EVI, pch=19)
   abline(a=0, b=1, col="red")
@@ -59,8 +157,11 @@ for (sp in species){
   plot(pres$EVI, pls$EVI, pch=19)
   abline(a=0, b=1, col="red")
   
-  plot(pres$EVI, pls$EVI, pch=19)
+  plot(pres$EVI, abs$EVI, pch=19)
   abline(a=0, b=1, col="blue", lwd=2)
+  
+  plot(as.numeric(yday(as.Date(pres$timestamp))), as.numeric(yday(as.Date(pls$timestamp))), pch=19)
+  
 }
 
 

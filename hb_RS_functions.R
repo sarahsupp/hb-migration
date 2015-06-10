@@ -265,3 +265,39 @@ formatAbsent <- function(adata) {
   adata$DOM <- format(adata$DATE, "%d")
   return(adata)
 }
+
+#######################################################################################################
+#identify season and time windows
+ID_windows = function(yeardat, spring, peak, fall, timewindow){
+  # This function separates each year into a given number of time windows, where window 2 (w2) begins 
+  # on the date for the onset of spring migration and the last window (wn) ends in the time frame that 
+  # follows the time frame containing the date for the end of fall migration (wn-1)
+  # yeardat: a data.frame subsetted for a single year
+  # spring: date for onset of spring migration
+  # peak: date for peak latitude for the population
+  # fall: date for end of fall migration
+  # timewindow: numeric value indicating the time window used to aggregate observation data (e.g. 7 would define a week)
+  # returns data for that year labeled and clipped to the spring-breeding-fall migration period (e.g. excludes "winter")
+  
+  yeardat$increment = 0
+  yeardat$window = 0
+  yeardat$season="winter"
+  
+  if(fall < spring | fall < peak) {
+    print(paste0("ERROR: migration dates do not make sense, check data ", yeardat$SCI_NAME[1], yeardat$YEAR[1]))
+    return(yeardat)
+  }
+  
+  start <-  spring - timewindow
+  n.windows <- floor(((fall - start)/timewindow) + 2)
+  mid.window <- ceiling((peak - start)/timewindow)
+  end <- start + n.windows * timewindow
+  
+  yeardat[yeardat$yday >= start & yeardat$yday < end,]$increment <- yeardat[yeardat$yday >= start & yeardat$yday < end,]$yday-start + 1
+  yeardat[yeardat$yday >= start & yeardat$yday < end,]$window <- ceiling(yeardat[yeardat$yday >= start & yeardat$yday < end,]$increment/timewindow)
+  yeardat[yeardat$yday >= start & yeardat$yday < end & yeardat$window < mid.window,]$season <- "spring"
+  yeardat[yeardat$yday >= start & yeardat$yday < end & yeardat$window > mid.window,]$season <- "fall"
+  yeardat[yeardat$yday >= start & yeardat$yday < end & yeardat$window == mid.window,]$season <- "breeding"
+  
+  return(yeardat)
+}
