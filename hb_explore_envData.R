@@ -9,6 +9,7 @@ library(ltm)
 library(Rarity)
 library(lme4)
 library(lubridate)
+library(arm)
 
 # define pathnames
 function.dir <- "/home/sarah/Documents/GitHub/hb-migration/hb_RS_functions.R"
@@ -55,10 +56,12 @@ for (sp in species){
   migdates$species = gsub("\"", "", migdates$species, fixed=TRUE)
   migdates$year = as.factor(gsub("\"", "", migdates$year, fixed=TRUE))
 
+  #add code for present, absent, and present, but forward (2) or backward (-1) in time (# days in time window)
   abs$pres = as.factor(0)
   pres$pres = as.factor(1)
   min$pres = as.factor(-1) #note all days are -3 from matching pres points, with the same locations
   pls$pres = as.factor(2)  #note all days are +3 from matching pres points, with the same locations
+  
   #add rownames as a column for later matching
   abs$id = as.factor(row.names(abs))
   pres$id = as.factor(row.names(pres))
@@ -74,78 +77,98 @@ for (sp in species){
   
   pres = subset(all, pres==1)
   abs = subset(all, pres==0)
+  min = subset(all, pres==-1)
+  pls = subset(all, pres==2)
   
   #assign time windows based on presence and absence data, and label by season
-  years = unique(migdates$year)
-  for (y in years){
-    yrdat = pres[pres$year == y,]
-    absdat = abs[abs$year == y,]
-    yrmig = migdates[migdates$year == y,]
-    #assign time frames from the alpha hulls (the last value is the desired time frame)
-    yrdat_win = ID_windows(yrdat, spring=yrmig[1,1], peak=yrmig[1,2], fall=yrmig[1,3], timewindow=3)
-    absdat_win = ID_windows(absdat, spring=yrmig[1,1], peak=yrmig[1,2], fall=yrmig[1,3], timewindow=3)
-    
-    if (y == years[1]){
-      yrwindows = yrdat_win
-      abswindows = absdat_win
-    }
-    else{ yrwindows = rbind(yrwindows, yrdat_win) 
-          abswindows = rbind(abswindows, absdat_win)}
-    }
+  pres = assign_window_season(migdates, pres, 3)
+  abs = assign_window_season(migdates, abs, 3)
+  min = assign_window_season(migdates, min, 3)
+  pls = assign_window_season(migdates, pls, 3)
+  
+  pres$season = as.factor(pres$season)
+  abs$season = as.factor(abs$season)
+  min$season = as.factor(min$season) #forward in time
+  pls$season = as.factor(pls$season) #backward in time
 
-  minpls = subset(all, pres %in% c(-1, 2))
-  pminpls = merge(minpls, yrwindows[,c(15,19,20,21)], by = c("id", "id"))
-  pminpls = rbind(pminpls, yrwindows)
+  pminpls = rbind(pres, min, pls)
   pminpls = subset(pminpls, season %in% c("spring", "fall", "breeding"))
   pres_ssn = subset(yrwindows, season %in% c("spring", "fall", "breeding"))
   
   #plot environmental patterns for locations that birds were seen at (3 connected dots for location trajectories)
-  ggplot(pminpls, aes(yday, EVI)) + geom_point(aes(col=EVI), alpha=0.5) + 
+  ggplot(pminpls, aes(yday, EVI)) + geom_point(data=abs, aes(yday, EVI)) + geom_point(aes(col=EVI), alpha=0.5) + 
     geom_line(aes(group=id, col=EVI), alpha=0.5) +
     stat_smooth(data=pres_ssn, method="gam", formula = y~s(x, k=10), col="black") +
     scale_color_gradient(low="moccasin", high="chartreuse4") +
     xlab("Julian Day of the Year") + ylab("EVI") + theme_bw() + 
     facet_wrap(~year)
   
-  ggplot(pminpls, aes(yday, t10m-273.15)) + geom_point(aes(col=t10m-273.15), alpha=0.5) + 
+  ggplot(pminpls, aes(yday, t10m-273.15)) + geom_point(data=abs, aes(yday, t10m-273.15)) + geom_point(aes(col=t10m-273.15), alpha=0.5) + 
     geom_line(aes(group=id,col=t10m-273.15), alpha=0.5) +
     stat_smooth(data=pres_ssn, method="gam", formula = y~s(x, k=10), col="black") +  
     scale_color_gradient(low="blue", high="firebrick") +
     xlab("Julian Day of the Year") + ylab("Temperature (C)") + theme_bw() +
     facet_wrap(~year)
   
-  ggplot(pminpls, aes(yday, SRTM_elev)) + geom_point(aes(col=rh2m),alpha=0.5) + geom_line(aes(group=id, col=rh2m)) +
+  ggplot(pminpls, aes(yday, SRTM_elev)) + geom_point(data=abs, aes(yday, SRTM_elev)) + geom_point(aes(col=rh2m),alpha=0.5) + geom_line(aes(group=id, col=rh2m)) +
+    stat_smooth(data=pres_ssn, method="gam", formula = y~s(x, k=10), col="black") +
+    scale_color_gradient(low="moccasin", high="navy") + 
+    xlab("Julian Day of the Year") + ylab("SRTM Elevation") + theme_bw() + 
+    facet_wrap(~year)
+  
+  ggplot(pminpls, aes(yday, swrf)) + geom_point(data=abs, aes(yday, swrf)) + geom_point(aes(col=rh2m),alpha=0.5) + geom_line(aes(group=id, col=rh2m)) +
     stat_smooth(data=pres_ssn, method="gam", formula = y~s(x, k=10), col="black") + facet_wrap(~year)+  
     scale_color_gradient(low="moccasin", high="navy") + theme_bw()
   
-  ggplot(pminpls, aes(yday, swrf)) + geom_point(aes(col=rh2m),alpha=0.5) + geom_line(aes(group=id, col=rh2m)) +
-    stat_smooth(data=pres_ssn, method="gam", formula = y~s(x, k=10), col="black") + facet_wrap(~year)+  
-    scale_color_gradient(low="moccasin", high="navy") + theme_bw()
+  pa = subset(rbind(pres, abs), season %in% c("spring", "breeding", "fall"))
+  pmin = subset(rbind(pres, min), season %in% c("spring", "breeding", "fall"))
+  ppls = subset(rbind(pres, pls), season %in% c("spring", "breeding", "fall"))
+  pres2 = subset(pres, season %in% c("spring", "breeding", "fall"))
   
-  pa = rbind(pres, abs)
-  pmin = rbind(pres, min)
-  ppls = rbind(pres, pls)
-
+  #pairs plots, colored by season
+  evitemp = ggplot(pres2, aes(t10m-273.15, EVI, col=season)) + 
+    geom_point(alpha=0.5, size=3) + #shape=pres, 
+    scale_color_manual(values=c("black", "orange", "cadetblue")) + theme_bw() + stat_smooth(method=lm)
   
-  #lubridate to pull month and year from filename
-  all$month = as.factor(month(as.Date(all$timestamp)))
-  all$year =  as.factor(year(as.Date(all$timestamp)))
-  all$yday = as.numeric(yday(as.Date(all$timestamp)))
+  elevtemp = ggplot(pres2, aes(SRTM_elev, t10m-273.15, col=season)) + 
+    geom_point(alpha=0.5, size=3) + #shape=pres, 
+    scale_color_manual(values=c("black", "orange", "cadetblue")) + theme_bw() + stat_smooth(method=lm)
   
-  pa = subset(all, pres %in% c(0,1))
-  pmin = subset(all, pres %in% c(1,-1))
-  ppls = subset(all, pres %in% c(1,2))
+  latevi = ggplot(pres2, aes(location.lat, EVI, col=season)) + 
+    geom_point(alpha=0.5, size=3) + #shape=pres, 
+    scale_color_manual(values=c("black", "orange", "cadetblue")) + theme_bw() + stat_smooth(method=lm)
+  
+  lonevi = ggplot(pres2, aes(location.long, EVI, col=season)) + 
+    geom_point(alpha=0.5, size=3) + #shape=pres, 
+    scale_color_manual(values=c("black", "orange", "cadetblue")) + theme_bw() + stat_smooth(method=lm)
+  
+  # make a North America base map
+  noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = "bw")
+  spmap = ggmap(noam) + geom_point(data=pres, aes(location.long, location.lat, col=season), alpha=0.5) + 
+    scale_color_manual(values=c("black", "orange", "cadetblue", "purple")) + ggtitle(sp)
+  
+  multiplot(spmap, evitemp, elevtemp, NA, latevi, lonevi,  cols=2)
+    
+  #statistical model
+  #Is there an environmental signal in the population's immediate region for presence
+  glm1 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + (1|year) + (1|season), family="binomial", data=pa)
+  glm2 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year), family="binomial", data=pa)
+  
+  glm1 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + (1|year) + (1|season), family="binomial", data=pmin)
+  glm2 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year), family="binomial", data=pmin)
+  
+  #FIXME: Stopped editing here.
   
   ggplot(pres, aes(as.Date(timestamp), EVI)) + geom_point(aes(col=t10m - 273.15)) + 
     scale_color_gradient(low="blue", high="firebrick")
   
-  ggplot(pmin, aes(yday, EVI, col=pres)) + geom_point(alpha=0.75) + 
+  ggplot(pmin, aes(window, EVI, col=pres)) + geom_point(alpha=0.5) + 
     stat_smooth(method="gam", formula = y ~ s(x, k=20)) + facet_wrap(~year) +
-    scale_color_manual(values = c("indianred", "gray"))
+    scale_color_manual(values = c("indianred", "gray")) + theme_bw()
   
-  ggplot(ppls, aes(yday, EVI, col=pres)) + geom_point(alpha=0.5) + 
+  ggplot(ppls, aes(window, EVI, col=pres)) + geom_point(alpha=0.5) + 
     stat_smooth(method="loess") + facet_wrap(~year) +
-    scale_color_manual(values = c("indianred", "gray"))
+    scale_color_manual(values = c("indianred", "gray")) + theme_bw()
   
   ggplot(pa, aes(yday, EVI, col=pres)) + geom_point(alpha=0.5) + 
     stat_smooth(method="gam", formula = y ~ s(x, k=20)) + facet_wrap(~year)  +
