@@ -24,6 +24,9 @@ fig.dir <- "/home/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migrati
 
 source(function.dir)
 
+#assign based on the time frame (number of days) used to compute the alpha hulls
+alpha_window = 5
+
 ###########################################################################################
 #SRS started working in this section 5/30/15
 #list of species codes
@@ -81,10 +84,10 @@ for (sp in species){
   pls = subset(all, pres==2)
   
   #assign time windows based on presence and absence data, and label by season
-  pres = assign_window_season(migdates, pres, 3)
-  abs = assign_window_season(migdates, abs, 3)
-  min = assign_window_season(migdates, min, 3)
-  pls = assign_window_season(migdates, pls, 3)
+  pres = assign_window_season(migdates, pres, alpha_window)
+  abs = assign_window_season(migdates, abs, alpha_window)
+  min = assign_window_season(migdates, min, alpha_window)
+  pls = assign_window_season(migdates, pls, alpha_window)
   
   pres$season = as.factor(pres$season)
   abs$season = as.factor(abs$season)
