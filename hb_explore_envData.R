@@ -32,19 +32,17 @@ alpha_window = 5
 #list of species codes
 species <- c("bchu", "bthu", "cahu", "ruhu", "rthu")
 
-files = list.files(path = agan.dir, pattern = glob2rx("ruhu*.RData"), recursive=FALSE, full.names=TRUE)
-
-
 for (sp in species){
   spfiles = list.files(path = agan.dir, pattern = glob2rx(paste0(sp,"*.RData")), recursive=FALSE, full.names=TRUE)
   mfiles = list.files(path = migtime.dir, pattern = glob2rx(paste0(sp,"*migration*")), recursive=FALSE, full.names=TRUE)
   
   #load all the files into a list
   #datlist <- sapply(spfiles, function(x) get(load(x)), simplify = FALSE) 
+            #TODO: Update this so that it can import ALL needed files
   abs = get(load(spfiles[1]))
   pres = get(load(spfiles[2]))
   min = get(load(spfiles[3]))
-  pls = get(load(spfiles[4]))
+  pls = get(load(spfiles[6]))
 
   if(sp == "rthu"){ migdates = read.table(mfiles[1], header=TRUE, sep="\t", quote="", fill=TRUE, as.is=TRUE, comment.char="")}
   else{ migdates = read.table(mfiles[2], header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")}
