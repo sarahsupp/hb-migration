@@ -38,7 +38,7 @@ for (sp in species){
   
   #load all the files into a list
   #datlist <- sapply(spfiles, function(x) get(load(x)), simplify = FALSE) 
-            #TODO: Update this so that it can import ALL needed files
+            #TODO: Update this so that it can import ALL needed files - Files [3] and [6] correspond to +/- 10 day lag
   abs = get(load(spfiles[1]))
   pres = get(load(spfiles[2]))
   min = get(load(spfiles[3]))
@@ -60,8 +60,8 @@ for (sp in species){
   #add code for present, absent, and present, but forward (2) or backward (-1) in time (# days in time window)
   abs$pres = as.factor(0)
   pres$pres = as.factor(1)
-  min$pres = as.factor(-1) #note all days are -3 from matching pres points, with the same locations
-  pls$pres = as.factor(2)  #note all days are +3 from matching pres points, with the same locations
+  min$pres = as.factor(-1) #note the time window for alpha hulls is -5, so this represents -5, -10 or -15 days from matching pres points, with the same locations
+  pls$pres = as.factor(2)  #note the time window for alpha hulls is +5 from matching pres points, so this represents +5, +10, or +15 days, with the same locations
   
   #add rownames as a column for later matching
   abs$id = as.factor(row.names(abs))
