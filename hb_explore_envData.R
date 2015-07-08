@@ -47,18 +47,24 @@ for (s in 1:length(species)){
   #load all the files into a list
   #datlist <- sapply(spfiles, function(x) get(load(x)), simplify = FALSE) 
   abs = importANDformat(spfiles[1], 0, migdates, alpha_window)
-  pres = importANDformat(spfiles[2], 0, migdates, alpha_window)
-  min.05 = importANDformat(spfiles[3], 0, migdates, alpha_window)
-  min.10 = importANDformat(spfiles[4], 0, migdates, alpha_window)
-  min.15 = importANDformat(spfiles[5], 0, migdates, alpha_window)
-  pls.05 = importANDformat(spfiles[6], 0, migdates, alpha_window)
-  pls.10 = importANDformat(spfiles[7], 0, migdates, alpha_window)
-  pls.15 = importANDformat(spfiles[8], 0, migdates, alpha_window)
+  pres = importANDformat(spfiles[2], 1, migdates, alpha_window)
+  min.05 = importANDformat(spfiles[3], -1, migdates, alpha_window)
+  min.10 = importANDformat(spfiles[4], -2, migdates, alpha_window)
+  min.15 = importANDformat(spfiles[5], -3, migdates, alpha_window)
+  pls.05 = importANDformat(spfiles[6], 2, migdates, alpha_window)
+  pls.10 = importANDformat(spfiles[7], 3, migdates, alpha_window)
+  pls.15 = importANDformat(spfiles[8], 4, migdates, alpha_window)
 
+  #subset dat for plots
   pminpls = subset(rbind(pres, min.05, min.10, min.15, pls.05, pls.10, pls.15), season %in% c("spring", "fall", "breeding"))
   all_ssn = subset(rbind(abs, pres, min.05, min.10, min.15, pls.05, pls.10, pls.15), season %in% c("spring", "fall", "breeding"))
   pres_ssn = subset(pres, season %in% c("spring", "fall", "breeding"))
   abs_ssn = subset(abs, season %in% c("spring", "fall", "breeding"))
+  
+  #subset data for glmm
+  pa = subset(rbind(pres, abs), season %in% c("spring", "breeding", "fall"))
+  pmin = subset(rbind(pres, min.10), season %in% c("spring", "breeding", "fall"))
+  ppls = subset(rbind(pres, pls.10), season %in% c("spring", "breeding", "fall"))
   
   #plot environmental patterns for locations that birds were seen at (3 connected dots for location trajectories)
 png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_EVI.png")), height=7.5, width=10, units="in", res=300)
@@ -129,11 +135,6 @@ png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_numobs.png")), h
 dev.off()
 
 #---------------------------------------statistical model
-#subset data for glmm
-pa = subset(rbind(pres, abs), season %in% c("spring", "breeding", "fall"))
-pmin = subset(rbind(pres, min.10), season %in% c("spring", "breeding", "fall"))
-ppls = subset(rbind(pres, pls.10), season %in% c("spring", "breeding", "fall"))
-
   #Is there an environmental signal in the population's immediate region for presence?
   glm1 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + (1|year) + (1|season) + (1|month), family="binomial", data=pa)
   glm2 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year) + (1|month), family="binomial", data=pa)
