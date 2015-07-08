@@ -370,3 +370,36 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
     }
   }
 }
+
+importANDformat = function(path, prescode, migdates, alpha_window){
+  #path is a pathname to load the RData file for eBird occurrence + remote sensing data
+  #prescode is the code to indicate presence (-1:-3 = previous windows, 1 = present, 0 = absent, 2:4 = next windows)
+  #migdates is a dataframe with migration dates for assigning season
+  #alpha_window is a number indicating the number of days used to assign alpha hulls (we use 5)
+  require(lubridate)
+  
+  dat = get(load(path))
+  dat$pres = as.factor(prescode)
+  dat$id = as.factor(row.names(dat))
+  #lubridate to pull month and year from filename
+  dat$month = as.factor(month(as.Date(dat$timestamp)))
+  dat$year =  as.factor(year(as.Date(dat$timestamp)))
+  dat$yday = as.numeric(yday(as.Date(dat$timestamp)))
+  #assign window id codes for later comparisons
+  dat = assign_window_season(migdates, dat, alpha_window)
+  dat$season = as.factor(dat$season)
+  return(dat)
+}
+
+cleanColNames = function(migdates){
+  #strip extra "" and "\\" from fields
+  names(migdates) = gsub('.{1}$', '', substring(names(migdates),3))   #make the column names look nicer
+  migdates$spr_begin = as.numeric(gsub("\"", "", migdates$spr_begin, fixed=TRUE))
+  migdates$peak_lat = as.numeric(gsub("\"", "", migdates$peak_lat, fixed=TRUE))
+  migdates$fal_end = as.numeric(gsub("\"", "", migdates$fal_end, fixed=TRUE))
+  migdates$spr_spd = as.numeric(gsub("\"", "", migdates$spr_spd, fixed=TRUE))
+  migdates$fal_spd = as.numeric(gsub("\"", "", migdates$fal_spd, fixed=TRUE))
+  migdates$species = gsub("\"", "", migdates$species, fixed=TRUE)
+  migdates$year = as.factor(gsub("\"", "", migdates$year, fixed=TRUE))
+  return(migdates)
+}
