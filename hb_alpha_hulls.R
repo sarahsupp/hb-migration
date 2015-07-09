@@ -5,6 +5,9 @@
 # Kevin Guay (kguay@whrc.org)
 # on 13 Apr 2015
 # mo 02 May 2015
+# BEFORE RUNNING, make sure to check that using the correct PERIOD
+#                 make sure to change the base path to correct WINDOWS or UNIX
+#                 make sure to change the pathnames to the correct versions
 
 # load required packages 
 require(plyr)
@@ -161,7 +164,7 @@ for(species.code in c('bchu','bthu', 'cahu','ruhu')){
           if( ( (history[1] == history[3]) & (history[1] != history[2]) & (history[2] != history[3]) ) | (length(unique(history[1:30]))==1) | (nrow(hull.pts) < history[1]) ){
             a.increment <- 0.01
             rep.last <- rep.last + 1
-			# if the repeating has lasted for 5 itterations, then halt the loop
+			# if the repeating has lasted for 5 iterations, then halt the loop
             if(rep.last > 5 | (nrow(hull.pts) < history[1])){
               if((abs(history[1] - inside.goal) < abs(history[2] - inside.goal))  ){
                 a <- history.a[1]
