@@ -1,8 +1,8 @@
 # this code is to analyze and plot the eBird hummingbird presence data with environmental correlates
+# (c) 2014-2015 by Sarah R. Supp, Tina Cormier, Laura Graham
 
 # import libraries
 library(randomForest)
-#library(party)
 library(sm)
 library(ggplot2)
 library(ltm)
@@ -67,6 +67,7 @@ for (sp in species){
   pmin = subset(rbind(pres, min.10), season %in% c("spring", "breeding", "fall"))
   ppls = subset(rbind(pres, pls.10), season %in% c("spring", "breeding", "fall"))
   
+#----------------------- PLOT THE DATA
   #plot environmental patterns for locations that birds were seen at (3 connected dots for location trajectories)
 png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_EVI.png")), height=7.5, width=10, units="in", res=300)
   ggplot(pminpls, aes(yday, EVI)) + geom_point(data=abs, aes(yday, EVI)) + geom_point(data=pres_ssn, aes(col=Npp_1km), alpha=0.75) + 
@@ -135,12 +136,12 @@ png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_numobs.png")), h
   geom_vline(data=migdates,aes(xintercept=peak_lat))
 dev.off()
 
-#---------------------------------------statistical model
+#--------------------------------------- STATISTICAL TESTS
   #Is there an environmental signal in the population's immediate region for presence?
 print(sp)
   glm1 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + (1|year) + (1|season) + (1|month), family="binomial", data=pa)
   glm2 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year) + (1|month), family="binomial", data=pa)
-  glm3 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + year + (1|month), family="binomial", data=pa)
+  glm3 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season*year + (1|month), family="binomial", data=pa)
 summary(glm1)
 summary(glm2)
 summary(glm3)
@@ -154,10 +155,24 @@ summary(glm3)
 
 # glmm vs. gamm?
 
+#compare years?
+
 }
+
+# TRY KS TEST TO COMPARE SEASONS/YEARS/PA? NOt a very powerful test... Compare hull means, not all data points?
+spr_pres <- pres[pres$season == "spring",]
+fal_pres <- pres[pres$season == "fall",]
+ggplot(spr_pres, aes(x=EVI)) + geom_density(alpha=0.3, fill="cadetblue") + 
+  geom_density(data=fal_pres, alpha=0.3, fill="orange") + 
+  theme_classic() + xlab("EVI") + facet_wrap(~year)
+
+ks <- ks.test(pres[,colnames(pres) %in% "EVI"], abs[,colnames(abs) %in% "EVI"])
+ks_pa = rbind(ks_pa, c(y,s,var,round(as.numeric(ks$statistic),4),round(ks$p.value,4)))
 
 #FIXME: Stopped editing here.
   
+
+
   ggplot(pres, aes(as.Date(timestamp), EVI)) + geom_point(aes(col=t10m - 273.15)) + 
     scale_color_gradient(low="blue", high="firebrick")
   
