@@ -12,6 +12,8 @@ library(lubridate)
 library(arm)
 library(ggmap)
 library(GGally)
+library(mgcv)
+library(gamm4)
 
 # define pathnames
 function.dir <- "/home/sarah/Documents/GitHub/hb-migration/hb_RS_functions.R"
@@ -32,16 +34,15 @@ alpha_window = 5
 ###########################################################################################
 #SRS started working in this section 5/30/15
 #list of species codes
-species <- c("bchu", "bthu", "cahu", "ruhu")#, "rthu")
+species <- c("bchu", "bthu", "cahu", "ruhu", "rthu")
 
-for (s in 1:length(species)){
-  sp=species[s]
+for (sp in species){
   spfiles = list.files(path = agan.dir, pattern = glob2rx(paste0(sp,"*.RData")), recursive=FALSE, full.names=TRUE)
   mfiles = list.files(path = migtime.dir, pattern = glob2rx(paste0(sp,"*migration*")), recursive=FALSE, full.names=TRUE)
   
   #import migration dates from previous analysis
   if(sp == "rthu"){ migdates = read.table(mfiles[1], header=TRUE, sep="\t", quote="", fill=TRUE, as.is=TRUE, comment.char="")}
-  else{ migdates = read.table(mfiles[2], header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")}
+  if(sp %in% c("bchu", "bthu", "cahu", "ruhu")){ migdates = read.table(mfiles[2], header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")}
   migdates=cleanColNames(migdates)
   
   #load all the files into a list
@@ -136,20 +137,25 @@ dev.off()
 
 #---------------------------------------statistical model
   #Is there an environmental signal in the population's immediate region for presence?
+print(sp)
   glm1 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + (1|year) + (1|season) + (1|month), family="binomial", data=pa)
   glm2 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year) + (1|month), family="binomial", data=pa)
   glm3 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + year + (1|month), family="binomial", data=pa)
-print(sp)
 summary(glm1)
 summary(glm2)
 summary(glm3)
-  #Is there an environmental sign for where species are in their migration pathway?
+  #Is there an environmental signal for where species are in their migration pathway?
   glm1 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year), family="binomial", data=pmin)
   glm2 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year), family="binomial", data=ppls)
   glm3 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year), family="binomial", data=pminpls)
 summary(glm1)
 summary(glm2)
 summary(glm3)
+
+# glmm vs. gamm?
+
+}
+
 #FIXME: Stopped editing here.
   
   ggplot(pres, aes(as.Date(timestamp), EVI)) + geom_point(aes(col=t10m - 273.15)) + 
