@@ -8,12 +8,16 @@ library(ggplot2)
 library(ltm)
 library(Rarity)
 library(lme4)
+library(lubridate)
+library(arm)
+library(ggmap)
+library(GGally)
 
 # define pathnames
-function.dir <- "C:/Users/sarah/Documents/github/hb-migration/hb_RS_functions.R"
-agan.dir <- "C:/Users/sarah/Dropbox/ebird_annotated_raw/"
-migtime.dir <- "C:/Users/sarah/Dropbox/ebird_annotated_raw/"
-fig.dir <- "C:/Users/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/"
+function.dir <- "/home/sarah/Documents/GitHub/hb-migration/hb_RS_functions.R"
+agan.dir <- "/home/sarah/Dropbox/Hummingbirds/hb_migration_data/ebird_annotated_raw/combined/"
+migtime.dir <- "/home/sarah/Dropbox/Hummingbirds/hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/"
+fig.dir <- "/home/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/"
 
 #function.dir <- "/Users/tcormier/Documents/scripts/git_repos/hb-migration/hb_RS_functions.R"
 #agan.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/downloaded_annotations/"
@@ -21,6 +25,163 @@ fig.dir <- "C:/Users/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migr
 #fig.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/figures/ruhu/"
 
 source(function.dir)
+
+#assign based on the time frame (number of days) used to compute the alpha hulls
+alpha_window = 5
+
+###########################################################################################
+#SRS started working in this section 5/30/15
+#list of species codes
+species <- c("bchu", "bthu", "cahu", "ruhu")#, "rthu")
+
+for (s in 1:length(species)){
+  sp=species[s]
+  spfiles = list.files(path = agan.dir, pattern = glob2rx(paste0(sp,"*.RData")), recursive=FALSE, full.names=TRUE)
+  mfiles = list.files(path = migtime.dir, pattern = glob2rx(paste0(sp,"*migration*")), recursive=FALSE, full.names=TRUE)
+  
+  #import migration dates from previous analysis
+  if(sp == "rthu"){ migdates = read.table(mfiles[1], header=TRUE, sep="\t", quote="", fill=TRUE, as.is=TRUE, comment.char="")}
+  else{ migdates = read.table(mfiles[2], header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")}
+  migdates=cleanColNames(migdates)
+  
+  #load all the files into a list
+  #datlist <- sapply(spfiles, function(x) get(load(x)), simplify = FALSE) 
+  abs = importANDformat(spfiles[1], 0, migdates, alpha_window)
+  pres = importANDformat(spfiles[2], 1, migdates, alpha_window)
+  min.05 = importANDformat(spfiles[3], -1, migdates, alpha_window)
+  min.10 = importANDformat(spfiles[4], -2, migdates, alpha_window)
+  min.15 = importANDformat(spfiles[5], -3, migdates, alpha_window)
+  pls.05 = importANDformat(spfiles[6], 2, migdates, alpha_window)
+  pls.10 = importANDformat(spfiles[7], 3, migdates, alpha_window)
+  pls.15 = importANDformat(spfiles[8], 4, migdates, alpha_window)
+
+  #subset dat for plots
+  pminpls = subset(rbind(pres, min.05, min.10, min.15, pls.05, pls.10, pls.15), season %in% c("spring", "fall", "breeding"))
+  all_ssn = subset(rbind(abs, pres, min.05, min.10, min.15, pls.05, pls.10, pls.15), season %in% c("spring", "fall", "breeding"))
+  pres_ssn = subset(pres, season %in% c("spring", "fall", "breeding"))
+  abs_ssn = subset(abs, season %in% c("spring", "fall", "breeding"))
+  
+  #subset data for glmm
+  pa = subset(rbind(pres, abs), season %in% c("spring", "breeding", "fall"))
+  pmin = subset(rbind(pres, min.10), season %in% c("spring", "breeding", "fall"))
+  ppls = subset(rbind(pres, pls.10), season %in% c("spring", "breeding", "fall"))
+  
+  #plot environmental patterns for locations that birds were seen at (3 connected dots for location trajectories)
+png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_EVI.png")), height=7.5, width=10, units="in", res=300)
+  ggplot(pminpls, aes(yday, EVI)) + geom_point(data=abs, aes(yday, EVI)) + geom_point(data=pres_ssn, aes(col=Npp_1km), alpha=0.75) + 
+    geom_line(aes(group=id, col=EVI), alpha=0.25) +
+    stat_smooth(data=pres_ssn, method="gam", formula = y~s(x, k=10), col="black") +
+    scale_color_gradient(low="moccasin", high="chartreuse4") +
+    xlab("Julian Day of the Year") + ylab("EVI") + theme_bw() +  
+    geom_vline(data=migdates, aes(xintercept=peak_lat)) +
+    facet_wrap(~year)
+dev.off()
+  
+png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_Temp.png")), height=7.5, width=10, units="in", res=300)  
+  ggplot(pminpls, aes(yday, t10m-273.15)) + geom_point(data=abs, aes(yday, t10m-273.15)) + geom_point(data=pres_ssn, aes(col=t10m-273.15), alpha=0.75) + 
+    geom_line(aes(group=id,col=t10m-273.15), alpha=0.25) +
+    stat_smooth(data=pres_ssn, method="gam", formula = y~s(x, k=10), col="black") +  
+    scale_color_gradient(low="blue", high="firebrick") +
+    xlab("Julian Day of the Year") + ylab("Temperature (C)") + theme_bw() + 
+    geom_vline(data=migdates, aes(xintercept=peak_lat)) +
+    facet_wrap(~year)
+dev.off()
+  
+png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_SRTMelev.png")), height=7.5, width=7.5, units="in", res=300)
+  ggplot(pminpls, aes(yday, SRTM_elev)) + geom_point(data=abs, aes(yday, SRTM_elev)) + geom_point(data=pres, aes(col=EVI),alpha=0.5) + 
+  #geom_line(aes(group=id, col=EVI), alpha=0.25) +
+    stat_smooth(data=pres_ssn, method="gam", formula = y~s(x, k=10), col="black") +
+    scale_color_gradient(low="moccasin", high="chartreuse4") + 
+    xlab("Julian Day of the Year") + ylab("SRTM Elevation") + theme_bw() + 
+    geom_vline(data=migdates, aes(xintercept=peak_lat)) +
+    facet_wrap(~year)
+dev.off()
+  
+  #pairs plots, colored by season
+  evitemp = ggplot(pres_ssn, aes(t10m-273.15, EVI, col=season)) + 
+    geom_point(alpha=0.25, size=3) + #shape=pres, 
+    scale_color_manual(values=c("black", "orange", "cadetblue")) + theme_bw() + stat_smooth(method=lm)
+  
+  elevtemp = ggplot(pres_ssn, aes(SRTM_elev, t10m-273.15, col=season)) + 
+    geom_point(alpha=0.25, size=3) + #shape=pres, 
+    scale_color_manual(values=c("black", "orange", "cadetblue")) + theme_bw() + stat_smooth(method=lm)
+  
+  latevi = ggplot(pres_ssn, aes(location.lat, EVI, col=season)) + 
+    geom_point(alpha=0.25, size=3) + #shape=pres, 
+    scale_color_manual(values=c("black", "orange", "cadetblue")) + theme_bw() + stat_smooth(method=lm)
+  
+  lonevi = ggplot(pres_ssn, aes(location.long, EVI, col=season)) + 
+    geom_point(alpha=0.25, size=3) + #shape=pres, 
+    scale_color_manual(values=c("black", "orange", "cadetblue")) + theme_bw() + stat_smooth(method=lm)
+  
+  # make a North America base map
+  noam = get_map(location = "North America", zoom=3, maptype = "terrain", color = "bw")
+  spmap = ggmap(noam) + geom_point(data=pres, aes(location.long, location.lat, col=season), alpha=0.25) + 
+    scale_color_manual(values=c("black", "orange", "cadetblue", "purple")) + ggtitle(sp)
+  
+png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_multiplot.png")), height=7.5, width=7.5, units="in", res=300)
+  multiplot(spmap, evitemp, elevtemp, NA, latevi, lonevi,  cols=2)
+dev.off()
+
+#pairs plot of environmental variables
+png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_pairsplot.png")), height=15, width=20, units="in", res=300)
+  ggpairs(all_ssn[,c(3,2,5:7,10,12:14,21,17)])
+dev.off()
+
+#plot the distribution of the presence and absence data across years
+png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_numobs.png")), height=15, width=20, units="in", res=300)
+  ggplot(pa, aes(yday)) + geom_histogram(aes(fill=pres), alpha=0.5, binwidth=14) + facet_wrap(~year) + theme_bw() + 
+  geom_vline(data=migdates,aes(xintercept=peak_lat))
+dev.off()
+
+#---------------------------------------statistical model
+  #Is there an environmental signal in the population's immediate region for presence?
+  glm1 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + (1|year) + (1|season) + (1|month), family="binomial", data=pa)
+  glm2 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year) + (1|month), family="binomial", data=pa)
+  glm3 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + year + (1|month), family="binomial", data=pa)
+print(sp)
+summary(glm1)
+summary(glm2)
+summary(glm3)
+  #Is there an environmental sign for where species are in their migration pathway?
+  glm1 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year), family="binomial", data=pmin)
+  glm2 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year), family="binomial", data=ppls)
+  glm3 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year), family="binomial", data=pminpls)
+summary(glm1)
+summary(glm2)
+summary(glm3)
+#FIXME: Stopped editing here.
+  
+  ggplot(pres, aes(as.Date(timestamp), EVI)) + geom_point(aes(col=t10m - 273.15)) + 
+    scale_color_gradient(low="blue", high="firebrick")
+  
+  ggplot(pmin, aes(window, EVI, col=pres)) + geom_point(alpha=0.5) + 
+    stat_smooth(method="gam", formula = y ~ s(x, k=20)) + facet_wrap(~year) +
+    scale_color_manual(values = c("indianred", "gray")) + theme_bw()
+  
+  ggplot(ppls, aes(window, EVI, col=pres)) + geom_point(alpha=0.5) + 
+    stat_smooth(method="loess") + facet_wrap(~year) +
+    scale_color_manual(values = c("indianred", "gray")) + theme_bw()
+  
+  ggplot(pa, aes(yday, EVI, col=pres)) + geom_point(alpha=0.5) + 
+    stat_smooth(method="gam", formula = y ~ s(x, k=20)) + facet_wrap(~year)  +
+    scale_color_manual(values = c("indianred", "gray"))
+  
+  plot(pres$EVI, min$EVI, pch=19)
+  abline(a=0, b=1, col="red")
+  
+  plot(pres$EVI, pls$EVI, pch=19)
+  abline(a=0, b=1, col="red")
+  
+  plot(pres$EVI, abs$EVI, pch=19)
+  abline(a=0, b=1, col="blue", lwd=2)
+  
+  plot(as.numeric(yday(as.Date(pres$timestamp))), as.numeric(yday(as.Date(pls$timestamp))), pch=19)
+  
+}
+
+
+
 
 ###########################################################################################
 #spp abbreviation (same one used in file paths and names)

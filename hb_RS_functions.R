@@ -265,3 +265,141 @@ formatAbsent <- function(adata) {
   adata$DOM <- format(adata$DATE, "%d")
   return(adata)
 }
+
+#######################################################################################################
+#identify season and time windows
+ID_windows = function(yeardat, spring, peak, fall, timewindow){
+  # This function separates each year into a given number of time windows, where window 2 (w2) begins 
+  # on the date for the onset of spring migration and the last window (wn) ends in the time frame that 
+  # follows the time frame containing the date for the end of fall migration (wn-1)
+  # yeardat: a data.frame subsetted for a single year
+  # spring: date for onset of spring migration
+  # peak: date for peak latitude for the population
+  # fall: date for end of fall migration
+  # timewindow: numeric value indicating the time window used to aggregate observation data (e.g. 7 would define a week)
+  # returns data for that year labeled and clipped to the spring-breeding-fall migration period (e.g. excludes "winter")
+  
+  yeardat$increment = 0
+  yeardat$window = 0
+  yeardat$season="winter"
+  
+  if(fall < spring | fall < peak) {
+    print(paste0("ERROR: migration dates do not make sense, check data ", yeardat$SCI_NAME[1], yeardat$YEAR[1]))
+    return(yeardat)
+  }
+  
+  start <-  spring - timewindow
+  n.windows <- floor(((fall - start)/timewindow) + 2)
+  mid.window <- ceiling((peak - start)/timewindow)
+  end <- start + n.windows * timewindow
+  
+  yeardat[yeardat$yday >= start & yeardat$yday < end,]$increment <- yeardat[yeardat$yday >= start & yeardat$yday < end,]$yday-start + 1
+  yeardat[yeardat$yday >= start & yeardat$yday < end,]$window <- ceiling(yeardat[yeardat$yday >= start & yeardat$yday < end,]$increment/timewindow)
+  yeardat[yeardat$yday >= start & yeardat$yday < end & yeardat$window < mid.window,]$season <- "spring"
+  yeardat[yeardat$yday >= start & yeardat$yday < end & yeardat$window > mid.window,]$season <- "fall"
+  yeardat[yeardat$yday >= start & yeardat$yday < end & yeardat$window == mid.window,]$season <- "breeding"
+  
+  return(yeardat)
+}
+
+
+#######################################################################################################
+#assign time windows using the ID_windows function and label by season using the migration dates
+
+assign_window_season = function(migdates, data, windowlength){
+  #migdates is a dataframe with columns: spr_begin, peak_lat, fal_end, spr_spd, fal_spd, species, year
+  #data is the main dataframe containing columns for the environmental data associated with hummingbird location points (or absence)
+  #windowlength is the number of days in a time window (we started with three-day window frames)
+  years = unique(migdates$year)
+  for (y in years){
+    yrdat = data[data$year == y,]
+    yrmig = migdates[migdates$year == y,]
+    #assign time frames from the alpha hulls (the last value is the desired time frame)
+    yrdat_win = ID_windows(yrdat, spring=yrmig[1,1], peak=yrmig[1,2], fall=yrmig[1,3], timewindow=windowlength)
+    
+    if (y == years[1]){ assigned_data = yrdat_win }
+   else{ assigned_data = rbind(assigned_data, yrdat_win) }
+  }
+  return(assigned_data)
+}
+
+#########################################################################################################
+# Multiple plot function
+# http://www.cookbook-r.com/Graphs/Multiple_graphs_on_one_page_%28ggplot2%29/
+# 
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  require(grid)
+  
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+  
+  numPlots = length(plots)
+  
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+  
+  if (numPlots==1) {
+    print(plots[[1]])
+    
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+
+importANDformat = function(path, prescode, migdates, alpha_window){
+  #path is a pathname to load the RData file for eBird occurrence + remote sensing data
+  #prescode is the code to indicate presence (-1:-3 = previous windows, 1 = present, 0 = absent, 2:4 = next windows)
+  #migdates is a dataframe with migration dates for assigning season
+  #alpha_window is a number indicating the number of days used to assign alpha hulls (we use 5)
+  require(lubridate)
+  
+  dat = get(load(path))
+  dat$pres = as.factor(prescode)
+  dat$id = as.factor(row.names(dat))
+  #lubridate to pull month and year from filename
+  dat$month = as.factor(month(as.Date(dat$timestamp)))
+  dat$year =  as.factor(year(as.Date(dat$timestamp)))
+  dat$yday = as.numeric(yday(as.Date(dat$timestamp)))
+  #assign window id codes for later comparisons
+  dat = assign_window_season(migdates, dat, alpha_window)
+  dat$season = as.factor(dat$season)
+  return(dat)
+}
+
+cleanColNames = function(migdates){
+  #strip extra "" and "\\" from fields
+  names(migdates) = gsub('.{1}$', '', substring(names(migdates),3))   #make the column names look nicer
+  migdates$spr_begin = as.numeric(gsub("\"", "", migdates$spr_begin, fixed=TRUE))
+  migdates$peak_lat = as.numeric(gsub("\"", "", migdates$peak_lat, fixed=TRUE))
+  migdates$fal_end = as.numeric(gsub("\"", "", migdates$fal_end, fixed=TRUE))
+  migdates$spr_spd = as.numeric(gsub("\"", "", migdates$spr_spd, fixed=TRUE))
+  migdates$fal_spd = as.numeric(gsub("\"", "", migdates$fal_spd, fixed=TRUE))
+  migdates$species = gsub("\"", "", migdates$species, fixed=TRUE)
+  migdates$year = as.factor(gsub("\"", "", migdates$year, fixed=TRUE))
+  return(migdates)
+}
