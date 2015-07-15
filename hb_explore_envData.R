@@ -167,7 +167,7 @@ summary(glmm.list[["glmm.pmin"]])
 summary(glmm.list[["glmm.ppls"]])
 summary(glmm.list[["glmm.pminpls"]])
 
-save(glmm.list, file=paste(fig.dir, "glmm.list.rda", sep="/"))
+save(glmm.list, file=paste0(fig.dir, "/", sp, ".glmm.list.rda"))
 
 # glmm vs. gamm?
 gamm.list <- list()
@@ -176,7 +176,7 @@ gamm.list <- list()
   try(system.time(gamm.list[["ppls"]] = glmer(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data=ppls)))
   try(system.time(gamm.list[["pminpls"]] = glmer(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data=pminpls)))
 
-save(gamm.list, file=paste(fig.dir, "gamm.list.rda", sep="/"))
+save(gamm.list, file=paste0(fig.dir, "/", sp, ".gamm.list.rda"))
 #compare years?
 
 }
