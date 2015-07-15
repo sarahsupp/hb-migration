@@ -299,6 +299,17 @@ ID_windows = function(yeardat, spring, peak, fall, timewindow){
   yeardat[yeardat$yday >= start & yeardat$yday < end & yeardat$window > mid.window,]$season <- "fall"
   yeardat[yeardat$yday >= start & yeardat$yday < end & yeardat$window == mid.window,]$season <- "breeding"
   
+  #assign the start ydate for each window (for later aggregation and plotting)
+  n=start
+  yday1=c(NA,n)
+  while(n <= end){
+    n=n+5
+    yday1=append(yday1, n)
+  }
+  yday1.df = data.frame("window"=0:length(yday1[-1]), "yday1"=yday1)
+  
+  yeardat = merge(yeardat, yday1.df, by = intersect("window", "window"))
+  
   return(yeardat)
 }
 
@@ -309,7 +320,7 @@ ID_windows = function(yeardat, spring, peak, fall, timewindow){
 assign_window_season = function(migdates, data, windowlength){
   #migdates is a dataframe with columns: spr_begin, peak_lat, fal_end, spr_spd, fal_spd, species, year
   #data is the main dataframe containing columns for the environmental data associated with hummingbird location points (or absence)
-  #windowlength is the number of days in a time window (we started with three-day window frames)
+  #windowlength is the number of days in a time window (we started with three-day window frames, but are now using 5-day window frames)
   years = unique(migdates$year)
   for (y in years){
     yrdat = data[data$year == y,]
@@ -323,53 +334,6 @@ assign_window_season = function(migdates, data, windowlength){
   return(assigned_data)
 }
 
-#########################################################################################################
-# Multiple plot function
-# http://www.cookbook-r.com/Graphs/Multiple_graphs_on_one_page_%28ggplot2%29/
-# 
-# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
-# - cols:   Number of columns in layout
-# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
-#
-# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
-# then plot 1 will go in the upper left, 2 will go in the upper right, and
-# 3 will go all the way across the bottom.
-#
-multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
-  require(grid)
-  
-  # Make a list from the ... arguments and plotlist
-  plots <- c(list(...), plotlist)
-  
-  numPlots = length(plots)
-  
-  # If layout is NULL, then use 'cols' to determine layout
-  if (is.null(layout)) {
-    # Make the panel
-    # ncol: Number of columns of plots
-    # nrow: Number of rows needed, calculated from # of cols
-    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
-                     ncol = cols, nrow = ceiling(numPlots/cols))
-  }
-  
-  if (numPlots==1) {
-    print(plots[[1]])
-    
-  } else {
-    # Set up the page
-    grid.newpage()
-    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
-    
-    # Make each plot, in the correct location
-    for (i in 1:numPlots) {
-      # Get the i,j matrix positions of the regions that contain this subplot
-      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
-      
-      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
-                                      layout.pos.col = matchidx$col))
-    }
-  }
-}
 
 importANDformat = function(path, prescode, migdates, alpha_window){
   #path is a pathname to load the RData file for eBird occurrence + remote sensing data
@@ -402,4 +366,89 @@ cleanColNames = function(migdates){
   migdates$species = gsub("\"", "", migdates$species, fixed=TRUE)
   migdates$year = as.factor(gsub("\"", "", migdates$year, fixed=TRUE))
   return(migdates)
+}
+
+
+## From http://www.cookbook-r.com/Graphs/Plotting_means_and_error_bars_%28ggplot2%29/#Helper%20functions 
+
+summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=0.95, .drop=TRUE) {
+  ## Gives count, mean, standard deviation, standard error of the mean, and confidence interval (default 95%).
+  ##   data: a data frame.
+  ##   measurevar: the name of a column that contains the variable to be summariezed
+  ##   groupvars: a vector containing names of columns that contain grouping variables
+  ##   na.rm: a boolean that indicates whether to ignore NA's
+  ##   conf.interval: the percent range of the confidence interval (default is 95%)
+  
+  require(plyr)
+  # New version of length which can handle NA's: if na.rm==T, don't count them
+  length2 <- function (x, na.rm=FALSE) {
+    if (na.rm) sum(!is.na(x))
+    else       length(x)
+  }
+  
+  # This does the summary. For each group's data frame, return a vector with
+  # N, mean, and sd
+  datac <- ddply(data, groupvars, .drop=.drop,
+                 .fun = function(xx, col) {
+                   c(N    = length2(xx[[col]], na.rm=na.rm),
+                     mean = mean   (xx[[col]], na.rm=na.rm),
+                     sd   = sd     (xx[[col]], na.rm=na.rm)
+                   )
+                 },
+                 measurevar
+               )
+  
+  # Rename the "mean" column    
+  datac <- rename(datac, c("mean" = measurevar))
+  datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+  
+  # Confidence interval multiplier for standard error
+  # Calculate t-statistic for confidence interval: 
+  # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+  ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+  datac$ci <- datac$se * ciMult
+  
+  return(datac)
+}
+
+# Multiple plot function
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  library(grid)
+  
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+  numPlots = length(plots)
+  
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+  
+  if (numPlots==1) {
+    print(plots[[1]])
+    
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
 }
