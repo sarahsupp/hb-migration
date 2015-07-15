@@ -171,10 +171,10 @@ save(glmm.list, file=paste0(fig.dir, "/", sp, ".glmm.list.rda"))
 
 # glmm vs. gamm?
 gamm.list <- list()
-  try(system.time(gamm.list[["pa"]] = gamm4(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data = pa)))
-  try(system.time(gamm.list[["pmin"]] = glmer(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data=pmin)))
-  try(system.time(gamm.list[["ppls"]] = glmer(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data=ppls)))
-  try(system.time(gamm.list[["pminpls"]] = glmer(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data=pminpls)))
+  try(system.time(gamm.list[["pa"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data = pa)))
+  try(system.time(gamm.list[["pmin"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data=pmin)))
+  try(system.time(gamm.list[["ppls"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data=ppls)))
+  try(system.time(gamm.list[["pminpls"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data=pminpls)))
 
 save(gamm.list, file=paste0(fig.dir, "/", sp, ".gamm.list.rda"))
 #compare years?
