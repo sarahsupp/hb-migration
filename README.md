@@ -50,7 +50,11 @@ The analyses can be replicated by changing the working directory at the top of t
 ##### Project 1 - Supp et al. 201X. Ecosphere
 * `hb-migration.r` script -- cleans up the trait and community datasets, runs descriptive analyses, and outputs figures.
 * `migration-fxns.r` script -- stores functions for subsetting, analyzing, and plotting the data.
-* `BBLmapcode.r` script -- maps foreign recaptures from Bird Banding Lab data. M. Lim
+* `BBL_Appendix.r` script -- replicates the figures in Appendix A for the manuscript.
+* `BBLmapcode.r` script -- original script that maps foreign recaptures from Bird Banding Lab data. M. Lim
+* `eBird-effort.r` script -- combines eBird files with icosahedron map to calc effort. Use this one.
+* `eBird-effort-new.r` script -- combines eBird files with icosahedron map
+* `aggregate_hb_checklists.r` -- used to initially combine eBird observations, which came as separate month-year files
 
 ##### Project 2 - eBird + remote sensing
 * `agg_hb_checklists_paper2.r` script -- aggregates the monthly checklists FAL sent from eBird, and separates them based on species
