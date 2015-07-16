@@ -35,7 +35,7 @@ Data is currently privately housed, but may be requested for the purposes of rep
 * mapdata
 * environmental rasters and data from movebank, interpolated to daily values
 * Bird Banding Laboratory encounter and recovery dataset
-* GBIF data, can be queried using R
+* GBIF data; can be queried using R
 
 ##### License:
 This code is available under a BSD 2-Clause License.
@@ -47,7 +47,7 @@ R 3.x, R packages `chron`, `fields`, `knitr`, `gamm4` , `geosphere`, `ggplot2`, 
 
 The analyses can be replicated by changing the working directory at the top of the file .R to the location on your computer where you have stored the .R, .txt, and .csv files, and by modifying the pathnames for output to where you would like to store the results. Questions about the code should be directed to SRS (sarah@weecology.org).
 
-##### Project 1 - Supp et al. 201X. Ecosphere
+##### Project 1 - Supp et al. 2015. Ecosphere. http://dx.doi.org/10.1890/ES14-00290.1
 * `hb-migration.r` script -- cleans up the trait and community datasets, runs descriptive analyses, and outputs figures.
 * `migration-fxns.r` script -- stores functions for subsetting, analyzing, and plotting the data.
 * `BBL_Appendix.r` script -- replicates the figures in Appendix A for the manuscript.
