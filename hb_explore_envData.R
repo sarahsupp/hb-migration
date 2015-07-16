@@ -7,6 +7,7 @@ library(sm)
 library(ggplot2)
 library(ltm)
 library(Rarity)
+library(nlme)
 library(lme4)
 library(lubridate)
 library(arm)
@@ -49,28 +50,50 @@ for (sp in species){
   #datlist <- sapply(spfiles, function(x) get(load(x)), simplify = FALSE) 
   abs = importANDformat(spfiles[1], 0, migdates, alpha_window)
   pres = importANDformat(spfiles[2], 1, migdates, alpha_window)
-  min.05 = importANDformat(spfiles[3], -1, migdates, alpha_window)
-  min.10 = importANDformat(spfiles[4], -2, migdates, alpha_window)
-  min.15 = importANDformat(spfiles[5], -3, migdates, alpha_window)
-  pls.05 = importANDformat(spfiles[6], 2, migdates, alpha_window)
-  pls.10 = importANDformat(spfiles[7], 3, migdates, alpha_window)
-  pls.15 = importANDformat(spfiles[8], 4, migdates, alpha_window)
+  min.05 = importANDformat(spfiles[5], -1, migdates, alpha_window)
+  min.10 = importANDformat(spfiles[3], -2, migdates, alpha_window)
+  min.15 = importANDformat(spfiles[4], -3, migdates, alpha_window)
+  pls.05 = importANDformat(spfiles[8], 2, migdates, alpha_window)
+  pls.10 = importANDformat(spfiles[6], 3, migdates, alpha_window)
+  pls.15 = importANDformat(spfiles[7], 4, migdates, alpha_window)
 
   #subset dat for plots
   pminpls = subset(rbind(pres, min.05, min.10, min.15, pls.05, pls.10, pls.15), season %in% c("spring", "fall", "breeding"))
   all_ssn = subset(rbind(abs, pres, min.05, min.10, min.15, pls.05, pls.10, pls.15), season %in% c("spring", "fall", "breeding"))
   pres_ssn = subset(pres, season %in% c("spring", "fall", "breeding"))
   abs_ssn = subset(abs, season %in% c("spring", "fall", "breeding"))
+  min_ssn = subset(min.15, season %in% c("spring", "fall", "breeding"))
+  pls_ssn = subset(pls.15, season %in% c("spring", "fall", "breeding"))
   
   #subset data for glmm
   pa = subset(rbind(pres, abs), season %in% c("spring", "breeding", "fall"))
-  pmin = subset(rbind(pres, min.10), season %in% c("spring", "breeding", "fall"))
-  ppls = subset(rbind(pres, pls.10), season %in% c("spring", "breeding", "fall"))
+  pmin = subset(rbind(pres, min.15), season %in% c("spring", "breeding", "fall"))
+  ppls = subset(rbind(pres, pls.15), season %in% c("spring", "breeding", "fall"))
+  
+  #data summaries
+  #NOTE: yday1 does not map directly to averages that should be compared, but compare.win does
+  all.sum=summarySE(all_ssn, measurevar="EVI", groupvars=c("pres", "yday1", "year", "compare.win"), na.rm=TRUE, conf.interval=0.95)
   
 #----------------------- PLOT THE DATA
+  # plot summary data 
+
+  # Use 95% confidence interval or SE
+noabs = subset(all.sum, pres %in% c(-3, -2, -1, 1, 2, 3, 4))
+  ggplot(data=noabs, aes(x=yday1, y=EVI)) + geom_line(aes(group=compare.win, col=pres, size=N)) +
+#  geom_errorbar(aes(ymin=EVI-ci, ymax=EVI+ci), width=0.1, position=pd, col=gray) + 
+#  geom_errorbar(aes(ymin=EVI-se, ymax=EVI+se), width=0.1, position=pd, col=gray) +
+  facet_wrap(~year)
+  
+  # The errorbars overlapped, so use position_dodge to move them horizontally
+  pd <- position_dodge(0.1) # move them .05 to the left and right
+  ggplot(data=all.sum, aes(x=yday1, y=EVI, size=N, col=pres)) + 
+    geom_errorbar(aes(ymin=EVI-ci, ymax=EVI+ci), width=.1, position=pd, col="gray") +
+    geom_line(position=pd,alpha=0.5, aes(group=compare.win)) + geom_point(position=pd,alpha=0.5) + 
+  facet_wrap(~year)
+
   #plot environmental patterns for locations that birds were seen at (3 connected dots for location trajectories)
 png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_EVI.png")), height=7.5, width=10, units="in", res=300)
-  ggplot(pminpls, aes(yday, EVI)) + geom_point(data=abs, aes(yday, EVI)) + geom_point(data=pres_ssn, aes(col=Npp_1km), alpha=0.75) + 
+  ggplot(pminpls, aes(yday,EVI)) + geom_point(data=abs, aes(yday, EVI)) + geom_point(data=pres_ssn, aes(col=Npp_1km), alpha=0.75) + 
     geom_line(aes(group=id, col=EVI), alpha=0.25) +
     stat_smooth(data=pres_ssn, method="gam", formula = y~s(x, k=10), col="black") +
     scale_color_gradient(low="moccasin", high="chartreuse4") +
@@ -136,6 +159,18 @@ png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_numobs.png")), h
   geom_vline(data=migdates,aes(xintercept=peak_lat))
 dev.off()
 
+
+# # Code to make  triangle plots - should plot with means?
+# require(ggtern)
+# ggtern(pres_ssn, aes(x=scale(EVI), y=scale(t10m), z=scale(SRTM_elev), group=window, color=season)) +
+#   geom_confidence(aes(col=season)) +
+#   geom_point(alpha=0.5) +
+#   geom_polygon(alpha=0.5,size=2) +
+#   geom_path(aes(color=season),linetype=2,size=0.5) +
+#   tern_limits(T=1,L=1,R=1) +
+#   theme_bw(base_size = 16) + 
+#   scale_color_manual(values=c("black", "orange", "cadetblue")) + facet_wrap(~year)
+
 #--------------------------------------- STATISTICAL TESTS
   #Is there an environmental signal in the population's immediate region for presence?
 print(sp)
@@ -169,10 +204,10 @@ ggplot(spr_pres, aes(x=EVI)) + geom_density(alpha=0.3, fill="cadetblue") +
 ks <- ks.test(pres[,colnames(pres) %in% "EVI"], abs[,colnames(abs) %in% "EVI"])
 ks_pa = rbind(ks_pa, c(y,s,var,round(as.numeric(ks$statistic),4),round(ks$p.value,4)))
 
-#FIXME: Stopped editing here.
+#FIXME: SRS stopped editing here (July 14, 2015).
   
 
-
+### BELOW: OLD CODE DEV. BY SRS AND TAC (ca. 2014)
   ggplot(pres, aes(as.Date(timestamp), EVI)) + geom_point(aes(col=t10m - 273.15)) + 
     scale_color_gradient(low="blue", high="firebrick")
   

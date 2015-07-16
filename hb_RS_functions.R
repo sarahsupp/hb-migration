@@ -306,9 +306,17 @@ ID_windows = function(yeardat, spring, peak, fall, timewindow){
     n=n+5
     yday1=append(yday1, n)
   }
-  yday1.df = data.frame("window"=0:length(yday1[-1]), "yday1"=yday1)
-  
+  yday1.df = data.frame("window"=0:length(yday1[-1]), "yday1"=yday1)  
   yeardat = merge(yeardat, yday1.df, by = intersect("window", "window"))
+  
+  #assign id var for comparing time frames (id compares rows/locations)
+  if(yeardat$pres[1] %in% c(0,1)){ yeardat$compare.win = yeardat$window }
+  else if(yeardat$pres[1] == -1) {yeardat$compare.win = yeardat$window +1 }
+  else if(yeardat$pres[1] == -2) {yeardat$compare.win = yeardat$window +2 }
+  else if(yeardat$pres[1] == -3) {yeardat$compare.win = yeardat$window +3 }
+  else if(yeardat$pres[1] == 2) {yeardat$compare.win = yeardat$window -1 }
+  else if(yeardat$pres[1] == 3) {yeardat$compare.win = yeardat$window -2 }
+  else if(yeardat$pres[1] == 4) {yeardat$compare.win = yeardat$window -3 }
   
   return(yeardat)
 }
@@ -370,7 +378,6 @@ cleanColNames = function(migdates){
 
 
 ## From http://www.cookbook-r.com/Graphs/Plotting_means_and_error_bars_%28ggplot2%29/#Helper%20functions 
-
 summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
                       conf.interval=0.95, .drop=TRUE) {
   ## Gives count, mean, standard deviation, standard error of the mean, and confidence interval (default 95%).
