@@ -22,6 +22,18 @@ agan.dir <- "/home/sarah/Dropbox/Hummingbirds/hb_migration_data/ebird_annotated_
 migtime.dir <- "/home/sarah/Dropbox/Hummingbirds/hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/"
 fig.dir <- "/home/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/"
 
+# pathnames on SB PC
+function.dir <- "hb_RS_functions.R"
+agan.dir <- "D:/hb-migration-files/combined"
+migtime.dir <- "D:/hb-migration-files/aggregate_by_species/"
+fig.dir <- "D:/hb-migration-files/figures/"
+
+# Laura pathnames
+function.dir <- "hb_RS_functions.R"
+agan.dir <- "~/Dropbox/hb_migration_data/ebird_annotated_raw/combined/"
+migtime.dir <- "~/Dropbox/hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/"
+fig.dir <- "~/Dropbox/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/"
+
 #function.dir <- "/Users/tcormier/Documents/scripts/git_repos/hb-migration/hb_RS_functions.R"
 #agan.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/downloaded_annotations/"
 #migtime.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/data/supp_migration/"
@@ -173,23 +185,33 @@ dev.off()
 
 #--------------------------------------- STATISTICAL TESTS
   #Is there an environmental signal in the population's immediate region for presence?
+glmm.list <- list()
 print(sp)
-  glm1 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + (1|year) + (1|season) + (1|month), family="binomial", data=pa)
-  glm2 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year) + (1|month), family="binomial", data=pa)
-  glm3 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season*year + (1|month), family="binomial", data=pa)
-summary(glm1)
-summary(glm2)
-summary(glm3)
+  # key to the letters is it's what's in the random part of the model. 
+  glmm.list[["glmm.ysm"]] = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + (1|year) + (1|season) + (1|month), family="binomial", data=pa)
+  glmm.list[["glmm.ym"]] = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year) + (1|month), family="binomial", data=pa)
+  glmm.list[["glmm.m"]] = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season*year + (1|month), family="binomial", data=pa)
+summary(glmm.list[["glmm.ysm"]])
+summary(glmm.list[["glmm.ym"]])
+summary(glmm.list[["glmm.m"]])
   #Is there an environmental signal for where species are in their migration pathway?
-  glm1 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year), family="binomial", data=pmin)
-  glm2 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year), family="binomial", data=ppls)
-  glm3 = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year), family="binomial", data=pminpls)
-summary(glm1)
-summary(glm2)
-summary(glm3)
+  glmm.list[["glmm.pmin"]] = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year), family="binomial", data=pmin)
+  glmm.list[["glmm.ppls"]] = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year), family="binomial", data=ppls)
+  glmm.list[["glmm.pminpls"]] = glmer(pres ~ scale(EVI) + scale(t10m) + scale(swrf) + scale(SRTM_elev) + season + (1|year), family="binomial", data=pminpls)
+summary(glmm.list[["glmm.pmin"]])
+summary(glmm.list[["glmm.ppls"]])
+summary(glmm.list[["glmm.pminpls"]])
+
+save(glmm.list, file=paste0(fig.dir, "/", sp, ".glmm.list.rda"))
 
 # glmm vs. gamm?
+gamm.list <- list()
+  try(system.time(gamm.list[["pa"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data = pa)))
+  try(system.time(gamm.list[["pmin"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data=pmin)))
+  try(system.time(gamm.list[["ppls"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data=ppls)))
+  try(system.time(gamm.list[["pminpls"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data=pminpls)))
 
+save(gamm.list, file=paste0(fig.dir, "/", sp, ".gamm.list.rda"))
 #compare years?
 
 }
