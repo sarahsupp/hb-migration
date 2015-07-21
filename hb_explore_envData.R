@@ -71,7 +71,7 @@ for (sp in species){
   pls.05 = importANDformat(spfiles[8], 2, migdates, alpha_window)
   pls.10 = importANDformat(spfiles[6], 3, migdates, alpha_window)
   pls.15 = importANDformat(spfiles[7], 4, migdates, alpha_window)
-
+  
   #subset dat for plots
   pminpls = subset(rbind(pres, min.05, min.10, min.15, pls.05, pls.10, pls.15), season %in% c("spring", "fall", "breeding"))
   all_ssn = subset(rbind(abs, pres, min.05, min.10, min.15, pls.05, pls.10, pls.15), season %in% c("spring", "fall", "breeding"))
@@ -97,25 +97,25 @@ for (sp in species){
   #NOTE: yday1 does not map directly to averages that should be compared, but compare.win does
   all.sum=summarySE(all_ssn, measurevar="EVI", groupvars=c("pres", "yday1", "year", "compare.win"), na.rm=TRUE, conf.interval=0.95)
   
-#----------------------- PLOT THE DATA
+  #----------------------- PLOT THE DATA
   # plot summary data 
-
+  
   # Use 95% confidence interval or SE
-noabs = subset(all.sum, pres %in% c(-3, -2, -1, 1, 2, 3, 4))
+  noabs = subset(all.sum, pres %in% c(-3, -2, -1, 1, 2, 3, 4))
   ggplot(data=noabs, aes(x=yday1, y=EVI)) + geom_line(aes(group=compare.win, col=pres, size=N)) +
-#  geom_errorbar(aes(ymin=EVI-ci, ymax=EVI+ci), width=0.1, position=pd, col=gray) + 
-#  geom_errorbar(aes(ymin=EVI-se, ymax=EVI+se), width=0.1, position=pd, col=gray) +
-  facet_wrap(~year)
+    #  geom_errorbar(aes(ymin=EVI-ci, ymax=EVI+ci), width=0.1, position=pd, col=gray) + 
+    #  geom_errorbar(aes(ymin=EVI-se, ymax=EVI+se), width=0.1, position=pd, col=gray) +
+    facet_wrap(~year)
   
   # The errorbars overlapped, so use position_dodge to move them horizontally
   pd <- position_dodge(0.1) # move them .05 to the left and right
   ggplot(data=all.sum, aes(x=yday1, y=EVI, size=N, col=pres)) + 
     geom_errorbar(aes(ymin=EVI-ci, ymax=EVI+ci), width=.1, position=pd, col="gray") +
     geom_line(position=pd,alpha=0.5, aes(group=compare.win)) + geom_point(position=pd,alpha=0.5) + 
-  facet_wrap(~year)
-
+    facet_wrap(~year)
+  
   #plot environmental patterns for locations that birds were seen at (3 connected dots for location trajectories)
-png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_EVI.png")), height=7.5, width=10, units="in", res=300)
+  png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_EVI.png")), height=7.5, width=10, units="in", res=300)
   ggplot(pminpls, aes(yday,EVI)) + geom_point(data=abs, aes(yday, EVI)) + geom_point(data=pres_ssn, aes(col=Npp_1km), alpha=0.75) + 
     geom_line(aes(group=id, col=EVI), alpha=0.25) +
     stat_smooth(data=pres_ssn, method="gam", formula = y~s(x, k=10), col="black") +
@@ -123,9 +123,9 @@ png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_EVI.png")), heig
     xlab("Julian Day of the Year") + ylab("EVI") + theme_bw() +  
     geom_vline(data=migdates, aes(xintercept=peak_lat)) +
     facet_wrap(~year)
-dev.off()
+  dev.off()
   
-png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_Temp.png")), height=7.5, width=10, units="in", res=300)  
+  png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_Temp.png")), height=7.5, width=10, units="in", res=300)  
   ggplot(pminpls, aes(yday, t10m-273.15)) + geom_point(data=abs, aes(yday, t10m-273.15)) + geom_point(data=pres_ssn, aes(col=t10m-273.15), alpha=0.75) + 
     geom_line(aes(group=id,col=t10m-273.15), alpha=0.25) +
     stat_smooth(data=pres_ssn, method="gam", formula = y~s(x, k=10), col="black") +  
@@ -133,17 +133,17 @@ png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_Temp.png")), hei
     xlab("Julian Day of the Year") + ylab("Temperature (C)") + theme_bw() + 
     geom_vline(data=migdates, aes(xintercept=peak_lat)) +
     facet_wrap(~year)
-dev.off()
+  dev.off()
   
-png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_SRTMelev.png")), height=7.5, width=7.5, units="in", res=300)
+  png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_SRTMelev.png")), height=7.5, width=7.5, units="in", res=300)
   ggplot(pminpls, aes(yday, SRTM_elev)) + geom_point(data=abs, aes(yday, SRTM_elev)) + geom_point(data=pres, aes(col=EVI),alpha=0.5) + 
-  #geom_line(aes(group=id, col=EVI), alpha=0.25) +
+    #geom_line(aes(group=id, col=EVI), alpha=0.25) +
     stat_smooth(data=pres_ssn, method="gam", formula = y~s(x, k=10), col="black") +
     scale_color_gradient(low="moccasin", high="chartreuse4") + 
     xlab("Julian Day of the Year") + ylab("SRTM Elevation") + theme_bw() + 
     geom_vline(data=migdates, aes(xintercept=peak_lat)) +
     facet_wrap(~year)
-dev.off()
+  dev.off()
   
   #pairs plots, colored by season
   evitemp = ggplot(pres_ssn, aes(t10m-273.15, EVI, col=season)) + 
@@ -167,36 +167,36 @@ dev.off()
   spmap = ggmap(noam) + geom_point(data=pres, aes(location.long, location.lat, col=season), alpha=0.25) + 
     scale_color_manual(values=c("black", "orange", "cadetblue", "purple")) + ggtitle(sp)
   
-png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_multiplot.png")), height=7.5, width=7.5, units="in", res=300)
+  png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_multiplot.png")), height=7.5, width=7.5, units="in", res=300)
   multiplot(spmap, evitemp, elevtemp, NA, latevi, lonevi,  cols=2)
-dev.off()
-
-#pairs plot of environmental variables
-png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_pairsplot.png")), height=15, width=20, units="in", res=300)
+  dev.off()
+  
+  #pairs plot of environmental variables
+  png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_pairsplot.png")), height=15, width=20, units="in", res=300)
   ggpairs(all_ssn[,c(3,2,5:7,10,12:14,21,17)])
-dev.off()
-
-#plot the distribution of the presence and absence data across years
-png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_numobs.png")), height=15, width=20, units="in", res=300)
+  dev.off()
+  
+  #plot the distribution of the presence and absence data across years
+  png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_numobs.png")), height=15, width=20, units="in", res=300)
   ggplot(pa, aes(yday)) + geom_histogram(aes(fill=pres), alpha=0.5, binwidth=14) + facet_wrap(~year) + theme_bw() + 
-  geom_vline(data=migdates,aes(xintercept=peak_lat))
-dev.off()
-
-
-# # Code to make  triangle plots - should plot with means?
-# require(ggtern)
-# ggtern(pres_ssn, aes(x=scale(EVI), y=scale(t10m), z=scale(SRTM_elev), group=window, color=season)) +
-#   geom_confidence(aes(col=season)) +
-#   geom_point(alpha=0.5) +
-#   geom_polygon(alpha=0.5,size=2) +
-#   geom_path(aes(color=season),linetype=2,size=0.5) +
-#   tern_limits(T=1,L=1,R=1) +
-#   theme_bw(base_size = 16) + 
-#   scale_color_manual(values=c("black", "orange", "cadetblue")) + facet_wrap(~year)
-
-#--------------------------------------- STATISTICAL TESTS
-glmm.list <- list()
-print(sp)
+    geom_vline(data=migdates,aes(xintercept=peak_lat))
+  dev.off()
+  
+  
+  # # Code to make  triangle plots - should plot with means?
+  # require(ggtern)
+  # ggtern(pres_ssn, aes(x=scale(EVI), y=scale(t10m), z=scale(SRTM_elev), group=window, color=season)) +
+  #   geom_confidence(aes(col=season)) +
+  #   geom_point(alpha=0.5) +
+  #   geom_polygon(alpha=0.5,size=2) +
+  #   geom_path(aes(color=season),linetype=2,size=0.5) +
+  #   tern_limits(T=1,L=1,R=1) +
+  #   theme_bw(base_size = 16) + 
+  #   scale_color_manual(values=c("black", "orange", "cadetblue")) + facet_wrap(~year)
+  
+  #--------------------------------------- STATISTICAL TESTS
+  glmm.list <- list()
+  print(sp)
   #Is there an environmental signal in the population's immediate region for presence?
   glmm.list[["glmm.pa.spring"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=pa.spring)
   glmm.list[["glmm.pa.fall"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=pa.fall)
@@ -213,7 +213,7 @@ print(sp)
   save(glmm.list, file=paste0(stat.dir, "/", sp, ".glmm.list.rda"))
   
   # there might be an effort difference between windows - include as random factor (models the same otherwise)  
-glmm.window.list <- list()
+  glmm.window.list <- list()
   #Is there an environmental signal in the population's immediate region for presence?
   glmm.window.list[["glmm.pa.spring"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=pa.spring)
   glmm.window.list[["glmm.pa.fall"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=pa.fall)
@@ -228,19 +228,19 @@ glmm.window.list <- list()
   glmm.window.list[["glmm.ppls.fall"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=ppls.fall)
   glmm.window.list[["glmm.ppls.all"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=ppls)
   save(glmm.window.list, file=paste0(stat.dir, "/", sp, ".glmm.window.list.rda"))
-
-
-# glmm vs. gamm?
-gamm.list <- list()
+  
+  
+  # glmm vs. gamm?
+  gamm.list <- list()
   
   try(system.time(gamm.list[["pa"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data = pa)))
   try(system.time(gamm.list[["pmin"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data=pmin)))
   try(system.time(gamm.list[["ppls"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data=ppls)))
   try(system.time(gamm.list[["pminpls"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data=pminpls)))
-
-save(gamm.list, file=paste0(fig.dir, "/", sp, ".gamm.list.rda"))
-#compare years?
-
+  
+  save(gamm.list, file=paste0(fig.dir, "/", sp, ".gamm.list.rda"))
+  #compare years?
+  
 }
 
 # TRY KS TEST TO COMPARE SEASONS/YEARS/PA? NOt a very powerful test... Compare hull means, not all data points?
@@ -254,35 +254,35 @@ ks <- ks.test(pres[,colnames(pres) %in% "EVI"], abs[,colnames(abs) %in% "EVI"])
 ks_pa = rbind(ks_pa, c(y,s,var,round(as.numeric(ks$statistic),4),round(ks$p.value,4)))
 
 #FIXME: SRS stopped editing here (July 14, 2015).
-  
+
 
 ### BELOW: OLD CODE DEV. BY SRS AND TAC (ca. 2014)
-  ggplot(pres, aes(as.Date(timestamp), EVI)) + geom_point(aes(col=t10m - 273.15)) + 
-    scale_color_gradient(low="blue", high="firebrick")
-  
-  ggplot(pmin, aes(window, EVI, col=pres)) + geom_point(alpha=0.5) + 
-    stat_smooth(method="gam", formula = y ~ s(x, k=20)) + facet_wrap(~year) +
-    scale_color_manual(values = c("indianred", "gray")) + theme_bw()
-  
-  ggplot(ppls, aes(window, EVI, col=pres)) + geom_point(alpha=0.5) + 
-    stat_smooth(method="loess") + facet_wrap(~year) +
-    scale_color_manual(values = c("indianred", "gray")) + theme_bw()
-  
-  ggplot(pa, aes(yday, EVI, col=pres)) + geom_point(alpha=0.5) + 
-    stat_smooth(method="gam", formula = y ~ s(x, k=20)) + facet_wrap(~year)  +
-    scale_color_manual(values = c("indianred", "gray"))
-  
-  plot(pres$EVI, min$EVI, pch=19)
-  abline(a=0, b=1, col="red")
-  
-  plot(pres$EVI, pls$EVI, pch=19)
-  abline(a=0, b=1, col="red")
-  
-  plot(pres$EVI, abs$EVI, pch=19)
-  abline(a=0, b=1, col="blue", lwd=2)
-  
-  plot(as.numeric(yday(as.Date(pres$timestamp))), as.numeric(yday(as.Date(pls$timestamp))), pch=19)
-  
+ggplot(pres, aes(as.Date(timestamp), EVI)) + geom_point(aes(col=t10m - 273.15)) + 
+  scale_color_gradient(low="blue", high="firebrick")
+
+ggplot(pmin, aes(window, EVI, col=pres)) + geom_point(alpha=0.5) + 
+  stat_smooth(method="gam", formula = y ~ s(x, k=20)) + facet_wrap(~year) +
+  scale_color_manual(values = c("indianred", "gray")) + theme_bw()
+
+ggplot(ppls, aes(window, EVI, col=pres)) + geom_point(alpha=0.5) + 
+  stat_smooth(method="loess") + facet_wrap(~year) +
+  scale_color_manual(values = c("indianred", "gray")) + theme_bw()
+
+ggplot(pa, aes(yday, EVI, col=pres)) + geom_point(alpha=0.5) + 
+  stat_smooth(method="gam", formula = y ~ s(x, k=20)) + facet_wrap(~year)  +
+  scale_color_manual(values = c("indianred", "gray"))
+
+plot(pres$EVI, min$EVI, pch=19)
+abline(a=0, b=1, col="red")
+
+plot(pres$EVI, pls$EVI, pch=19)
+abline(a=0, b=1, col="red")
+
+plot(pres$EVI, abs$EVI, pch=19)
+abline(a=0, b=1, col="blue", lwd=2)
+
+plot(as.numeric(yday(as.Date(pres$timestamp))), as.numeric(yday(as.Date(pls$timestamp))), pch=19)
+
 }
 
 
@@ -322,8 +322,8 @@ ann$doy <- as.numeric(format(ann$timestamp, "%j"))
 
 
 #separate pres from abs
- pres <- ann[ann$presence == 1,]
- abs <- ann[ann$presence == 0,]
+pres <- ann[ann$presence == 1,]
+abs <- ann[ann$presence == 0,]
 
 #plot doy representation to check that it is similar for pres and abs
 ggplot(data=pres, aes(doy)) + geom_histogram(fill="red", alpha=0.5) + 
@@ -377,7 +377,7 @@ var.titles <- c("Temperature at 10 m", "Surface Temperature", "Surface Precipita
                 "Downward longwave Radiation Flux", "East-West Wind at 10 m", "Uplift", "Elevation")
 xlab.titles <- c(expression("Temperature at 10 m" ~ (degree~C)), expression("Surface Temperature" ~ (degree~C)), "Precipitation (mm)",
                  "EVI", expression("Downward Shortwave Radiation Flux" ~ (W ~ m^-2)), expression("Downward Longwave Radiation Flux" ~ (W ~ m^-2)), 
-                  "East-West Wind at 10 m (m/s)", "Uplift", "Elevation (m)")
+                 "East-West Wind at 10 m (m/s)", "Uplift", "Elevation (m)")
 
 #for each variable, let's look at presence vs. absence in spring and fall
 for (i in 1:length(vars)) {
@@ -404,7 +404,7 @@ for (i in 1:length(vars)) {
     print(p)
     
     dev.off()
-   }#end seasons loop
+  }#end seasons loop
 } #end vars loop
 
 
@@ -414,7 +414,7 @@ for (j in 1:length(vars)) {
   title <- paste0("Spring vs. Fall Rufous Hummingbird Habitat Utilization - \n", var.titles[j])
   outfile <- paste0(fig.dir, "ruhu_springVsFall_habitat_utilization_", vars[j], ".pdf")
   pdf(outfile, width=9, height=8)
- 
+  
   p <- ggplot(pres, aes(x=get(vars[j]), fill=season)) + geom_density(alpha=.5)   
   p <- p + scale_fill_manual( values = c("orange", "cyan2"))
   p <- p + theme_classic() + theme(text=element_text(size=14))
@@ -511,23 +511,23 @@ for (var in unique(vars)){
         next
       if(y==ynext)
         next
-    pres <- sf[sf$present == 1 & sf$year == y,]
-    abs <- sf[sf$present == 0 & sf$year == y,]
-    pres2 <- sf[sf$present == 1 & sf$year == ynext,]
-    abs2 <- sf[sf$present == 0 & sf$year == ynext,]
-    compare <- ggplot(pres, aes(x=get(var))) + geom_density(alpha=0.3, fill="red") + 
-      geom_density(data=pres2, alpha=0.3, fill="blue") + 
-      geom_density(data=abs, alpha=0.3, fill="grey60",col="red") + 
-      geom_density(data=abs2, alpha=0.3, fill="grey60",col="blue") + 
-      theme_classic() + xlab(var) + 
-      ggtitle(paste(y,ynext,var, sep=" - "))
-    print(compare)
-    ks <- ks.test(pres[,colnames(pres) %in% var], pres2[,colnames(pres2) %in% var])
-    Da <- critical_D(nrow(pres), nrow(pres2))
-    if(Da > ks$statistic){ sig <- "Y" }
-    else{ sig <- "N" }  
-    ks_yrs <- rbind(ks_yrs, c(y, ynext, var, round(as.numeric(ks$statistic),4), round(ks$p.value,4), sig))
-  }}
+      pres <- sf[sf$present == 1 & sf$year == y,]
+      abs <- sf[sf$present == 0 & sf$year == y,]
+      pres2 <- sf[sf$present == 1 & sf$year == ynext,]
+      abs2 <- sf[sf$present == 0 & sf$year == ynext,]
+      compare <- ggplot(pres, aes(x=get(var))) + geom_density(alpha=0.3, fill="red") + 
+        geom_density(data=pres2, alpha=0.3, fill="blue") + 
+        geom_density(data=abs, alpha=0.3, fill="grey60",col="red") + 
+        geom_density(data=abs2, alpha=0.3, fill="grey60",col="blue") + 
+        theme_classic() + xlab(var) + 
+        ggtitle(paste(y,ynext,var, sep=" - "))
+      print(compare)
+      ks <- ks.test(pres[,colnames(pres) %in% var], pres2[,colnames(pres2) %in% var])
+      Da <- critical_D(nrow(pres), nrow(pres2))
+      if(Da > ks$statistic){ sig <- "Y" }
+      else{ sig <- "N" }  
+      ks_yrs <- rbind(ks_yrs, c(y, ynext, var, round(as.numeric(ks$statistic),4), round(ks$p.value,4), sig))
+    }}
 }
 ks_yrs <- ks_yrs[-1,]
 
@@ -536,18 +536,18 @@ ks_yrs <- ks_yrs[-1,]
 ks_season <- data.frame("year"=1, "var"=NA, "Dstat"=1, "pvalue"=1, "signif"=NA)
 for (var in unique(vars)){
   for (y in unique(years)){
-      spr_pres <- sf[sf$present == 1 & sf$year == y & sf$season == "spring",]
-      fal_pres <- sf[sf$present == 1 & sf$year == y & sf$season == "fall",]
-      compare <- ggplot(spr_pres, aes(x=get(var))) + geom_density(alpha=0.3, fill="cadetblue") + 
-        geom_density(data=fal_pres, alpha=0.3, fill="orange") + 
-        theme_classic() + xlab(var) + ggtitle(paste(y, var, sep=" - "))
-      print(compare)
-      ks <- ks.test(spr_pres[,colnames(spr_pres) %in% var], fal_pres[,colnames(fal_pres) %in% var])
-      Da <- critical_D(nrow(pres), nrow(pres2))
-      if(Da > ks$statistic){ sig <- "N" }
-      else{ sig <- "Y" }  
-      ks_season <- rbind(ks_season, c(y, var, round(as.numeric(ks$statistic),4), round(ks$p.value,4), sig))
-    }
+    spr_pres <- sf[sf$present == 1 & sf$year == y & sf$season == "spring",]
+    fal_pres <- sf[sf$present == 1 & sf$year == y & sf$season == "fall",]
+    compare <- ggplot(spr_pres, aes(x=get(var))) + geom_density(alpha=0.3, fill="cadetblue") + 
+      geom_density(data=fal_pres, alpha=0.3, fill="orange") + 
+      theme_classic() + xlab(var) + ggtitle(paste(y, var, sep=" - "))
+    print(compare)
+    ks <- ks.test(spr_pres[,colnames(spr_pres) %in% var], fal_pres[,colnames(fal_pres) %in% var])
+    Da <- critical_D(nrow(pres), nrow(pres2))
+    if(Da > ks$statistic){ sig <- "N" }
+    else{ sig <- "Y" }  
+    ks_season <- rbind(ks_season, c(y, var, round(as.numeric(ks$statistic),4), round(ks$p.value,4), sig))
+  }
 }
 ks_season <- ks_season[-1,]
 
@@ -597,7 +597,7 @@ zscore$season <- sf2$season
 
 fit <- glmer(presence ~ Temp_sfc + t10m + swrf + lwrf + EVI + Total_precipitation_sfc + uplift + SRTM_elev + 
                (1|year) + (1|season), data = sf, family = "binomial", 
-                control = glmerControl(optimizer = "bobyqa"))
+             control = glmerControl(optimizer = "bobyqa"))
 summary(fit)
 
 
