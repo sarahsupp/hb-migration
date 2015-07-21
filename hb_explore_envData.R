@@ -21,18 +21,21 @@ function.dir <- "/home/sarah/Documents/GitHub/hb-migration/hb_RS_functions.R"
 agan.dir <- "/home/sarah/Dropbox/Hummingbirds/hb_migration_data/ebird_annotated_raw/combined/"
 migtime.dir <- "/home/sarah/Dropbox/Hummingbirds/hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/"
 fig.dir <- "/home/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/"
+stat.dir <- "/home/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/stat-tests/"
 
 # pathnames on SB PC
-function.dir <- "hb_RS_functions.R"
-agan.dir <- "D:/hb-migration-files/combined"
-migtime.dir <- "D:/hb-migration-files/aggregate_by_species/"
-fig.dir <- "D:/hb-migration-files/figures/"
+#function.dir <- "hb_RS_functions.R"
+#agan.dir <- "D:/hb-migration-files/combined"
+#migtime.dir <- "D:/hb-migration-files/aggregate_by_species/"
+#fig.dir <- "D:/hb-migration-files/figures/"
+#stat.dir <- "D:/hb-migration-files/stat-tests/"
 
 # Laura pathnames
 function.dir <- "hb_RS_functions.R"
 agan.dir <- "~/Dropbox/hb_migration_data/ebird_annotated_raw/combined/"
 migtime.dir <- "~/Dropbox/hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/"
 fig.dir <- "~/Dropbox/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/"
+stat.dir <- "~/Dropbox/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/stat-tests/"
 
 #function.dir <- "/Users/tcormier/Documents/scripts/git_repos/hb-migration/hb_RS_functions.R"
 #agan.dir <- "/Users/tcormier/Documents/820_Hummingbirds/migration_study/movebank/downloaded_annotations/"
@@ -77,10 +80,18 @@ for (sp in species){
   min_ssn = subset(min.15, season %in% c("spring", "fall", "breeding"))
   pls_ssn = subset(pls.15, season %in% c("spring", "fall", "breeding"))
   
-  #subset data for glmm
+  #subset data for glmm / gamm
   pa = subset(rbind(pres, abs), season %in% c("spring", "breeding", "fall"))
   pmin = subset(rbind(pres, min.15), season %in% c("spring", "breeding", "fall"))
   ppls = subset(rbind(pres, pls.15), season %in% c("spring", "breeding", "fall"))
+  
+  pa.spring = subset(rbind(pres, abs), season=="spring")
+  pmin.spring = subset(rbind(pres, min.15), season=="spring")
+  ppls.spring = subset(rbind(pres, pls.15), season=="spring")
+  
+  pa.fall = subset(rbind(pres, abs), season=="fall")
+  pmin.fall = subset(rbind(pres, min.15), season=="fall")
+  ppls.fall = subset(rbind(pres, pls.15), season=="fall")
   
   #data summaries
   #NOTE: yday1 does not map directly to averages that should be compared, but compare.win does
