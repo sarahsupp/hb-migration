@@ -198,48 +198,76 @@ for (sp in species){
   glmm.list <- list()
   print(sp)
   #Is there an environmental signal in the population's immediate region for presence?
-  glmm.list[["glmm.pa.spring"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=pa.spring)
-  glmm.list[["glmm.pa.fall"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=pa.fall)
-  glmm.list[["glmm.pa.all"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=pa)
+  glmm.list[["pa.spring"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=pa.spring)
+  glmm.list[["pa.fall"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=pa.fall)
+  glmm.list[["pa.all"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=pa)
   
   #Is there an environmental signal for where species are in their migration pathway?
-  glmm.list[["glmm.pmin.spring"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=pmin.spring)
-  glmm.list[["glmm.pmin.fall"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=pmin.fall)
-  glmm.list[["glmm.pmin.all"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=pmin)
+  glmm.list[["pmin.spring"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=pmin.spring)
+  glmm.list[["pmin.fall"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=pmin.fall)
+  glmm.list[["pmin.all"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=pmin)
   
-  glmm.list[["glmm.ppls.spring"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=ppls.spring)
-  glmm.list[["glmm.ppls.fall"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=ppls.fall)
-  glmm.list[["glmm.ppls.all"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=ppls)
+  glmm.list[["ppls.spring"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=ppls.spring)
+  glmm.list[["ppls.fall"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=ppls.fall)
+  glmm.list[["ppls.all"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year), family="binomial", data=ppls)
   save(glmm.list, file=paste0(stat.dir, "/", sp, ".glmm.list.rda"))
   
   # there might be an effort difference between windows - include as random factor (models the same otherwise)  
   glmm.window.list <- list()
   #Is there an environmental signal in the population's immediate region for presence?
-  glmm.window.list[["glmm.pa.spring"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=pa.spring)
-  glmm.window.list[["glmm.pa.fall"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=pa.fall)
-  glmm.window.list[["glmm.pa.all"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=pa)
+  glmm.window.list[["pa.spring"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=pa.spring)
+  glmm.window.list[["pa.fall"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=pa.fall)
+  glmm.window.list[["pa.all"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=pa)
   
   #Is there an environmental signal for where species are in their migration pathway?
-  glmm.window.list[["glmm.pmin.spring"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=pmin.spring)
-  glmm.window.list[["glmm.pmin.fall"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=pmin.fall)
-  glmm.window.list[["glmm.pmin.all"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=pmin)
+  glmm.window.list[["pmin.spring"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=pmin.spring)
+  glmm.window.list[["pmin.fall"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=pmin.fall)
+  glmm.window.list[["pmin.all"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=pmin)
   
-  glmm.window.list[["glmm.ppls.spring"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=ppls.spring)
-  glmm.window.list[["glmm.ppls.fall"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=ppls.fall)
-  glmm.window.list[["glmm.ppls.all"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=ppls)
+  glmm.window.list[["ppls.spring"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=ppls.spring)
+  glmm.window.list[["ppls.fall"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=ppls.fall)
+  glmm.window.list[["ppls.all"]] <- glmer(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="binomial", data=ppls)
   save(glmm.window.list, file=paste0(stat.dir, "/", sp, ".glmm.window.list.rda"))
   
   
-  # glmm vs. gamm?
+  # glmm vs. gamm? 
+  # the same model structures are being repeated but as GAMMs. All fixed effects
+  # are currently being smoothed - will need to check outputs to see if this is
+  # necessary/realistic
   gamm.list <- list()
   
-  try(system.time(gamm.list[["pa"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data = pa)))
-  try(system.time(gamm.list[["pmin"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data=pmin)))
-  try(system.time(gamm.list[["ppls"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data=ppls)))
-  try(system.time(gamm.list[["pminpls"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(swrf) + s(SRTM_elev) + season, family="binomial", random=~(1|year), data=pminpls)))
+  try(gamm.list[["pa.spring"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(SRTM_elev), family="binomial", random=~(1|year), data = pa.spring))
+  try(gamm.list[["pa.fall"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(SRTM_elev), family="binomial", random=~(1|year), data = pa.fall))
+  try(gamm.list[["pa.all"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(SRTM_elev), family="binomial", random=~(1|year), data = pa))
   
-  save(gamm.list, file=paste0(fig.dir, "/", sp, ".gamm.list.rda"))
-  #compare years?
+  try(gamm.list[["pmin.spring"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(SRTM_elev), family="binomial", random=~(1|year), data = pmin.spring))
+  try(gamm.list[["pmin.fall"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(SRTM_elev), family="binomial", random=~(1|year), data = pmin.fall))
+  try(gamm.list[["pmin.all"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(SRTM_elev), family="binomial", random=~(1|year), data = pmin))
+  
+  try(gamm.list[["ppls.spring"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(SRTM_elev), family="binomial", random=~(1|year), data = ppls.spring))
+  try(gamm.list[["ppls.fall"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(SRTM_elev), family="binomial", random=~(1|year), data = ppls.fall))
+  try(gamm.list[["ppls.all"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(SRTM_elev), family="binomial", random=~(1|year), data = ppls))
+  
+  save(gamm.list, file=paste0(stat.dir, "/", sp, ".gamm.list.rda"))
+  
+  gamm.window.list <- list()
+  
+  try(gamm.window.list[["pa.spring"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(SRTM_elev), family="binomial", random=~(1|year) + (1|window), data = pa.spring))
+  try(gamm.window.list[["pa.fall"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(SRTM_elev), family="binomial", random=~(1|year) + (1|window), data = pa.fall))
+  try(gamm.window.list[["pa.all"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(SRTM_elev), family="binomial", random=~(1|year) + (1|window), data = pa))
+  
+  try(gamm.window.list[["pmin.spring"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(SRTM_elev), family="binomial", random=~(1|year) + (1|window), data = pmin.spring))
+  try(gamm.window.list[["pmin.fall"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(SRTM_elev), family="binomial", random=~(1|year) + (1|window), data = pmin.fall))
+  try(gamm.window.list[["pmin.all"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(SRTM_elev), family="binomial", random=~(1|year) + (1|window), data = pmin))
+  
+  try(gamm.window.list[["ppls.spring"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(SRTM_elev), family="binomial", random=~(1|year) + (1|window), data = ppls.spring))
+  try(gamm.window.list[["ppls.fall"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(SRTM_elev), family="binomial", random=~(1|year) + (1|window), data = ppls.fall))
+  try(gamm.window.list[["ppls.all"]] <- gamm4(pres ~ s(EVI) + s(t10m) + s(SRTM_elev), family="binomial", random=~(1|year) + (1|window), data = ppls))
+  
+  save(gamm.window.list, file=paste0(stat.dir, "/", sp, ".gamm.window.list.rda"))
+  
+  #compare years? - current feeling is that this might be difficult due to
+  #varying effort across years. Need to look into
   
 }
 
