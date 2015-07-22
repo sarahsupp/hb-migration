@@ -50,7 +50,7 @@ alpha_window = 5
 ###########################################################################################
 #SRS started working in this section 5/30/15
 #list of species codes
-species <- c("bchu", "bthu", "cahu", "ruhu", "rthu")
+species <- c("bchu", "bthu", "cahu", "ruhu") #, "rthu")
 
 for (sp in species){
   spfiles = list.files(path = agan.dir, pattern = glob2rx(paste0(sp,"*.RData")), recursive=FALSE, full.names=TRUE)
@@ -281,7 +281,7 @@ ggplot(spr_pres, aes(x=EVI)) + geom_density(alpha=0.3, fill="cadetblue") +
 ks <- ks.test(pres[,colnames(pres) %in% "EVI"], abs[,colnames(abs) %in% "EVI"])
 ks_pa = rbind(ks_pa, c(y,s,var,round(as.numeric(ks$statistic),4),round(ks$p.value,4)))
 
-#FIXME: SRS stopped editing here (July 14, 2015).
+#-------------------- FIXME: SRS stopped editing here (July 14, 2015).
 
 
 ### BELOW: OLD CODE DEV. BY SRS AND TAC (ca. 2014)
