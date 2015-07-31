@@ -120,7 +120,7 @@ for (sp in species){
   
   
 #   # The errorbars overlapped, so use position_dodge to move them horizontally
-#   pd <- position_dodge(0.1) # move them .05 to the left and right
+   pd <- position_dodge(0.1) # move them .05 to the left and right
 #   ggplot(data=all.sum, aes(x=yday1, y=EVI, size=N, col=pres)) + 
 #     geom_errorbar(aes(ymin=EVI-ci, ymax=EVI+ci), width=.1, position=pd, col="gray") +
 #     geom_line(position=pd,alpha=0.5, aes(group=compare.win)) + geom_point(position=pd,alpha=0.5) + 
