@@ -15,6 +15,7 @@ library(ggmap)
 library(GGally)
 library(mgcv)
 library(gamm4)
+library(gamlss)
 
 # define pathnames
 function.dir <- "/home/sarah/Documents/GitHub/hb-migration/hb_RS_functions.R"
@@ -50,14 +51,14 @@ alpha_window = 5
 ###########################################################################################
 #SRS started working in this section 5/30/15
 #list of species codes
-species <- c("bchu", "bthu", "cahu", "ruhu") #, "rthu")
+species <- c("bchu", "bthu", "cahu", "ruhu", "rthu")
 
 for (sp in species){
   spfiles = list.files(path = agan.dir, pattern = glob2rx(paste0(sp,"*.RData")), recursive=FALSE, full.names=TRUE)
   mfiles = list.files(path = migtime.dir, pattern = glob2rx(paste0(sp,"*migration*")), recursive=FALSE, full.names=TRUE)
   
   #import migration dates from previous analysis
-  if(sp == "rthu"){ migdates = read.table(mfiles[1], header=TRUE, sep="\t", quote="", fill=TRUE, as.is=TRUE, comment.char="")}
+  if(sp == "rthu"){ migdates = read.table(mfiles[1], header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")}
   if(sp %in% c("bchu", "bthu", "cahu", "ruhu")){ migdates = read.table(mfiles[2], header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")}
   migdates=cleanColNames(migdates)
   
@@ -65,12 +66,12 @@ for (sp in species){
   #datlist <- sapply(spfiles, function(x) get(load(x)), simplify = FALSE) 
   abs = importANDformat(spfiles[1], 0, migdates, alpha_window)
   pres = importANDformat(spfiles[2], 1, migdates, alpha_window)
-  min.05 = importANDformat(spfiles[5], -1, migdates, alpha_window)
-  min.10 = importANDformat(spfiles[3], -2, migdates, alpha_window)
-  min.15 = importANDformat(spfiles[4], -3, migdates, alpha_window)
-  pls.05 = importANDformat(spfiles[8], 2, migdates, alpha_window)
-  pls.10 = importANDformat(spfiles[6], 3, migdates, alpha_window)
-  pls.15 = importANDformat(spfiles[7], 4, migdates, alpha_window)
+  min.05 = importANDformat(spfiles[5], -5, migdates, alpha_window)
+  min.10 = importANDformat(spfiles[3], -10, migdates, alpha_window)
+  min.15 = importANDformat(spfiles[4], -15, migdates, alpha_window)
+  pls.05 = importANDformat(spfiles[8], 5, migdates, alpha_window)
+  pls.10 = importANDformat(spfiles[6], 10, migdates, alpha_window)
+  pls.15 = importANDformat(spfiles[7], 15, migdates, alpha_window)
   
   #subset dat for plots
   pminpls = subset(rbind(pres, min.05, min.10, min.15, pls.05, pls.10, pls.15), season %in% c("spring", "fall", "breeding"))
@@ -96,25 +97,41 @@ for (sp in species){
   #data summaries
   #NOTE: yday1 does not map directly to averages that should be compared, but compare.win does
   all.sum=summarySE(all_ssn, measurevar="EVI", groupvars=c("pres", "yday1", "year", "compare.win"), na.rm=TRUE, conf.interval=0.95)
-  
+  all.sum2=summarySE(all_ssn, measurevar="EVI", groupvars=c("pres", "window", "compare.win"), na.rm=TRUE, conf.int=0.95)
   #----------------------- PLOT THE DATA
   # plot summary data 
   
   # Use 95% confidence interval or SE
-  noabs = subset(all.sum, pres %in% c(-3, -2, -1, 1, 2, 3, 4))
-  ggplot(data=noabs, aes(x=yday1, y=EVI)) + geom_line(aes(group=compare.win, col=pres, size=N)) +
-    #  geom_errorbar(aes(ymin=EVI-ci, ymax=EVI+ci), width=0.1, position=pd, col=gray) + 
-    #  geom_errorbar(aes(ymin=EVI-se, ymax=EVI+se), width=0.1, position=pd, col=gray) +
+  noabs = subset(all.sum, pres %in% c(-15, -10, -5, 1, 5, 10, 15))
+  noabs$pres = ordered(noabs$pres, levels=c(-15, -10, -5, 1, 5, 10, 15))
+  ggplot(data=noabs, aes(x=yday1, y=EVI)) +
+      geom_errorbar(aes(ymin=EVI-ci, ymax=EVI+ci), width=0.1, col=gray) + #position=pd #dodge position 
+      geom_errorbar(aes(ymin=EVI-se, ymax=EVI+se), width=0.1, col=gray) +
+      geom_line(aes(group=compare.win, col=pres, size=N)) +
+      scale_colour_manual(values=c("navy", "royalblue3", "turquoise2", "springgreen4", "violetred1", "tomato3", "red4")) +
     facet_wrap(~year)
   
-  # The errorbars overlapped, so use position_dodge to move them horizontally
-  pd <- position_dodge(0.1) # move them .05 to the left and right
-  ggplot(data=all.sum, aes(x=yday1, y=EVI, size=N, col=pres)) + 
-    geom_errorbar(aes(ymin=EVI-ci, ymax=EVI+ci), width=.1, position=pd, col="gray") +
-    geom_line(position=pd,alpha=0.5, aes(group=compare.win)) + geom_point(position=pd,alpha=0.5) + 
-    facet_wrap(~year)
+  noabs2 = subset(all.sum2, pres %in% c(-15, -10, -5, 1, 5, 10, 15))
+  noabs2$pres = ordered(noabs$pres, levels=c(-15, -10, -5, 1, 5, 10, 15))
+  breedwindow=count(unique(pres[pres$season=="breeding", c(18,1)])$window)
+  ggplot(data=noabs2, aes(x=window, y=EVI))  +
+    geom_vline(data=breedwindow, aes(xintercept=x, size=freq), col="red") +
+    geom_errorbar(aes(ymin=EVI-1.96*sd, ymax=EVI+1.96*sd), width=0.1, col=gray, data=noabs2[noabs2$pres==1,]) + #position=pd #dodge position 
+    #geom_errorbar(aes(ymin=EVI-se, ymax=EVI+se), width=0.1, col=gray) +
+    geom_line(aes(group=compare.win, col=pres, size=N)) + 
+    scale_colour_manual(values=c("navy", "royalblue3", "turquoise2", "springgreen4", "violetred1", "tomato3", "red4"))
   
-  #plot environmental patterns for locations that birds were seen at (3 connected dots for location trajectories)
+  
+  
+  
+#   # The errorbars overlapped, so use position_dodge to move them horizontally
+#   pd <- position_dodge(0.1) # move them .05 to the left and right
+#   ggplot(data=all.sum, aes(x=yday1, y=EVI, size=N, col=pres)) + 
+#     geom_errorbar(aes(ymin=EVI-ci, ymax=EVI+ci), width=.1, position=pd, col="gray") +
+#     geom_line(position=pd,alpha=0.5, aes(group=compare.win)) + geom_point(position=pd,alpha=0.5) + 
+#     facet_wrap(~year)
+  
+  #plot environmental patterns for locations that birds were seen at (7 connected dots for location trajectories)
   png(file.path(path=paste0(fig.dir,sp,"/"), filename=paste0(sp,"_EVI.png")), height=7.5, width=10, units="in", res=300)
   ggplot(pminpls, aes(yday,EVI)) + geom_point(data=abs, aes(yday, EVI)) + geom_point(data=pres_ssn, aes(col=Npp_1km), alpha=0.75) + 
     geom_line(aes(group=id, col=EVI), alpha=0.25) +
@@ -281,7 +298,7 @@ ggplot(spr_pres, aes(x=EVI)) + geom_density(alpha=0.3, fill="cadetblue") +
 ks <- ks.test(pres[,colnames(pres) %in% "EVI"], abs[,colnames(abs) %in% "EVI"])
 ks_pa = rbind(ks_pa, c(y,s,var,round(as.numeric(ks$statistic),4),round(ks$p.value,4)))
 
-#-------------------- FIXME: SRS stopped editing here (July 14, 2015).
+#-------------------- FIXME: SRS stopped editing here (July 31, 2015).
 
 
 ### BELOW: OLD CODE DEV. BY SRS AND TAC (ca. 2014)

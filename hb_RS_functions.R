@@ -311,12 +311,12 @@ ID_windows = function(yeardat, spring, peak, fall, timewindow){
   
   #assign id var for comparing time frames (id compares rows/locations)
   if(yeardat$pres[1] %in% c(0,1)){ yeardat$compare.win = yeardat$window }
-  else if(yeardat$pres[1] == -1) {yeardat$compare.win = yeardat$window +1 }
-  else if(yeardat$pres[1] == -2) {yeardat$compare.win = yeardat$window +2 }
-  else if(yeardat$pres[1] == -3) {yeardat$compare.win = yeardat$window +3 }
-  else if(yeardat$pres[1] == 2) {yeardat$compare.win = yeardat$window -1 }
-  else if(yeardat$pres[1] == 3) {yeardat$compare.win = yeardat$window -2 }
-  else if(yeardat$pres[1] == 4) {yeardat$compare.win = yeardat$window -3 }
+  else if(yeardat$pres[1] == -5) {yeardat$compare.win = yeardat$window +1 }
+  else if(yeardat$pres[1] == -10) {yeardat$compare.win = yeardat$window +2 }
+  else if(yeardat$pres[1] == -15) {yeardat$compare.win = yeardat$window +3 }
+  else if(yeardat$pres[1] == 5) {yeardat$compare.win = yeardat$window -1 }
+  else if(yeardat$pres[1] == 10) {yeardat$compare.win = yeardat$window -2 }
+  else if(yeardat$pres[1] == 15) {yeardat$compare.win = yeardat$window -3 }
   
   return(yeardat)
 }
