@@ -355,7 +355,7 @@ importANDformat = function(path, prescode, migdates, alpha_window){
   dat$id = as.factor(row.names(dat))
   #lubridate to pull month and year from filename
   dat$month = as.factor(month(as.Date(dat$timestamp)))
-  dat$year =  as.factor(year(as.Date(dat$timestamp)))
+  dat$year =  ordered(as.factor(year(as.Date(dat$timestamp))), levels=c(2008:2014))
   dat$yday = as.numeric(yday(as.Date(dat$timestamp)))
   #assign window id codes for later comparisons
   dat = assign_window_season(migdates, dat, alpha_window)
@@ -477,3 +477,13 @@ RS_means = function(dat){
   
   return(dat.sum)
 }
+
+#calculate Akaike weights sensu Hobbs & Hilborn 2006
+#http://www.planta.cn/forum/files_planta/2006_nobbs_ecology_153.pdf
+Akaike.weight <- function(AIC.vec){
+  AIC.vec <- AIC.vec-min(AIC.vec,na.rm=T)
+  Akai.weight.denom <- sum(exp(-2*AIC.vec))
+  Akai.weight <- (exp(-2*AIC.vec)) / Akai.weight.denom
+  return(Akai.weight)
+}
+
