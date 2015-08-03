@@ -311,12 +311,12 @@ ID_windows = function(yeardat, spring, peak, fall, timewindow){
   
   #assign id var for comparing time frames (id compares rows/locations)
   if(yeardat$pres[1] %in% c(0,1)){ yeardat$compare.win = yeardat$window }
-  else if(yeardat$pres[1] == -5) {yeardat$compare.win = yeardat$window +1 }
-  else if(yeardat$pres[1] == -10) {yeardat$compare.win = yeardat$window +2 }
-  else if(yeardat$pres[1] == -15) {yeardat$compare.win = yeardat$window +3 }
-  else if(yeardat$pres[1] == 5) {yeardat$compare.win = yeardat$window -1 }
-  else if(yeardat$pres[1] == 10) {yeardat$compare.win = yeardat$window -2 }
-  else if(yeardat$pres[1] == 15) {yeardat$compare.win = yeardat$window -3 }
+  else if(yeardat$pres[1] == -5) { yeardat$compare.win = yeardat$window +1 }
+  else if(yeardat$pres[1] == -10) { yeardat$compare.win = yeardat$window +2 }
+  else if(yeardat$pres[1] == -15) { yeardat$compare.win = yeardat$window +3 }
+  else if(yeardat$pres[1] == 5) { yeardat$compare.win = yeardat$window -1 }
+  else if(yeardat$pres[1] == 10) { yeardat$compare.win = yeardat$window -2 }
+  else if(yeardat$pres[1] == 15) { yeardat$compare.win = yeardat$window -3 }
   
   return(yeardat)
 }
@@ -458,4 +458,22 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
                                       layout.pos.col = matchidx$col))
     }
   }
+}
+
+
+RS_means = function(dat){
+  # calculates and returns means, sd, se, and 95% CI for the main RS variables 
+  dat.lat = summarySE(dat, measurevar="location.lat", groupvars=c("pres", "yday1", "year", "window"), na.rm=TRUE, conf.interval=0.95)
+  dat.lon = summarySE(dat, measurevar="location.long", groupvars=c("pres", "yday1", "year", "window"), na.rm=TRUE, conf.interval=0.95)
+  dat.evi = summarySE(dat, measurevar="EVI", groupvars=c("pres", "yday1", "year", "window"), na.rm=TRUE, conf.interval=0.95)
+  dat.t10m = summarySE(dat, measurevar="t10m", groupvars=c("pres", "yday1", "year", "window"), na.rm=TRUE, conf.interval=0.95)
+  dat.elev = summarySE(dat, measurevar="SRTM_elev", groupvars=c("pres", "yday1", "year", "window"), na.rm=TRUE, conf.interval=0.95)
+  
+  #merge data.frames, and name columns appropriately (check col numbers)
+  dat.sum=cbind(dat.lat, dat.lon[,6:9], dat.evi[,6:9], dat.t10m[,6:9], dat.elev[,6:9])
+  names(dat.sum) = c("pres", "yday1", "year", "window", "N", "mean.lat", "sd.lat", "se.lat", "ci.lat",
+                     "mean.lon", "sd.lon", "se.lon", "ci.lon", "mean.EVI", "sd.EVI", "se.EVI", "ci.EVI",
+                     "mean.t10m", "sd.t10m", "se.t10m", "ci.t10m", "mean.elev", "sd.elev", "se.elev", "ci.elev")
+  
+  return(dat.sum)
 }
