@@ -219,6 +219,8 @@ for (sp in species){
   pls.10 = importANDformat(spfiles[6], 10, migdates, alpha_window)
   pls.15 = importANDformat(spfiles[7], 15, migdates, alpha_window)
   
+  print (paste0("Imported data for species: ", sp))
+  
   #subset data for models - note that models will be run on +/- 15 day comparisons
   pa = subset(rbind(pres, abs), season %in% c("spring", "breeding", "fall"))
   pmin = subset(rbind(pres, min.15), season %in% c("spring", "breeding", "fall"))
@@ -267,7 +269,8 @@ for (sp in species){
   
   eval_gamlss_models(ppls.spring.mean, season="springpls", sp=sp, lag=TRUE, means=TRUE, output.dir=stat.dir)
   eval_gamlss_models(ppls.fall.mean, sp=sp, season="fallpls", lag=TRUE, means=TRUE, output.dir=stat.dir)
-  
+ 
+  print (paste0("Finished with models for ", sp))
 }
 
   
