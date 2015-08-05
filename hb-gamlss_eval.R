@@ -42,7 +42,12 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
   # top model(s) are written to output.dir
   
   #convert year to numeric for the models
-  dat$year = as.numeric(dat$year)
+  #dat$year = as.numeric(dat$year)
+  
+  #scale data for the models
+  dat$EVI = scale(dat$EVI)
+  dat$t10m = scale(dat$t10m)
+  dat$SRTM_elev = scale(dat$SRTM_elev)
   
   if(!means){
     cat("data represents all records from the alpha hulls \n")
@@ -58,17 +63,17 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
       # H0a. Remotely sensed variables will not be predictive of hummingbird presence, 
       #     because they do not adequately capture the processes (resources, demand) 
       #     that determine where birds are found along their migration route. 
-      MNull = gamlss(pres ~ 1 + (1|year) + (1|window), family="BI", data=dat)
+      MNull = gamlss(pres ~ 1 + random(year) + random(window), family="BI", data=dat)
       
       # H1. In the spring, birds should be more strongly tied to EVI, assuming that greenness 
       #     is a better proxy for food resources in the spring than in the fall.
       # H2. In the fall birds should be constrained to temperatures and Elevation*EVI interaction (resources), 
       #     particularly in the west where there is more extreme topography and habitat heterogeneity.
-      M1 = gamlss(pres ~ scale(EVI) * scale(t10m) * scale(SRTM_elev) + (1|year) + (1|window), family="BI", data=dat)
-      M2 = gamlss(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="BI", data=dat)
-      M3 = gamlss(pres ~ scale(EVI) + scale(t10m) + (1|year) + (1|window), family="BI", data=dat)
-      M4 = gamlss(pres ~ scale(EVI) + (1|year) + (1|window), family="BI", data=dat)
-      M5 = gamlss(pres ~ scale(t10m) + (1|year) + (1|window), family="BI", data=dat)
+      M1 = gamlss(pres ~ pb(EVI, df=5) * pb(t10m, df=5) * pb(SRTM_elev, df=5) + random(year) + random(window), family="BI", data=dat)
+      M2 = gamlss(pres ~ pb(EVI, df=5) + pb(t10m, df=5) + pb(SRTM_elev, df=5) + random(year) + random(window), family="BI", data=dat)
+      M3 = gamlss(pres ~ pb(EVI) + pb(t10m, df=5) + random(year) + random(window), family="BI", data=dat)
+      M4 = gamlss(pres ~ pb(EVI) + random(year) + random(window), family="BI", data=dat)
+      M5 = gamlss(pres ~ pb(t10m) + random(year) + random(window), family="BI", data=dat)
       
       #AIC comparison of models, returns matrix with AIC and df, ordered with best model first 
       AIC.df = GAIC(MNull, M1, M2, M3, M4, M5) 
@@ -90,7 +95,7 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
       # H0b. Remotely sensed variables will not be predictive of hummingbird presence, 
       #     because they do not adequately capture the processes (resources, demand) 
       #     that determine where birds are found along their migration route.
-      MNull = gamlss(pres ~ 1 + (1|year) + (1|window), family="BI", data=dat)
+      MNull = gamlss(pres ~ 1 + random(year) + random(window), family="BI", data=dat)
       
       # H3. In the spring, birds will be more strongly tied to EVI “greening up” 
       #     as they move northward to breeding grounds than in the fall.
@@ -99,12 +104,12 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
       # H5. In the fall, birds should be associated with higher elevations than in the spring, 
       #     because flower phenology (blooming time) is later at higher altitudes 
       #     (so it is associated with more resources) and cooler temperatures are found at higher elevations.
-      M1 = gamlss(pres ~ scale(EVI) * scale(t10m) * scale(SRTM_elev) + (1|year) + (1|window), family="BI", data=dat)
-      M2 = gamlss(pres ~ scale(t10m) * scale(SRTM_elev) + scale(EVI) * scale(SRTM_elev) + (1|year) + (1|window), family="BI", data=dat)
-      M3 = gamlss(pres ~ scale(EVI) + scale(t10m) + scale(SRTM_elev) + (1|year) + (1|window), family="BI", data=dat)
-      M4 = gamlss(pres ~ scale(EVI) + scale(t10m) + (1|year) + (1|window), family="BI", data=dat)
-      M5 = gamlss(pres ~ scale(EVI) + (1|year) + (1|window), family="BI", data=dat)
-      M6 = gamlss(pres ~ scale(t10m) + (1|year) + (1|window), family="BI", data=dat)
+      M1 = gamlss(pres ~ pb(EVI, df=5) * pb(t10m, df=5) * pb(SRTM_elev, df=5) + random(year) + random(window), family="BI", data=dat)
+      M2 = gamlss(pres ~ pb(t10m, df=5) * pb(SRTM_elev, df=5) + pb(EVI, df=5) * pb(SRTM_elev, df=5) + random(year) + random(window), family="BI", data=dat)
+      M3 = gamlss(pres ~ pb(EVI, df=5) + pb(t10m, df=5) + pb(SRTM_elev) + random(year) + random(window), family="BI", data=dat)
+      M4 = gamlss(pres ~ pb(EVI, df=5) + pb(t10m, df=5) + random(year) + random(window), family="BI", data=dat)
+      M5 = gamlss(pres ~ pb(EVI, df=5) + random(year) + random(window), family="BI", data=dat)
+      M6 = gamlss(pres ~ pb(t10m, df=5) + random(year) + random(window), family="BI", data=dat)
       
       #AIC comparison of models, returns matrix with AIC and df, ordered with best model first 
       AIC.df = GAIC(MNull, M1, M2, M3, M4, M5, M6) 
@@ -133,12 +138,12 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
       cat("models will compare within region presence vs. absence \n")
       
       #models use the same basic hypotheses as above, for no lag, but include effort
-      MNull = gamlss(pres ~ 1 + (1|year) + (1|window), sigma.formula=pb(N), family="BI", data=dat)
-      M1 = gamlss(pres ~ scale(mean.EVI) * scale(mean.t10m) * scale(mean.elev) + (1|year) + (1|window), sigma.formula=pb(N), family="BI", data=dat)
-      M2 = gamlss(pres ~ scale(mean.EVI) + scale(mean.t10m) + scale(mean.elev) + (1|year) + (1|window), sigma.formula=pb(N), family="BI", data=dat)
-      M3 = gamlss(pres ~ scale(mean.EVI) + scale(mean.t10m) + (1|year) + (1|window), sigma.formula=pb(N), family="BI", data=dat)
-      M4 = gamlss(pres ~ scale(mean.EVI) + (1|year) + (1|window), sigma.formula=pb(N), family="BI", data=dat)
-      M5 = gamlss(pres ~ scale(mean.t10m) + (1|year) + (1|window), sigma.formula=pb(N), family="BI", data=dat)
+      MNull = gamlss(pres ~ 1 + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M1 = gamlss(pres ~ pb(EVI, df=5) * pb(t10m, df=5) * pb(SRTM_elev, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M2 = gamlss(pres ~ pb(EVI, df=5) + pb(t10m, df=5) + pb(SRTM_elev, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M3 = gamlss(pres ~ pb(EVI) + pb(t10m, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M4 = gamlss(pres ~ pb(EVI) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M5 = gamlss(pres ~ pb(t10m) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
       
       #AIC comparison of models, returns matrix with AIC and df, ordered with best model first 
       AIC.df = GAIC(MNull, M1, M2, M3, M4, M5) 
@@ -158,14 +163,13 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
       cat("models will compare presence with migratory trajectory lags (+/- 15 days \n")
       
       #models use the same basic hypotheses as above, for +/- 15 day lag, but include effort
-      MNull = gamlss(pres ~ 1 + (1|year) + (1|window), sigma.formula=pb(N), family="BI", data=dat)
-      M1 = gamlss(pres ~ scale(mean.EVI) * scale(mean.t10m) * scale(mean.elev) + (1|year) + (1|window), sigma.formula=pb(N), family="BI", data=dat)
-      M2 = gamlss(pres ~ scale(mean.t10m) * scale(mean.elev) + scale(mean.EVI) * scale(mean.elev) + (1|year) + (1|window), sigma.formula=pb(N), family="BI", data=dat)
-      M3 = gamlss(pres ~ scale(mean.EVI) + scale(mean.t10m) + scale(mean.elev) + (1|year) + (1|window), sigma.formula=pb(N), family="BI", data=dat)
-      M4 = gamlss(pres ~ scale(mean.EVI) + scale(mean.t10m) + (1|year) + (1|window), sigma.formula=pb(N), family="BI", data=dat)
-      M5 = gamlss(pres ~ scale(mean.EVI) + (1|year) + (1|window), sigma.formula=pb(N), family="BI", data=dat)
-      M6 = gamlss(pres ~ scale(mean.t10m) + (1|year) + (1|window), sigma.formula=pb(N), family="BI", data=dat)
-      
+      MNull = gamlss(pres ~ 1 + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M1 = gamlss(pres ~ pb(EVI, df=5) * pb(t10m, df=5) * pb(SRTM_elev, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M2 = gamlss(pres ~ pb(t10m, df=5) * pb(SRTM_elev, df=5) + pb(EVI, df=5) * pb(SRTM_elev, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M3 = gamlss(pres ~ pb(EVI, df=5) + pb(t10m, df=5) + pb(SRTM_elev) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M4 = gamlss(pres ~ pb(EVI, df=5) + pb(t10m, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M5 = gamlss(pres ~ pb(EVI, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M6 = gamlss(pres ~ pb(t10m, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
       #AIC comparison of models, returns matrix with AIC and df, ordered with best model first 
       AIC.df = GAIC(MNull, M1, M2, M3, M4, M5, M6) 
       # Calculate AIC weights (Hobbs and Hilborn 2006)
