@@ -355,11 +355,13 @@ importANDformat = function(path, prescode, migdates, alpha_window){
   dat$id = as.factor(row.names(dat))
   #lubridate to pull month and year from filename
   dat$month = as.factor(month(as.Date(dat$timestamp)))
-  dat$year =  ordered(as.factor(year(as.Date(dat$timestamp))), levels=c(2008:2014))
+  dat$year = as.factor(year(as.Date(dat$timestamp)))
+  #dat$year =  ordered(as.factor(year(as.Date(dat$timestamp))), levels=c(2008:2014))
   dat$yday = as.numeric(yday(as.Date(dat$timestamp)))
   #assign window id codes for later comparisons
   dat = assign_window_season(migdates, dat, alpha_window)
   dat$season = as.factor(dat$season)
+  dat$window = as.factor(dat$window)
   return(dat)
 }
 
