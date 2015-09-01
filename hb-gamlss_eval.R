@@ -52,9 +52,11 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
     dat = na.omit(dat) #remove any lingering rows with NA
     
     #scale data for the models
-    dat$EVI = scale(dat$EVI)
-    dat$t10m = scale(dat$t10m)
-    dat$SRTM_elev = scale(dat$SRTM_elev)
+    dat$EVI <- as.vector(scale(dat$EVI)))
+    dat$t10m <- as.vector(scale(dat$t10m))
+    dat$SRTM_elev <- as.vector(scale(dat$SRTM_elev))
+    dat$year <- as.factor(dat$year)
+    dat$window <- as.factor(dat$window)
     
     #-----For within-region signal of presence (presence vs. absence points)
     if(!lag){
@@ -134,9 +136,11 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
     dat = na.omit(dat) #remove any lingering rows with NA
     
     #scale data for the models
-    dat$mean.EVI = scale(dat$mean.EVI)
-    dat$mean.t10m = scale(dat$mean.t10m)
-    dat$mean.elev = scale(dat$mean.elev)
+    dat$EVI <- as.vector(scale(dat$mean.EVI)))
+    dat$t10m <- as.vector(scale(dat$mean.t10m))
+    dat$SRTM_elev <- as.vector(scale(dat$mean.elev))
+    dat$year <- as.factor(dat$year)
+    dat$window <- as.factor(dat$window)
     
     #-----For within-region signal of presence (presence vs. absence points)
     if(!lag){
