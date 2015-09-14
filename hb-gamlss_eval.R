@@ -62,8 +62,9 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
     dat$year <- as.factor(dat$year)
     dat$window <- as.factor(dat$window)
     
-    #drop the levels for windows with no data
+    #drop the levels for windows/years with no data
     dat$window <- droplevels(dat$window)
+    dat$year <- droplevels(dat$year)
     
     #-----For within-region signal of presence (presence vs. absence points)
     if(!lag){
@@ -149,8 +150,9 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
     dat$year <- as.factor(dat$year)
     dat$window <- as.factor(dat$window)
     
-    #drop the levels for windows with no data
+    #drop the levels for windows/years with no data
     dat$window <- droplevels(dat$window)
+    dat$year <- droplevels(dat$year)
     
     #-----For within-region signal of presence (presence vs. absence points)
     if(!lag){
