@@ -72,17 +72,17 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
       # H0a. Remotely sensed variables will not be predictive of hummingbird presence, 
       #     because they do not adequately capture the processes (resources, demand) 
       #     that determine where birds are found along their migration route. 
-      MNull = gamlss(pres ~ 1, family="BI", data=dat)
+      MNull = gamlss(pres ~ 1 + random(year) + random(window), family="BI", data=dat)
       
       # H1. In the spring, birds should be more strongly tied to EVI, assuming that greenness 
       #     is a better proxy for food resources in the spring than in the fall.
       # H2. In the fall birds should be constrained to temperatures and Elevation*EVI interaction (resources), 
       #     particularly in the west where there is more extreme topography and habitat heterogeneity.
-      M.ETV = gamlss(pres ~ pb(EVI, df=5) * pb(t10m, df=5) * pb(SRTM_elev, df=5) + random(year) + random(window), family="BI", data=dat)
-      M.E_T_V = gamlss(pres ~ pb(EVI, df=5) + pb(t10m, df=5) + pb(SRTM_elev, df=5) + random(year) + random(window), family="BI", data=dat)
-      M.E_T = gamlss(pres ~ pb(EVI, df=5) + pb(t10m, df=5) + random(year) + random(window), family="BI", data=dat)
-      M.E = gamlss(pres ~ pb(EVI, df=5) + random(year) + random(window), family="BI", data=dat)
-      M.T = gamlss(pres ~ pb(t10m, df=5) + random(year) + random(window), family="BI", data=dat)
+      M.ETV = gamlss(pres ~ pb(EVI) * pb(t10m) * pb(SRTM_elev) + random(year) + random(window), family="BI", data=dat)
+      M.E_T_V = gamlss(pres ~ pb(EVI) + pb(t10m) + pb(SRTM_elev) + random(year) + random(window), family="BI", data=dat)
+      M.E_T = gamlss(pres ~ pb(EVI) + pb(t10m) + random(year) + random(window), family="BI", data=dat)
+      M.E = gamlss(pres ~ pb(EVI) + random(year) + random(window), family="BI", data=dat)
+      M.T = gamlss(pres ~ pb(t10m) + random(year) + random(window), family="BI", data=dat)
       
       #AIC comparison of models, returns matrix with AIC and df, ordered with best model first 
       AIC.df = GAIC(MNull, M.ETV, M.E_T_V, M.E_T, M.E, M.T) 
@@ -104,7 +104,7 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
       # H0b. Remotely sensed variables will not be predictive of hummingbird presence, 
       #     because they do not adequately capture the processes (resources, demand) 
       #     that determine where birds are found along their migration route.
-      MNull = gamlss(pres ~ 1, family="BI", data=dat)
+      MNull = gamlss(pres ~ 1 + random(year) + random(window), family="BI", data=dat)
       
       # H3. In the spring, birds will be more strongly tied to EVI “greening up” 
       #     as they move northward to breeding grounds than in the fall.
@@ -113,12 +113,12 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
       # H5. In the fall, birds should be associated with higher elevations than in the spring, 
       #     because flower phenology (blooming time) is later at higher altitudes 
       #     (so it is associated with more resources) and cooler temperatures are found at higher elevations.
-      M.ETV = gamlss(pres ~ pb(EVI, df=5) * pb(t10m, df=5) * pb(SRTM_elev, df=5) + random(year) + random(window), family="BI", data=dat)
-      M.EV_TV = gamlss(pres ~ pb(t10m, df=5) * pb(SRTM_elev, df=5) + pb(EVI, df=5) * pb(SRTM_elev, df=5) + random(year) + random(window), family="BI", data=dat)
-      M.E_T_V = gamlss(pres ~ pb(EVI, df=5) + pb(t10m, df=5) + pb(SRTM_elev) + random(year) + random(window), family="BI", data=dat)
-      M.E_T = gamlss(pres ~ pb(EVI, df=5) + pb(t10m, df=5) + random(year) + random(window), family="BI", data=dat)
-      M.E = gamlss(pres ~ pb(EVI, df=5) + random(year) + random(window), family="BI", data=dat)
-      M.T = gamlss(pres ~ pb(t10m, df=5) + random(year) + random(window), family="BI", data=dat)
+      M.ETV = gamlss(pres ~ pb(EVI) * pb(t10m) * pb(SRTM_elev) + random(year) + random(window), family="BI", data=dat)
+      M.EV_TV = gamlss(pres ~ pb(t10m) * pb(SRTM_elev) + pb(EVI) * pb(SRTM_elev) + random(year) + random(window), family="BI", data=dat)
+      M.E_T_V = gamlss(pres ~ pb(EVI) + pb(t10m) + pb(SRTM_elev) + random(year) + random(window), family="BI", data=dat)
+      M.E_T = gamlss(pres ~ pb(EVI) + pb(t10m) + random(year) + random(window), family="BI", data=dat)
+      M.E = gamlss(pres ~ pb(EVI) + random(year) + random(window), family="BI", data=dat)
+      M.T = gamlss(pres ~ pb(t10m) + random(year) + random(window), family="BI", data=dat)
       
       #AIC comparison of models, returns matrix with AIC and df, ordered with best model first 
       AIC.df = GAIC(MNull, M.ETV, M.EV_TV, M.E_T_V, M.E_T, M.E, M.T) 
@@ -159,11 +159,11 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
       #models use the same basic hypotheses as above, for no lag, but include effort 
       #models are labeled E=EVI, T=Temp, V=Elev
       MNull = gamlss(pres ~ 1 + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat) # null model doesn't seem to work when include random factors
-      M.ETV1 = gamlss(pres ~ pb(mean.EVI, df=5) * pb(mean.t10m, df=5) * pb(mean.elev, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
-      M.E_T_V = gamlss(pres ~ pb(mean.EVI, df=5) + pb(mean.t10m, df=5) + pb(mean.elev, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
-      M.E_T = gamlss(pres ~ pb(mean.EVI, df=5) + pb(mean.t10m, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
-      M.E = gamlss(pres ~ pb(mean.EVI, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
-      M.T = gamlss(pres ~ pb(mean.t10m, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M.ETV = gamlss(pres ~ pb(mean.EVI) * pb(mean.t10m) * pb(mean.elev) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M.E_T_V = gamlss(pres ~ pb(mean.EVI) + pb(mean.t10m) + pb(mean.elev) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M.E_T = gamlss(pres ~ pb(mean.EVI) + pb(mean.t10m) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M.E = gamlss(pres ~ pb(mean.EVI) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M.T = gamlss(pres ~ pb(mean.t10m) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
       
       #AIC comparison of models, returns matrix with AIC and df, ordered with best model first 
       AIC.df = GAIC(MNull, M.ETV, M.E_T_V, M.E_T, M.E, M.T) 
@@ -184,13 +184,13 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
       
       #models use the same basic hypotheses as above, for +/- 15 day lag, but include effort
       #models are labeled E=EVI, T=Temp, V=Elev, _ indicates additive
-      MNull = gamlss(pres ~ 1, sigma.fix=TRUE, family="BI", data=dat) #null model doesn't seem to work if include random factors
-      M.ETV = gamlss(pres ~ pb(mean.EVI, df=5) * pb(mean.t10m, df=5) * pb(mean.elev, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
-      M.EV_TV = gamlss(pres ~ pb(mean.t10m, df=5) * pb(mean.elev, df=5) + pb(mean.EVI, df=5) * pb(mean.elev, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
-      M.E_T_V = gamlss(pres ~ pb(mean.EVI, df=5) + pb(mean.t10m, df=5) + pb(mean.elev) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
-      M.E_T = gamlss(pres ~ pb(mean.EVI, df=5) + pb(mean.t10m, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
-      M.E = gamlss(pres ~ pb(mean.EVI, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
-      M.T = gamlss(pres ~ pb(mean.t10m, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      MNull = gamlss(pres ~ 1 + random(year) + random(window), sigma.fix=TRUE, family="BI", data=dat) #null model doesn't seem to work if include random factors
+      M.ETV = gamlss(pres ~ pb(mean.EVI) * pb(mean.t10m) * pb(mean.elev) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M.EV_TV = gamlss(pres ~ pb(mean.t10m) * pb(mean.elev) + pb(mean.EVI) * pb(mean.elev) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M.E_T_V = gamlss(pres ~ pb(mean.EVI) + pb(mean.t10m) + pb(mean.elev) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M.E_T = gamlss(pres ~ pb(mean.EVI) + pb(mean.t10m) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M.E = gamlss(pres ~ pb(mean.EVI) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M.T = gamlss(pres ~ pb(mean.t10m) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
       #AIC comparison of models, returns matrix with AIC and df, ordered with best model first 
       AIC.df = GAIC(MNull, M.ETV, M.EV_TV, M.E_T_V, M.E_T, M.E, M.T) 
       # Calculate AIC weights (Hobbs and Hilborn 2006)
