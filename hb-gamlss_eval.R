@@ -11,14 +11,18 @@ library(mgcv)
 library(gamm4)
 library(gamlss)
 
-# define pathnames (FAL will need to change pathnames)
-function.dir <- "/home/sarah/Documents/GitHub/hb-migration/hb_RS_functions.R"
-agan.dir <- "/home/sarah/Dropbox/Hummingbirds/hb_migration_data/ebird_annotated_raw/combined/"
-migtime.dir <- "/home/sarah/Dropbox/Hummingbirds/hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/"
-fig.dir <- "/home/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/"
-stat.dir <- "/home/sarah/Dropbox/Hummingbirds/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/stat-tests/"
+# dropbox pathname
+dropbox <- "/home/lorra/Dropbox/"
+#dropbox <- "/home/sarah/Dropbox/Hummingbirds/"
 
-source(function.dir)
+# define pathnames (FAL will need to change pathnames)
+function.dir <- "hb_RS_functions.R"
+agan.dir <- paste0(dropbox, "hb_migration_data/ebird_annotated_raw/combined/")
+migtime.dir <- paste0(dropbox, "hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/")
+fig.dir <- paste0(dropbox, "NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/")
+stat.dir <- paste0(dropbox, "NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/stat-tests/")
+
+source(function.dir) 
 
 #assign based on the time frame (number of days) used to compute the alpha hulls
 alpha_window = 5
@@ -57,6 +61,9 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
     dat$SRTM_elev <- as.vector(scale(dat$SRTM_elev))
     dat$year <- as.factor(dat$year)
     dat$window <- as.factor(dat$window)
+    
+    #drop the levels for windows with no data
+    dat$window <- droplevels(dat$window)
     
     #-----For within-region signal of presence (presence vs. absence points)
     if(!lag){
@@ -136,11 +143,14 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
     dat = na.omit(dat) #remove any lingering rows with NA
     
     #scale data for the models
-    dat$EVI <- as.vector(scale(dat$mean.EVI))
-    dat$t10m <- as.vector(scale(dat$mean.t10m))
-    dat$SRTM_elev <- as.vector(scale(dat$mean.elev))
+    dat$mean.EVI <- as.vector(scale(dat$mean.EVI))
+    dat$mean.t10m <- as.vector(scale(dat$mean.t10m))
+    dat$mean.SRTM_elev <- as.vector(scale(dat$mean.elev))
     dat$year <- as.factor(dat$year)
     dat$window <- as.factor(dat$window)
+    
+    #drop the levels for windows with no data
+    dat$window <- droplevels(dat$window)
     
     #-----For within-region signal of presence (presence vs. absence points)
     if(!lag){
@@ -148,7 +158,7 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
       
       #models use the same basic hypotheses as above, for no lag, but include effort 
       #models are labeled E=EVI, T=Temp, V=Elev
-      MNull = gamlss(pres ~ 1, sigma.formula=pb(N), family="BI", data=dat) # null model doesn't seem to work when include random factors
+      MNull = gamlss(pres ~ 1 + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat) # null model doesn't seem to work when include random factors
       M.ETV1 = gamlss(pres ~ pb(mean.EVI, df=5) * pb(mean.t10m, df=5) * pb(mean.elev, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
       M.E_T_V = gamlss(pres ~ pb(mean.EVI, df=5) + pb(mean.t10m, df=5) + pb(mean.elev, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
       M.E_T = gamlss(pres ~ pb(mean.EVI, df=5) + pb(mean.t10m, df=5) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
