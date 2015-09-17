@@ -76,6 +76,8 @@ for (sp in species){
   pa.spring.mean = RS_means(pa.spring)
   pa.fall.mean = RS_means(pa.fall)
   
+  pa.means = rbind(pa.spring.mean, pa.fall.mean)
+  
   pmin.spring.mean = RS_means(pmin.spring)
   pmin.fall.mean = RS_means(pmin.fall)
   ppls.spring.mean = RS_means(ppls.spring)
@@ -91,6 +93,30 @@ for (sp in species){
   ############################################################################
   print(paste0("making plots for ", sp))
   
+  # ----------------Presence-absence comparison WITHIN an alpha hull
+  ggplot(pa.means, aes(yday1, mean.elev)) + geom_line(aes(col=factor(pres,labels=c("present","absent")))) + 
+    geom_vline(data=migdates, aes(xintercept=peak_lat)) + facet_wrap(~year) + 
+    xlab("Julian day") + ylab("mean Elevation (meters)") + 
+    scale_colour_manual(values=c("black", "indianred")) +
+    labs(col="within alpha hull") + ggtitle(sp)
+  ggsave(file=paste0(fig.dir, sp, "/pa.mean_elev.png"))
+  
+  ggplot(pa.means, aes(yday1, mean.EVI)) + geom_line(aes(col=factor(pres,labels=c("present","absent")))) + 
+    geom_vline(data=migdates, aes(xintercept=peak_lat)) + facet_wrap(~year) + 
+    xlab("Julian day") + ylab("mean EVI") + 
+    scale_colour_manual(values=c("black", "indianred")) +
+    labs(col="within alpha hull") + ggtitle(sp)
+  ggsave(file=paste0(fig.dir, sp, "/pa.mean_EVI.png"))
+  
+  ggplot(pa.means, aes(yday1, mean.t10m-273.15)) + geom_line(aes(col=factor(pres,labels=c("present","absent")))) +
+    geom_vline(data=migdates, aes(xintercept=peak_lat)) + facet_wrap(~year) + 
+    xlab("Julian day") + ylab("mean temperature (Celsius)") + 
+    scale_colour_manual(values=c("black", "indianred")) +
+    labs(col="within alpha hull") + ggtitle(sp)
+  ggsave(file=paste0(fig.dir, sp, "/pa.mean_temp.png"))
+  
+  
+  # ---------------migration trajectory comparison +/- 15 days
   ggplot(means, aes(yday1, mean.elev)) + geom_line(aes(col=factor(pres,labels=c("present","+15 days", "15 days ago")))) + 
     geom_vline(data=migdates, aes(xintercept=peak_lat)) + facet_wrap(~year) + 
     xlab("Julian day") + ylab("mean Elevation (meters)") + 
