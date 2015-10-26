@@ -133,7 +133,17 @@ for (f in 1:length(files)){
   humdat = read.table(paste0(writepath, files[f]), header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")
   
   #make the column names look nicer
- 
+  names(humdat) = gsub('.{1}$', '', substring(names(humdat),3))
+  #make sure month is read as an ordered factor
+  humdat$MONTH = factor(humdat$MONTH, levels=c(1:12), ordered=TRUE)
+  
+  #grab species name for setting directory paths and naming figures, identify years
+  species = gsub("\"", "", humdat$SCI_NAME[1], fixed=TRUE) 
+  spcode = gsub("08-14.txt", "", files[f])
+  years = sort(unique(humdat$YEAR))
+  
+  #plot number of records by week and year, save frequency of obs to txt file
+  freqobs = ggplot(humdat, aes(DAY)) + geom_histogram(binwidth=1) + theme_bw() + facet_wrap(~YEAR)
   ggsave(file=paste(writepath, spcode, "_obs_by_year.pdf", sep=""))
   
   yeartable = PlotRecords(humdat$YEAR, species)
@@ -255,7 +265,7 @@ for (f in 1:length(files)){
 files = list.files(path=writepath, pattern = "_humdat_.*\\.*st.txt$")
 
 #specify time frame (number of days) to group observations
-timeframe = 5
+timeframe = 7
 
 for (f in 1:length(files)){
   
