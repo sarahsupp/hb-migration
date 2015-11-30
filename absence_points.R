@@ -1,10 +1,13 @@
 require(dplyr)
 require(gdata)
 require(tidyr)
+require(ggplot2)
+require(cowplot)
 
 window.size <- 5
 
 dat.path <- paste0("/home/lorra/Dropbox/hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/t", window.size, "/")
+out.path <- paste0("/home/lorra/Dropbox/hb_migration_data/pseudoabsences/t", window.size, "/")
 
 getAbsenceWindows <- function(test) {
   test$window <- as.numeric(test$window)
@@ -58,20 +61,11 @@ for(sp in c("bchu", "bthu", "cahu", "rthu", "ruhu")) {
   # get the start day of the presence window that it corresponds to
   abs <- merge(abs, winstart)
   
-  save(abs, file=paste0(sp, "_abs.rda"))
+  save(abs, file=paste0(out.path, "/", sp, "_abs.rda"))
 }
 
-# get summaries
-require(dplyr)
-require(tidyr)
-load("bchu_abs.rda")
-
-cahu.summary <- group_by(abs, YEAR, window) %>%
-  summarise(count = n()) %>%
-  spread(key=YEAR, value=count)
-
-# need to do this for presences too and work out how to display.
-
+# create and plot summaries of presences
+prs.summary <- list()
 for(sp in c("bchu", "bthu", "cahu", "rthu", "ruhu")) {
   if(sp=="rthu") {
     prs <- read.table(paste0(dat.path, "t", window.size, "_", sp, "_humdat_east.txt"), sep=",",  header = TRUE, stringsAsFactors = FALSE, quote = "\"")
@@ -80,8 +74,35 @@ for(sp in c("bchu", "bthu", "cahu", "rthu", "ruhu")) {
   }
   prs <- as.data.frame(sapply(prs, function(x) gsub("\\\\", "", x)), stringsAsFactors = FALSE)
   prs$window <- as.numeric(prs$window)
-  prs.summary <- group_by(prs, YEAR, window) %>%
+  prs.summary[[sp]] <- group_by(prs, YEAR, window) %>%
     summarise(count = n()) %>%
-    spread(key=YEAR, value=count)
-  save(prs.summary, file=paste0(sp, "_prs_summary.rda"))
+    mutate(species=sp)
 }
+
+prs.summary.full <- do.call("rbind", prs.summary)
+
+prs.plot <- ggplot(data=prs.summary.full, aes(x=window, y=count, colour=YEAR)) +
+  geom_line() +
+  facet_wrap(~species, scales="free")
+
+save_plot("~/Dropbox/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/presences.pdf", prs.plot,
+          base_aspect_ratio = 1:3)
+
+# create and plot summaries of absences
+abs.summary <- list()
+for(sp in c("bchu", "bthu", "cahu", "rthu", "ruhu")) {
+  
+  load(paste0(out.path, "/", sp, "_abs.rda"))
+  abs.summary[[sp]] <- group_by(abs, YEAR, window) %>%
+    summarise(count = n()) %>%
+    mutate(species=sp)
+}
+
+abs.summary.full <- do.call("rbind", abs.summary)
+
+abs.plot <- ggplot(data=abs.summary.full, aes(x=window, y=count, colour=YEAR)) +
+  geom_line() +
+  facet_wrap(~species, scales="free")
+
+save_plot("~/Dropbox/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/absences.pdf", abs.plot,
+          base_aspect_ratio = 1:3)
