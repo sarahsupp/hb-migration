@@ -9,7 +9,7 @@ library(maptools)
 #path to files
 filepath = "/home/sarah/Dropbox/Hummingbirds/hb_migration_data/ebird_raw/eBird_checklists_2008-2014/"
 writepath = "/home/sarah/Dropbox/Hummingbirds/hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/"
-hexpath = "/home/sarah/Dropbox/ActiveResearchProjects/Hummingbird_eBirdMigration/"
+hexpath = "/home/sarah/Dropbox/CompletedResearchProjects/Hummingbird_eBirdMigration/"
 gitpath = "/home/sarah/Documents/GitHub/hb-migration/"
 
 #----------------------------------------------------FUNCTIONS
@@ -128,22 +128,12 @@ for (f in 1:length(files)){
   require(sp)
   require(raster)
   require(segmented)
-  source(paste(gitpath, "/migration-fxns.r", sep=""))
+  source(paste(gitpath, "/Project-1/migration-fxns.r", sep=""))
   
   humdat = read.table(paste0(writepath, files[f]), header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")
   
   #make the column names look nicer
   names(humdat) = gsub('.{1}$', '', substring(names(humdat),3))
-  
-  #strip extra "" and "\\" from fields
-  humdat$SCI_NAME = gsub("\"", "", humdat$SCI_NAME, fixed=TRUE) 
-  humdat$PRIMARY_COM_NAME = gsub("\"", "", humdat$PRIMARY_COM_NAME, fixed=TRUE) 
-  humdat$GROUP_ID = gsub("\"", "", humdat$GROUP_ID, fixed=TRUE) 
-  humdat$PROJ_ID = gsub("\"", "", humdat$PROJ_ID, fixed=TRUE) 
-  humdat$SUB_ID = gsub("\"", "", humdat$SUB_ID, fixed=TRUE) 
-  humdat$PROTOCOL_ID = gsub("\"", "", humdat$PROTOCOL_ID, fixed=TRUE) 
-  humdat$TIME = gsub("\"", "", humdat$TIME, fixed=TRUE) 
-  
   #make sure month is read as an ordered factor
   humdat$MONTH = factor(humdat$MONTH, levels=c(1:12), ordered=TRUE)
   
@@ -153,7 +143,7 @@ for (f in 1:length(files)){
   years = sort(unique(humdat$YEAR))
   
   #plot number of records by week and year, save frequency of obs to txt file
-  freqobs = ggplot(humdat, aes(DAY)) + geom_histogram(binwidth=7) + theme_bw() + facet_wrap(~YEAR)
+  freqobs = ggplot(humdat, aes(DAY)) + geom_histogram(binwidth=1) + theme_bw() + facet_wrap(~YEAR)
   ggsave(file=paste(writepath, spcode, "_obs_by_year.pdf", sep=""))
   
   yeartable = PlotRecords(humdat$YEAR, species)
@@ -275,7 +265,7 @@ for (f in 1:length(files)){
 files = list.files(path=writepath, pattern = "_humdat_.*\\.*st.txt$")
 
 #specify time frame (number of days) to group observations
-timeframe = 3
+timeframe = 7
 
 for (f in 1:length(files)){
   

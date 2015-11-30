@@ -12,11 +12,14 @@ library(gamm4)
 library(gamlss)
 
 # dropbox pathname
-dropbox <- "/home/lorra/Dropbox/"
-#dropbox <- "/home/sarah/Dropbox/Hummingbirds/"
+#dropbox <- "/home/lorra/Dropbox/"
+dropbox <- "/home/sarah/Dropbox/Hummingbirds/"
+
+# github pathname
+github <- "/home/sarah/Documents/GitHub/hb-migration/"
 
 # define pathnames (FAL will need to change pathnames)
-function.dir <- "hb_RS_functions.R"
+function.dir <- paste0(github, "hb_RS_functions.R")
 agan.dir <- paste0(dropbox, "hb_migration_data/ebird_annotated_raw/combined/")
 migtime.dir <- paste0(dropbox, "hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/")
 fig.dir <- paste0(dropbox, "NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/")
