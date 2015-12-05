@@ -40,6 +40,32 @@ getAbsenceWindows <- function(test) {
     mutate(window=preswindow) %>%
     select(-preswindow)
   
+  # This section subsamples so that the max number of absences is 3*presences ---------------------------------
+  # find how many presences there are by window
+  prsXwindow <- group_by(test, window) %>%
+    summarise(no.pres=n())
+  
+  absXwindow <- group_by(prsabs, window) %>%
+    summarise(no.abs=n())
+  
+  prsabsXwindow <- merge(prsXwindow, absXwindow)
+  
+  prsabsXwindow$sample <- prsabsXwindow$no.abs >= 3*prsabsXwindow$no.pres
+  
+  l.prsabs <- split(prsabs, prsabs$window)
+  
+  # sampling function
+  sample.abs <- function(wdw) {
+    if(prsabsXwindow[prsabsXwindow$window==wdw, "sample"]) {
+      out <- l.prsabs[[wdw]][sample(nrow(l.prsabs[[wdw]]), 3*prsabsXwindow[prsabsXwindow$window==wdw, "no.pres"]),]
+    } else {
+      out <- l.prsabs[[wdw]]
+    }
+    return(out)
+  }
+  
+  l.prsabs <- lapply(as.character(prsabsXwindow$window), function(x) sample.abs(x))
+  prsabs <- do.call("rbind", l.prsabs)
   return(prsabs)
 }
 
