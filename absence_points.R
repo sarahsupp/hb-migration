@@ -9,14 +9,10 @@ window.size <- 5
 dat.path <- paste0("/home/lorra/Dropbox/hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/t", window.size, "/")
 out.path <- paste0("/home/lorra/Dropbox/hb_migration_data/pseudoabsences/t", window.size, "/")
 
-getAbsenceWindows <- function(test) {
+getAbsenceWindows <- function(test, direction) {
   test$window <- as.numeric(test$window)
   nonzerowindow <- sort(unique(test$window))[-1]
-  
-  # abs is a window by window matrix showing where absences are taken from for each window
-  abswindows <- matrix(FALSE, nrow=length(nonzerowindow), ncol=length(nonzerowindow))
-  lowerTriangle(abswindows) <- TRUE
-  
+
   #calculate the window at which peak migration starts (counted as beginning of fall)
   peakwin <- filter(test, DAY==peak) %>%
     select(window) %>%
@@ -26,8 +22,19 @@ getAbsenceWindows <- function(test) {
   # get the index/rownumber for the peakwindow
   i.peakwin <- which(nonzerowindow==peakwin)
   
-  # get rid of all absences earlier than peak for the fall presences. 
-  abswindows[(i.peakwin + 1):nrow(abswindows), 1:(i.peakwin - 1)] <- FALSE
+  # abs is a window by window matrix showing where absences are taken from for each window
+  abswindows <- matrix(FALSE, nrow=length(nonzerowindow), ncol=length(nonzerowindow))
+  
+  if(direction=="comingfrom") {
+    lowerTriangle(abswindows) <- TRUE
+    # get rid of all absences earlier than peak for the fall presences. 
+    abswindows[(i.peakwin + 1):nrow(abswindows), 1:(i.peakwin - 1)] <- FALSE
+  } else if (direction=="goingto") {
+    # get rid of all absences later than peak for the spring presences. 
+    upperTriangle(abswindows) <- TRUE
+    abswindows[1:(i.peakwin - 1), (i.peakwin + 1):nrow(abswindows)] <- FALSE
+  }
+  
   abswindows <- data.frame(window=nonzerowindow, abswindows)
   names(abswindows) <- c("preswindow", nonzerowindow)
   # gather and remove "FALSE" rows to get the full set of absence data
@@ -77,17 +84,22 @@ for(sp in c("bchu", "bthu", "cahu", "rthu", "ruhu")) {
   }
   prs <- as.data.frame(sapply(prs, function(x) gsub("\\\\", "", x)), stringsAsFactors = FALSE)
   l.prs <- split(prs, prs$YEAR)
-  l.abs <- lapply(l.prs, getAbsenceWindows)
-  abs <- do.call("rbind", l.abs)
+  l.abs.comingfrom <- lapply(l.prs, function(x) getAbsenceWindows(x, "comingfrom"))
+  abs.comingfrom <- do.call("rbind", l.abs.comingfrom)
+  
+  l.abs.goingto <- lapply(l.prs, function(x) getAbsenceWindows(x, "goingto"))
+  abs.goingto <- do.call("rbind", l.abs.goingto)
   
   # get window/year start days
   winstart <- group_by(prs, YEAR, window) %>%
     summarise(absday = min(DAY))
   
   # get the start day of the presence window that it corresponds to
-  abs <- merge(abs, winstart)
+  abs.comingfrom <- merge(abs.comingfrom, winstart)
+  abs.goingto <- merge(abs.goingto, winstart)
   
-  save(abs, file=paste0(out.path, "/", sp, "_abs.rda"))
+  write.csv(abs.comingfrom, file=paste0(out.path, "/", sp, "_abs_comingfrom.txt"))
+  write.csv(abs.goingto, file=paste0(out.path, "/", sp, "_abs_goingto.txt"))
 }
 
 # create and plot summaries of presences
