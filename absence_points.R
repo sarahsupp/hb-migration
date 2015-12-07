@@ -102,6 +102,13 @@ for(sp in c("bchu", "bthu", "cahu", "rthu", "ruhu")) {
   write.csv(abs.goingto, file=paste0(out.path, "/", sp, "_abs_goingto.txt"))
 }
 
+# create unique point/data files for sending to WH
+files <- list.files(out.path, full.names = TRUE)
+input <- lapply(files, read.csv)
+input.l <- do.call("rbind", input)
+input.u <- unique(input.l[,c("LATITUDE", "LONGITUDE", "absday", "YEAR")])
+write.csv(input.u, file=paste0(out.path, "/unique.absence.points.csv"))
+
 # create and plot summaries of presences
 prs.summary <- list()
 for(sp in c("bchu", "bthu", "cahu", "rthu", "ruhu")) {
