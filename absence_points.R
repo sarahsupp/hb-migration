@@ -106,8 +106,10 @@ for(sp in c("bchu", "bthu", "cahu", "rthu", "ruhu")) {
 files <- list.files(out.path, full.names = TRUE)
 input <- lapply(files, read.csv)
 input.l <- do.call("rbind", input)
-input.u <- unique(input.l[,c("LATITUDE", "LONGITUDE", "absday", "YEAR")])
+input.u <- unique(input.l[,c("LATITUDE", "LONGITUDE", "absday", "TIME", "YEAR")])
 write.csv(input.u, file=paste0(out.path, "/unique.absence.points.csv"))
+
+test <- unique(input.u[,c("LATITUDE", "LONGITUDE", "absday", "YEAR")])
 
 # create and plot summaries of presences
 prs.summary <- list()
