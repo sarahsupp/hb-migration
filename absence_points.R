@@ -8,6 +8,7 @@ window.size <- 5
 
 dat.path <- paste0("/home/lorra/Dropbox/hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/t", window.size, "/")
 out.path <- paste0("/home/lorra/Dropbox/hb_migration_data/pseudoabsences/t", window.size, "/")
+env.dat <- "/home/lorra/Dropbox/hb_migration_data/gesp_Quality_EVI_SRTM_t10m_250.csv"
 
 getAbsenceWindows <- function(test, direction) {
   test$window <- as.numeric(test$window)
@@ -110,6 +111,26 @@ input.u <- unique(input.l[,c("LATITUDE", "LONGITUDE", "absday", "TIME", "YEAR")]
 write.csv(input.u, file=paste0(out.path, "/unique.absence.points.csv"))
 
 test <- unique(input.u[,c("LATITUDE", "LONGITUDE", "absday", "YEAR")])
+
+# code to run after files back from WH - annotates individual species files with environmental variables
+env_dat <- read.csv(env.dat, stringsAsFactors = FALSE)
+env_dat$timestamp <- strptime(env_dat$timestamp, "%Y-%m-%d %H:%M:%S")
+if(!file.exists(paste0(out.path, "/annotated"))) dir.create(paste0(out.path, "/annotated"))
+
+files <- list.files(out.path, pattern = "_abs_")
+
+chck_rows <- lapply(files, function(f) {
+  sp_dat <- read.csv(paste0(out.path, f), stringsAsFactors = FALSE)
+  sp_dat$timestamp <- strptime(paste(as.Date(sp_dat$absday - 1, origin = paste0(sp_dat$YEAR, "-01-01"), value = 1), sp_dat$TIME),
+                               "%Y-%m-%d %H:%M:%S")
+  
+  # annotate species absence points with environmental data
+  sp_dat_ann <- merge(sp_dat, env_dat, 
+                      by.x = c("LATITUDE", "LONGITUDE", "timestamp"), 
+                      by.y = c("location.lat", "location.long", "timestamp"))
+  save(sp_dat_ann, file=paste0(out.path, "/annotated/", gsub(".txt", ".R", f)))
+  chck <- c(nrow(sp_dat), nrow(sp_dat_ann))
+})
 
 # create and plot summaries of presences
 prs.summary <- list()

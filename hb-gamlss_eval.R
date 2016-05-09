@@ -12,23 +12,25 @@ library(gamm4)
 library(gamlss)
 
 # dropbox pathname
-#dropbox <- "/home/lorra/Dropbox/"
-dropbox <- "/home/sarah/Dropbox/Hummingbirds/"
+dropbox <- "/home/lorra/Dropbox/"
+#dropbox <- "/home/sarah/Dropbox/Hummingbirds/"
 
 # github pathname
-github <- "/home/sarah/Documents/GitHub/hb-migration/"
+github <- "/home/lorra/Documents/hb-migration/"
+#github <- "/home/sarah/Documents/GitHub/hb-migration/"
+
+#assign based on the time frame (number of days) used to compute the alpha hulls
+alpha_window = 5
 
 # define pathnames (FAL will need to change pathnames)
 function.dir <- paste0(github, "hb_RS_functions.R")
 agan.dir <- paste0(dropbox, "hb_migration_data/ebird_annotated_raw/combined/")
+abs.dir <- paste0(dropbox, "hb_migration_data/pseudoabsences/t", alpha_window, "/annotated/")
 migtime.dir <- paste0(dropbox, "hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/")
 fig.dir <- paste0(dropbox, "NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/")
 stat.dir <- paste0(dropbox, "NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/stat-tests/")
 
 source(function.dir) 
-
-#assign based on the time frame (number of days) used to compute the alpha hulls
-alpha_window = 5
 
 #list of species codes
 species <- c("bchu", "bthu", "cahu", "ruhu", "rthu")
@@ -101,9 +103,9 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
       rm(gamlss.list)
     }
     
-    #-----For migratory trajectory (presence vs +/- 15 day points)
+    #-----For migratory trajectory (presence vs all future/past points)
     if(lag){
-      cat("models will compare presence with migratory trajectory lags (+/- 15 days \n")
+      cat("models will compare presence with absences derived from all future points and all previous points \n")
       
       # H0b. Remotely sensed variables will not be predictive of hummingbird presence, 
       #     because they do not adequately capture the processes (resources, demand) 
@@ -185,7 +187,7 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
     
     #-----For migratory trajectory (presence vs +/- 15 day points)
     if(lag){
-      cat("models will compare presence with migratory trajectory lags (+/- 15 days \n")
+      cat("models will compare presence with absences derived from all future points and all previous points \n")
       
       #models use the same basic hypotheses as above, for +/- 15 day lag, but include effort
       #models are labeled E=EVI, T=Temp, V=Elev, _ indicates additive
@@ -229,6 +231,8 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
 
 for (sp in species){
   spfiles = list.files(path = agan.dir, pattern = glob2rx(paste0(sp,"*.RData")), recursive=FALSE, full.names=TRUE)
+  pls.abs = list.files(path = abs.dir, pattern = glob2rx(paste0(sp,"*goingto.R")), recursive=FALSE, full.names=TRUE)
+  min.abs = list.files(path = abs.dir, pattern = glob2rx(paste0(sp,"*comingfrom.R")), recursive=FALSE, full.names=TRUE)
   mfiles = list.files(path = migtime.dir, pattern = glob2rx(paste0(sp,"*migration*")), recursive=FALSE, full.names=TRUE)
   
   #import migration dates from previous analysis
@@ -239,13 +243,7 @@ for (sp in species){
   #load all the files into a list
   abs = importANDformat(spfiles[1], 0, migdates, alpha_window)
   pres = importANDformat(spfiles[2], 1, migdates, alpha_window)
-  min.05 = importANDformat(spfiles[5], -5, migdates, alpha_window)
-  min.10 = importANDformat(spfiles[3], -10, migdates, alpha_window)
-  min.15 = importANDformat(spfiles[4], -15, migdates, alpha_window)
-  pls.05 = importANDformat(spfiles[8], 5, migdates, alpha_window)
-  pls.10 = importANDformat(spfiles[6], 10, migdates, alpha_window)
-  pls.15 = importANDformat(spfiles[7], 15, migdates, alpha_window)
-  
+  min.abs = importANDformat(pls.abs, 0, migdates, alpha_window)
   print (paste0("Imported data for species: ", sp))
   
   #subset data for models - note that models will be run on +/- 15 day comparisons
