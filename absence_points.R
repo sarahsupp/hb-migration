@@ -8,7 +8,7 @@ window.size <- 5
 
 dat.path <- paste0("/home/lorra/Dropbox/hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/t", window.size, "/")
 out.path <- paste0("/home/lorra/Dropbox/hb_migration_data/pseudoabsences/t", window.size, "/")
-env.dat <- "/home/lorra/Dropbox/hb_migration_data/gesp_Quality_EVI_SRTM_t10m_250.csv"
+db.path <- "/home/lorra/Dropbox/hb_migration_data"
 
 getAbsenceWindows <- function(test, direction) {
   test$window <- as.numeric(test$window)
@@ -113,7 +113,12 @@ write.csv(input.u, file=paste0(out.path, "/unique.absence.points.csv"))
 test <- unique(input.u[,c("LATITUDE", "LONGITUDE", "absday", "YEAR")])
 
 # code to run after files back from WH - annotates individual species files with environmental variables
-env_dat <- read.csv(env.dat, stringsAsFactors = FALSE)
+env_dat <- read.csv(paste0(db.path, "/gesp_Quality_EVI_SRTM_t10m_250.csv"), stringsAsFactors = FALSE)
+
+# SRTM_elev and t10m were not on the final file so have included previous version of these
+other <- read.csv(paste0(db.path, "/gesp_fcl_abs_combined_250.csv"))
+other <- select(other, timestamp, location.long, location.lat, SRTM_elev, t10m)
+env_dat <- merge(env_dat, other)
 env_dat$timestamp <- strptime(env_dat$timestamp, "%Y-%m-%d %H:%M:%S")
 if(!file.exists(paste0(out.path, "/annotated"))) dir.create(paste0(out.path, "/annotated"))
 
@@ -125,10 +130,19 @@ chck_rows <- lapply(files, function(f) {
                                "%Y-%m-%d %H:%M:%S")
   
   # annotate species absence points with environmental data
-  sp_dat_ann <- merge(sp_dat, env_dat, 
-                      by.x = c("LATITUDE", "LONGITUDE", "timestamp"), 
-                      by.y = c("location.lat", "location.long", "timestamp"))
-  save(sp_dat_ann, file=paste0(out.path, "/annotated/", gsub(".txt", ".R", f)))
+  sp_dat_ann <- merge(env_dat, sp_dat, 
+                      by.x = c("location.lat", "location.long", "timestamp"), 
+                      by.y = c("LATITUDE", "LONGITUDE", "timestamp")) %>%
+    mutate(id=rownames(.), pres=0, year = YEAR, month = MONTH, yday = absday, yday1 = absday) %>%
+    dplyr::select(id, location.long, location.lat, window, year, month, yday, yday1, season, EVI, SRTM_elev, t10m, pres)
+  
+  sp_dat_ann$window <- as.factor(sp_dat_ann$window)
+  sp_dat_ann$year <- as.factor(sp_dat_ann$year)
+  sp_dat_ann$month <- as.factor(sp_dat_ann$month)
+  sp_dat_ann$season <- as.factor(sp_dat_ann$season)
+  sp_dat_ann$pres <- as.factor(sp_dat_ann$pres)
+  
+  save(sp_dat_ann, file=paste0(out.path, "/annotated/", gsub(".txt", ".rda", f)))
   chck <- c(nrow(sp_dat), nrow(sp_dat_ann))
 })
 

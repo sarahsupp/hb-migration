@@ -309,14 +309,14 @@ ID_windows = function(yeardat, spring, peak, fall, timewindow){
   yday1.df = data.frame("window"=0:length(yday1[-1]), "yday1"=yday1)  
   yeardat = merge(yeardat, yday1.df, by = intersect("window", "window"))
   
-  #assign id var for comparing time frames (id compares rows/locations)
-  if(yeardat$pres[1] %in% c(0,1)){ yeardat$compare.win = yeardat$window }
-  else if(yeardat$pres[1] == -5) { yeardat$compare.win = yeardat$window +1 }
-  else if(yeardat$pres[1] == -10) { yeardat$compare.win = yeardat$window +2 }
-  else if(yeardat$pres[1] == -15) { yeardat$compare.win = yeardat$window +3 }
-  else if(yeardat$pres[1] == 5) { yeardat$compare.win = yeardat$window -1 }
-  else if(yeardat$pres[1] == 10) { yeardat$compare.win = yeardat$window -2 }
-  else if(yeardat$pres[1] == 15) { yeardat$compare.win = yeardat$window -3 }
+  # #assign id var for comparing time frames (id compares rows/locations)
+  # if(yeardat$pres[1] %in% c(0,1)){ yeardat$compare.win = yeardat$window }
+  # else if(yeardat$pres[1] == -5) { yeardat$compare.win = yeardat$window +1 }
+  # else if(yeardat$pres[1] == -10) { yeardat$compare.win = yeardat$window +2 }
+  # else if(yeardat$pres[1] == -15) { yeardat$compare.win = yeardat$window +3 }
+  # else if(yeardat$pres[1] == 5) { yeardat$compare.win = yeardat$window -1 }
+  # else if(yeardat$pres[1] == 10) { yeardat$compare.win = yeardat$window -2 }
+  # else if(yeardat$pres[1] == 15) { yeardat$compare.win = yeardat$window -3 }
   
   return(yeardat)
 }
@@ -362,6 +362,7 @@ importANDformat = function(path, prescode, migdates, alpha_window){
   dat = assign_window_season(migdates, dat, alpha_window)
   dat$season = as.factor(dat$season)
   dat$window = as.factor(dat$window)
+  dat <- dat[,c("id", "location.long", "location.lat", "window", "year", "month", "yday", "yday1", "season", "EVI", "SRTM_elev", "t10m", "pres")]
   return(dat)
 }
 

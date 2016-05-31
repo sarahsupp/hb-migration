@@ -231,8 +231,8 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
 
 for (sp in species){
   spfiles = list.files(path = agan.dir, pattern = glob2rx(paste0(sp,"*.RData")), recursive=FALSE, full.names=TRUE)
-  pls.abs = list.files(path = abs.dir, pattern = glob2rx(paste0(sp,"*goingto.R")), recursive=FALSE, full.names=TRUE)
-  min.abs = list.files(path = abs.dir, pattern = glob2rx(paste0(sp,"*comingfrom.R")), recursive=FALSE, full.names=TRUE)
+  pls.abs = list.files(path = abs.dir, pattern = glob2rx(paste0(sp,"*goingto.rda")), recursive=FALSE, full.names=TRUE)
+  min.abs = list.files(path = abs.dir, pattern = glob2rx(paste0(sp,"*comingfrom.rda")), recursive=FALSE, full.names=TRUE)
   mfiles = list.files(path = migtime.dir, pattern = glob2rx(paste0(sp,"*migration*")), recursive=FALSE, full.names=TRUE)
   
   #import migration dates from previous analysis
@@ -243,21 +243,22 @@ for (sp in species){
   #load all the files into a list
   abs = importANDformat(spfiles[1], 0, migdates, alpha_window)
   pres = importANDformat(spfiles[2], 1, migdates, alpha_window)
-  min.abs = importANDformat(pls.abs, 0, migdates, alpha_window)
+  min.abs = get(load(min.abs))
+  pls.abs = get(load(pls.abs))
   print (paste0("Imported data for species: ", sp))
   
   #subset data for models - note that models will be run on +/- 15 day comparisons
   pa = subset(rbind(pres, abs), season %in% c("spring", "breeding", "fall"))
-  pmin = subset(rbind(pres, min.15), season %in% c("spring", "breeding", "fall"))
-  ppls = subset(rbind(pres, pls.15), season %in% c("spring", "breeding", "fall"))
+  pmin = subset(rbind(pres, min.abs), season %in% c("spring", "breeding", "fall"))
+  ppls = subset(rbind(pres, pls.abs), season %in% c("spring", "breeding", "fall"))
   
   pa.spring = subset(rbind(pres, abs), season=="spring")
-  pmin.spring = subset(rbind(pres, min.15), season=="spring")
-  ppls.spring = subset(rbind(pres, pls.15), season=="spring")
+  pmin.spring = subset(rbind(pres, min.abs), season=="spring")
+  ppls.spring = subset(rbind(pres, pls.abs), season=="spring")
   
   pa.fall = subset(rbind(pres, abs), season=="fall")
-  pmin.fall = subset(rbind(pres, min.15), season=="fall")
-  ppls.fall = subset(rbind(pres, pls.15), season=="fall")
+  pmin.fall = subset(rbind(pres, min.abs), season=="fall")
+  ppls.fall = subset(rbind(pres, pls.abs), season=="fall")
   
   #subset data for models - note that models will be run on +/- 15 day comparisons of MEANS
   #NOTE: The labels seem to be backwards (pmin when matched on window or yday1 represents where hb will be, ppls represents where hb were)
