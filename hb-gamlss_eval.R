@@ -307,14 +307,4 @@ for (sp in species){
   
   print (paste0("Finished with models for ", sp))
 }
-
-# Calculate dAIC and change from list to DF
-mod.list <- lapply(mod.list, function(x) {
-  min.AIC <- min(x$AIC)
-  x$dAIC <- apply(x, 1, function(y) y['AIC'] - min.AIC)
-  return(x)
-})
-
-mod.df <- do.call("rbind", mod.list)
-  
   
