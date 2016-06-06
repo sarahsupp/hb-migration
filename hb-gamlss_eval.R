@@ -12,12 +12,14 @@ library(gamm4)
 library(gamlss)
 
 # dropbox pathname
-dropbox <- "/home/lorra/Dropbox/"
+#dropbox <- "/home/lorra/Dropbox/"
 #dropbox <- "/home/sarah/Dropbox/Hummingbirds/"
+dropbox <- "C:/Users/LauraGraham/Dropbox/"
 
 # github pathname
-github <- "/home/lorra/Documents/hb-migration/"
+#github <- "/home/lorra/Documents/hb-migration/"
 #github <- "/home/sarah/Documents/GitHub/hb-migration/"
+github <- "D:/hb-migration/"
 
 #assign based on the time frame (number of days) used to compute the alpha hulls
 alpha_window = 5
@@ -240,11 +242,15 @@ for (sp in species){
   if(sp %in% c("bchu", "bthu", "cahu", "ruhu")){ migdates = read.table(mfiles[2], header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")}
   migdates=cleanColNames(migdates)
   
-  #load all the files into a list
+  #load all the files into a list and remove rows with incomplete predictors
   abs = importANDformat(spfiles[1], 0, migdates, alpha_window)
+  abs <- abs[which(complete.cases(subset(abs, select = -yday1))),]
   pres = importANDformat(spfiles[2], 1, migdates, alpha_window)
+  pres <- pres[which(complete.cases(subset(pres, select = -yday1))),]
   min.abs = get(load(min.abs))
+  min.abs = min.abs[which(complete.cases(min.abs)),]
   pls.abs = get(load(pls.abs))
+  pls.abs = pls.abs[which(complete.cases(pls.abs)),]
   print (paste0("Imported data for species: ", sp))
   
   #subset data for models - note that models will be run on +/- 15 day comparisons
@@ -287,21 +293,28 @@ for (sp in species){
   mod.list[["ppls.spring"]] = eval_gamlss_models(ppls.spring, sp=sp, season="springpls", lag=TRUE, means=FALSE, output.dir=stat.dir)
   mod.list[["ppls.fall"]] = eval_gamlss_models(ppls.fall, sp=sp, lag=TRUE, season="fallpls", means=FALSE, output.dir=stat.dir)
   
-  #----- means
-  mod.list[["pa.mean.spring"]] = eval_gamlss_models(pa.spring.mean, season="spring", sp=sp, lag=FALSE, means=TRUE, output.dir=stat.dir)
-  mod.list[["pa.mean.fall"]] = eval_gamlss_models(pa.fall.mean, sp=sp, season="fall", lag=FALSE, means=TRUE, output.dir=stat.dir)
-  
-  mod.list[["pmin.mean.spring"]] = eval_gamlss_models(pmin.spring.mean, season="springmin", sp=sp, lag=TRUE, means=TRUE, output.dir=stat.dir)
-  mod.list[["pmin.mean.fall"]] = eval_gamlss_models(pmin.fall.mean, sp=sp, season="fallmin", lag=TRUE, means=TRUE, output.dir=stat.dir)
-  
-  mod.list[["ppls.mean.spring"]] = eval_gamlss_models(ppls.spring.mean, season="springpls", sp=sp, lag=TRUE, means=TRUE, output.dir=stat.dir)
-  mod.list[["ppls.mean.fall"]] = eval_gamlss_models(ppls.fall.mean, sp=sp, season="fallpls", lag=TRUE, means=TRUE, output.dir=stat.dir)
- 
+  #----- means - currently commented out because I'm not sure means make sense for the latter 4 models. 
+   mod.list[["pa.mean.spring"]] = eval_gamlss_models(pa.spring.mean, season="spring", sp=sp, lag=FALSE, means=TRUE, output.dir=stat.dir)
+   mod.list[["pa.mean.fall"]] = eval_gamlss_models(pa.fall.mean, sp=sp, season="fall", lag=FALSE, means=TRUE, output.dir=stat.dir)
+#   
+#   mod.list[["pmin.mean.spring"]] = eval_gamlss_models(pmin.spring.mean, season="springmin", sp=sp, lag=TRUE, means=TRUE, output.dir=stat.dir)
+#   mod.list[["pmin.mean.fall"]] = eval_gamlss_models(pmin.fall.mean, sp=sp, season="fallmin", lag=TRUE, means=TRUE, output.dir=stat.dir)
+#   
+#   mod.list[["ppls.mean.spring"]] = eval_gamlss_models(ppls.spring.mean, season="springpls", sp=sp, lag=TRUE, means=TRUE, output.dir=stat.dir)
+#   mod.list[["ppls.mean.fall"]] = eval_gamlss_models(ppls.fall.mean, sp=sp, season="fallpls", lag=TRUE, means=TRUE, output.dir=stat.dir)
+#  
   save(mod.list, file=paste0(stat.dir, "/", sp, ".mod.list.rda"))
   
   print (paste0("Finished with models for ", sp))
 }
 
-  
+# Calculate dAIC and change from list to DF
+mod.list <- lapply(mod.list, function(x) {
+  min.AIC <- min(x$AIC)
+  x$dAIC <- apply(x, 1, function(y) y['AIC'] - min.AIC)
+  return(x)
+})
+
+mod.df <- do.call("rbind", mod.list)
   
   
