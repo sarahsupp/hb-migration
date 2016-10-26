@@ -1,0 +1,205 @@
+---
+title: "hb-data-vis"
+author: "Sarah Supp"
+date: "October 4, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Getting set up:
+
+```{r, echo=FALSE}
+library(ggplot2)
+library(ggmap)
+library(gganimate)
+library(lubridate)
+dropbox <- "/home/sarah/Dropbox/Hummingbirds/"
+github <- "/home/sarah/Documents/GitHub/hb-migration/"
+
+#assign based on the time frame (number of days) used to compute the alpha hulls
+alpha_window = 5
+
+# define pathnames (FAL will need to change pathnames)
+function.dir <- paste0(github, "hb_RS_functions.R")
+agan.dir <- paste0(dropbox, "hb_migration_data/ebird_annotated_raw/combined/")
+abs.dir <- paste0(dropbox, "hb_migration_data/pseudoabsences/t", alpha_window, "/annotated/")
+migtime.dir <- paste0(dropbox, "hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/")
+fig.dir <- paste0(dropbox, "NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/")
+stat.dir <- paste0(dropbox, "NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/stat-tests/")
+
+source(function.dir) 
+
+#list of species codes
+species <- c("bchu", "bthu", "cahu", "ruhu", "rthu")
+```
+
+
+## Ruby-throated hummingbird
+
+```{r, echo=FALSE}
+sp = "rthu"
+
+  spfiles = list.files(path = agan.dir, pattern = glob2rx(paste0(sp,"*.RData")), recursive=FALSE, full.names=TRUE)
+  pls.abs = list.files(path = abs.dir, pattern = glob2rx(paste0(sp,"*goingto.rda")), recursive=FALSE, full.names=TRUE)
+  min.abs = list.files(path = abs.dir, pattern = glob2rx(paste0(sp,"*comingfrom.rda")), recursive=FALSE, full.names=TRUE)
+  mfiles = list.files(path = migtime.dir, pattern = glob2rx(paste0(sp,"*migration*")), recursive=FALSE, full.names=TRUE)
+  
+  #import migration dates from previous analysis
+  if(sp == "rthu"){ migdates = read.table(mfiles[1], header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")}
+  if(sp %in% c("bchu", "bthu", "cahu", "ruhu")){ migdates = read.table(mfiles[2], header=TRUE, sep=",", quote="", fill=TRUE, as.is=TRUE, comment.char="")}
+  migdates=cleanColNames(migdates)
+  
+  #load all the files into a list and remove rows with incomplete predictors
+  abs = importANDformat(spfiles[1], 0, migdates, alpha_window)
+  abs <- abs[which(complete.cases(subset(abs, select = -yday1))),]
+  pres = importANDformat(spfiles[2], 1, migdates, alpha_window)
+  pres <- pres[which(complete.cases(subset(pres, select = -yday1))),]
+  min.abs = get(load(min.abs))
+  min.abs = min.abs[which(complete.cases(min.abs)),]
+  pls.abs = get(load(pls.abs))
+  pls.abs = pls.abs[which(complete.cases(pls.abs)),]
+  print (paste0("Imported data for species: ", sp))
+  
+  #subset data for models - note that models will be run forward and backwards within a season
+  pa = subset(rbind(pres, abs), season %in% c("spring", "breeding", "fall"))
+  pmin = subset(rbind(pres, min.abs), season %in% c("spring", "breeding", "fall"))
+  ppls = subset(rbind(pres, pls.abs), season %in% c("spring", "breeding", "fall"))
+  
+  pa.spring = subset(rbind(pres, abs), season=="spring")
+  pmin.spring = subset(rbind(pres, min.abs), season=="spring")
+  ppls.spring = subset(rbind(pres, pls.abs), season=="spring")
+  
+  pa.fall = subset(rbind(pres, abs), season=="fall")
+  pmin.fall = subset(rbind(pres, min.abs), season=="fall")
+  ppls.fall = subset(rbind(pres, pls.abs), season=="fall")
+  
+  # presence data to use for plots
+  spr_fal = pres[pres$season=="spring" | pres$season=="fall",]
+```
+
+###Environment distribution by season
+####EVI
+```{r, echo=FALSE}
+sm=round(mean(spr_fal[spr_fal$season=="spring",]$EVI,),2)
+ssd=round(sd(spr_fal[spr_fal$season=="spring",]$EVI,),2)
+fm=round(mean(spr_fal[spr_fal$season=="fall",]$EVI,),2)
+fsd=round(sd(spr_fal[spr_fal$season=="fall",]$EVI,),2)
+ggplot(spr_fal, aes(EVI)) + geom_density(aes(fill=season), alpha=0.50) + ggtitle(paste0("spr (",sm,", ",ssd,") aut (",fm,", ",fsd,")"))
+```
+
+####Temperature
+```{r, echo=FALSE}
+sm=round(mean(spr_fal[spr_fal$season=="spring",]$t10m-273.15,),2)
+ssd=round(sd(spr_fal[spr_fal$season=="spring",]$t10m-273.15,),2)
+fm=round(mean(spr_fal[spr_fal$season=="fall",]$t10m-273.15,),2)
+fsd=round(sd(spr_fal[spr_fal$season=="fall",]$t10m-273.15,),2)
+ggplot(spr_fal, aes(t10m-273.15)) + geom_density(aes(fill=season), alpha=0.50) + ggtitle(paste0("spr (",sm,", ",ssd,") aut (",fm,", ",fsd,")")) + xlab("Celsius")
+```
+
+####Elevation
+```{r, echo=FALSE}
+sm=round(mean(spr_fal[spr_fal$season=="spring",]$SRTM_elev,),2)
+ssd=round(sd(spr_fal[spr_fal$season=="spring",]$SRTM_elev,),2)
+fm=round(mean(spr_fal[spr_fal$season=="fall",]$SRTM_elev,),2)
+fsd=round(sd(spr_fal[spr_fal$season=="fall",]$SRTM_elev,),2)
+ggplot(spr_fal, aes(SRTM_elev)) + geom_density(aes(fill=season), alpha=0.50) + ggtitle(paste0("spr (",sm,", ",ssd,") aut (",fm,", ",fsd,")")) + xlab("Elevation (m)")
+```
+
+Environment by day (black points are environmental conditions at forward and backward migration locations)
+```{r, echo=FALSE}
+ggplot(pres, aes(yday, EVI)) + geom_point(data=min.abs, alpha=0.10) + geom_point(data=pls.abs, alpha=0.10) + 
+  geom_point(alpha=0.10, aes(col=season)) + ggtitle(sp) +
+  stat_smooth(data=pres, method="gam", formula = y~s(x, k=10), col="black") + 
+  geom_vline(data=migdates, aes(xintercept=peak_lat))
+
+ggplot(pres, aes(yday, t10m-273.15)) + geom_point(data=min.abs, alpha=0.10) + geom_point(data=pls.abs, alpha=0.10) + 
+  geom_point(alpha=0.10, aes(col=season)) + ggtitle(sp) + ylab("Temperature at 10 m (C)") +
+  stat_smooth(data=pres, method="gam", formula = y~s(x, k=10), col="black") + 
+  geom_vline(data=migdates, aes(xintercept=peak_lat))
+
+ggplot(pres, aes(yday, SRTM_elev)) + geom_point(data=min.abs, alpha=0.10) + geom_point(data=pls.abs, alpha=0.10) + 
+  geom_point(alpha=0.10, aes(col=season)) + ggtitle(sp) + ylab("Elevation (m)") +
+  stat_smooth(data=pres, method="gam", formula = y~s(x, k=10), col="black") + 
+  geom_vline(data=migdates, aes(xintercept=peak_lat))
+```
+
+Correlation of environmental variables, using all the presence and absence data
+```{r, echo=FALSE}
+spr_fal_abs=abs[abs$season=="spring" | abs$season=="fall",]
+spr_fal_min=min.abs[min.abs$season=="spring" | min.abs$season=="fall",]
+spr_fal_pls=pls.abs[pls.abs$season=="spring" | pls.abs$season=="fall",]
+spr_fal_cor = rbind(spr_fal_abs, spr_fal_min, spr_fal_pls)
+spr_fal_cor$season="X"
+spr_fal_cor = rbind(spr_fal_cor, spr_fal)
+
+cor=cor(scale(spr_fal_cor$SRTM_elev), scale(spr_fal_cor$t10m))
+ggplot(spr_fal_cor, aes(scale(t10m), scale(SRTM_elev))) + geom_point(alpha=0.10, aes(col=season)) + ggtitle(paste0("Pearson Correlation = ", round(cor,2))) + 
+  xlab("scaled Temperature") + ylab("scaled Elevation")
+
+cor=cor(scale(spr_fal_cor$SRTM_elev), scale(spr_fal_cor$EVI))
+ggplot(spr_fal_cor, aes(scale(EVI), scale(SRTM_elev))) + geom_point(alpha=0.10, aes(col=season)) + ggtitle(paste0("Pearson Correlation = ", round(cor,2))) + 
+  xlab("scaled EVI") + ylab("scaled Elevation")
+
+cor=cor(scale(spr_fal_cor$t10m), scale(spr_fal_cor$EVI))
+ggplot(spr_fal_cor, aes(scale(EVI), scale(t10m))) + geom_point(alpha=0.10, aes(col=season)) + ggtitle(paste0("Pearson Correlation = ", round(cor,2))) + 
+  xlab("scaled EVI") + ylab("scaled Temperature")
+
+print(dim(spr_fal_cor))
+```
+
+example of within-area presence, in the middle of 2014 spring migration (February 24-28)
+```{r, echo=FALSE}
+if(sp == "rthu"){myLocation = c(-105, 30, -60, 50)}
+if(sp %in% c("bchu", "bthu", "cahu", "ruhu")){ myLocation = c(-130, 30, -105, 50)}
+
+myMap = get_map(location=myLocation, source="stamen", maptype="watercolor", crop=FALSE)
+
+spr_example = pa.spring[pa.spring$year==2014 & pa.spring$window==8,]
+ggmap(myMap) + geom_point(data=spr_example, aes(x=location.long, y=location.lat, col=pres))
+
+spr_mig_b = pmin.spring[pmin.spring$year==2014 & pmin.spring$window==8,]
+ggmap(myMap) + geom_point(data=spr_mig_b, aes(x=location.long, y=location.lat, col=pres))
+
+spr_mig_f = ppls.spring[ppls.spring$year==2014 & ppls.spring$window==8,]
+ggmap(myMap) + geom_point(data=spr_mig_f, aes(x=location.long, y=location.lat, col=SRTM_elev))
+```
+
+Example of an animated map, for 2014, colored by temperature
+```{r, echo=FALSE}
+
+spr_fal_14 = spr_fal[spr_fal$year == 2014,]
+myMap = get_map(location=myLocation, source="stamen", maptype="watercolor", crop=FALSE)
+
+mp = ggmap(myMap) + geom_point(data=spr_fal, aes(x=location.long, y=location.lat, frame=window, col=t10m-273.15)) + 
+  scale_color_gradient(low="blue", high="firebrick") 
+gg_animate(mp)
+#gg_animate(mp, paste0(fig.dir,"ruhu-2014.gif"))
+
+# mp = ggmap(myMap) + geom_point(data=spr_fal, aes(x=location.long, y=location.lat, frame=window, col=EVI)) + scale_color_gradient(low="moccasin", high="chartreuse4")
+#gg_animate(mp, paste0(fig.dir,"ruhu-2014-EVI.gif"))
+```
+
+
+Animation of all hummingbirds migrating in 2014
+```{r}
+species <- c("bchu", "bthu", "cahu", "ruhu", "rthu")
+all = NA
+for (sp in species){ 
+  spfiles = list.files(path = agan.dir, pattern = glob2rx(paste0(sp,"*.RData")), recursive=FALSE, full.names=TRUE)
+  pres = importANDformat(spfiles[2], 1, migdates, alpha_window)
+  pres <- pres[which(complete.cases(subset(pres, select = -yday1))),]
+  pres$sp = sp
+  all = rbind(all, pres)
+}
+
+all_14 = all[all$year==2014,]
+myLocation = c(-130, 30, -60, 50)
+myMap = get_map(location=myLocation, source="stamen", maptype="watercolor", crop=FALSE)
+
+mp = ggmap(myMap) + geom_point(data=all_14, aes(x=location.long, y=location.lat, frame=month, col=sp), alpha=0.5)
+gg_animate(mp)
+
+```
