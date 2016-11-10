@@ -80,6 +80,20 @@ sp = "rthu"
   spr_fal = pres[pres$season=="spring" | pres$season=="fall",]
 ```
 
+###Print summary information on number of data points for each dataset
+```{r, echo=FALSE}
+print(sp)
+print(paste0("Number occurrences: ", nrow(pres)))
+print(paste0("Number within-region absences from complete checklists: ", nrow(abs)))  
+print(paste0("Number absences for backward trajectory (past locations): ", nrow(min.abs))) 
+print(paste0("Number absences for forward trajectory (future locations): ", nrow(pls.abs))) 
+      
+print(paste0("Number spr/fall occurrences: ", nrow(spr_fal)))
+print(paste0("Number spr/fall within-region absences: ", nrow(abs[abs$season=="spring" | abs$season=="fall",]))) 
+print(paste0("Number spr/fall backward trajectory (past locations): ", nrow(min.abs[min.abs$season=="spring" | min.abs$season=="fall",]))) 
+print(paste0("Number spr/fall forward trajectory (future locations): ", nrow(pls.abs[pls.abs$season=="spring" | pls.abs$season=="fall",])))
+```
+
 ###Environment distribution by season
 ####EVI
 ```{r, echo=FALSE}
@@ -88,6 +102,7 @@ ssd=round(sd(spr_fal[spr_fal$season=="spring",]$EVI,),2)
 fm=round(mean(spr_fal[spr_fal$season=="fall",]$EVI,),2)
 fsd=round(sd(spr_fal[spr_fal$season=="fall",]$EVI,),2)
 ggplot(spr_fal, aes(EVI)) + geom_density(aes(fill=season), alpha=0.50) + ggtitle(paste0("spr (",sm,", ",ssd,") aut (",fm,", ",fsd,")"))
+print(paste0("The 95 percentiles are: ", quantile(spr_fal$EVI, 0.05, 0.95)))
 ```
 
 ####Temperature
@@ -97,6 +112,7 @@ ssd=round(sd(spr_fal[spr_fal$season=="spring",]$t10m-273.15,),2)
 fm=round(mean(spr_fal[spr_fal$season=="fall",]$t10m-273.15,),2)
 fsd=round(sd(spr_fal[spr_fal$season=="fall",]$t10m-273.15,),2)
 ggplot(spr_fal, aes(t10m-273.15)) + geom_density(aes(fill=season), alpha=0.50) + ggtitle(paste0("spr (",sm,", ",ssd,") aut (",fm,", ",fsd,")")) + xlab("Celsius")
+print(paste0("The 95 percentiles are: ", quantile(spr_fal$t10m, 0.05, 0.95)))
 ```
 
 ####Elevation
@@ -106,6 +122,7 @@ ssd=round(sd(spr_fal[spr_fal$season=="spring",]$SRTM_elev,),2)
 fm=round(mean(spr_fal[spr_fal$season=="fall",]$SRTM_elev,),2)
 fsd=round(sd(spr_fal[spr_fal$season=="fall",]$SRTM_elev,),2)
 ggplot(spr_fal, aes(SRTM_elev)) + geom_density(aes(fill=season), alpha=0.50) + ggtitle(paste0("spr (",sm,", ",ssd,") aut (",fm,", ",fsd,")")) + xlab("Elevation (m)")
+print(paste0("The 95 percentiles are: ", quantile(spr_fal$SRTM_elev, 0.05, 0.95)))
 ```
 
 Environment by day (black points are environmental conditions at forward and backward migration locations)
@@ -148,6 +165,19 @@ ggplot(spr_fal_cor, aes(scale(EVI), scale(t10m))) + geom_point(alpha=0.10, aes(c
   xlab("scaled EVI") + ylab("scaled Temperature")
 
 print(dim(spr_fal_cor))
+
+print("For all the data (presence + abs): ")
+print(paste0("mean EVI is ", round(mean(spr_fal_cor$EVI,2))))
+print(paste0("sd EVI is ", sd(spr_fal_cor$EVI,2)))
+print(paste0("The 95 percentiles of EVI are: ", quantile(spr_fal_cor$EVI, 0.05, 0.95)))
+
+print(paste0("mean temp is ", round(mean(spr_fal_cor$t10m,2))))
+print(paste0("sd temp is ", sd(spr_fal_cor$t10m,2)))
+print(paste0("The 95 percentiles of temp are: ", quantile(spr_fal_cor$t10m, 0.05, 0.95)))
+
+print(paste0("mean elevation is ", round(mean(spr_fal_cor$SRTM_elev,2))))
+print(paste0("sd elevation is ", sd(spr_fal_cor$SRTM_elev,2)))
+print(paste0("The 95 percentiles of elevation are: ", quantile(spr_fal_cor$SRTM_elev, 0.05, 0.95)))
 ```
 
 example of within-area presence, in the middle of 2014 spring migration (February 24-28)
