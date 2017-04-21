@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Getting set up:
+Note: pmin is backwards (all previous points) and ppls is forwards (all future points)
 
 ```{r, echo=FALSE}
 library(dplyr)
@@ -79,8 +80,13 @@ sp = "bthu"
   pmin.fall = subset(rbind(pres, min.abs), season=="fall")
   ppls.fall = subset(rbind(pres, pls.abs), season=="fall")
   
-  # presence data to use for plots
+  # presence data only to use for plots
   spr_fal = pres[pres$season=="spring" | pres$season=="fall",]
+  
+  # load statistical results from gamlss model evaluation (mod.list)
+  # where: pmin=backwards comparison (all past points), ppls = forwards comparison (all future points)
+  #        and, pa=local comparison (within an alpha hull)
+  load(paste0(stat.dir, "/", sp, ".mod.list.rda"))
 ```
 
 ###Print summary information on number of data points for each dataset
@@ -156,15 +162,15 @@ spr_fal_cor$season="X"
 spr_fal_cor = rbind(spr_fal_cor, spr_fal)
 
 cor=cor(scale(spr_fal_cor$SRTM_elev), scale(spr_fal_cor$t10m))
-ggplot(spr_fal_cor, aes(scale(t10m), scale(SRTM_elev))) + geom_point(alpha=0.10, aes(col=season)) + ggtitle(paste0("Pearson Correlation = ", round(cor,2))) + 
+ggplot(spr_fal_cor, aes(as.vector(scale(t10m)), as.vector(scale(SRTM_elev)))) + geom_point(alpha=0.10, aes(col=season)) + ggtitle(paste0("Pearson Correlation = ", round(cor,2))) + 
   xlab("scaled Temperature") + ylab("scaled Elevation")
 
 cor=cor(scale(spr_fal_cor$SRTM_elev), scale(spr_fal_cor$EVI))
-ggplot(spr_fal_cor, aes(scale(EVI), scale(SRTM_elev))) + geom_point(alpha=0.10, aes(col=season)) + ggtitle(paste0("Pearson Correlation = ", round(cor,2))) + 
+ggplot(spr_fal_cor, aes(as.vector(scale(EVI)), as.vector(scale(SRTM_elev)))) + geom_point(alpha=0.10, aes(col=season)) + ggtitle(paste0("Pearson Correlation = ", round(cor,2))) + 
   xlab("scaled EVI") + ylab("scaled Elevation")
 
 cor=cor(scale(spr_fal_cor$t10m), scale(spr_fal_cor$EVI))
-ggplot(spr_fal_cor, aes(scale(EVI), scale(t10m))) + geom_point(alpha=0.10, aes(col=season)) + ggtitle(paste0("Pearson Correlation = ", round(cor,2))) + 
+ggplot(spr_fal_cor, aes(as.vector(scale(EVI)), as.vector(scale(t10m)))) + geom_point(alpha=0.10, aes(col=season)) + ggtitle(paste0("Pearson Correlation = ", round(cor,2))) + 
   xlab("scaled EVI") + ylab("scaled Temperature")
 
 print(dim(spr_fal_cor))
@@ -309,16 +315,33 @@ gg_animate(mp)
 Map convex hulls of daily points for a season
 ```{r}
 ruhu_hull = all_spring[all_spring$sp=="ruhu" & all_spring$year==2013,]
+ruhu_hull = all_spring[all_spring$sp=="ruhu",]
+
 
 myLocation = c(-130, 30, -103, 50)
 myWesternMap = get_map(location=myLocation, source="stamen", maptype="toner", crop=FALSE)
 
 chulls <- ddply(ruhu_hull, .(yday1), function(df) df[chull(df$location.long, df$location.lat), ])
-ggmap(myWesternMap) + geom_polygon(data=chulls, aes(x=location.long, y=location.lat, group=yday1, col=month), fill=NA, alpha=0.2) + facet_wrap(~month) +
-  scale_colour_brewer(palette = "Set1") + 
-  scale_fill_brewer(palette = "Set1")
+ggmap(myWesternMap) + geom_polygon(data=chulls, aes(x=location.long, y=location.lat, group=yday1, fill=month), col="black", alpha=0.25) + facet_wrap(~year) +
+  scale_colour_brewer(palette = "Oranges") + 
+  scale_fill_brewer(palette = "Oranges")
 
 ```
+Map convex hulls of daily points for fall across years
+```{r}
+ruhu_hull = all_fall[all_fall$sp=="ruhu",]
+
+
+myLocation = c(-130, 30, -103, 50)
+myWesternMap = get_map(location=myLocation, source="stamen", maptype="toner", crop=FALSE)
+
+chulls <- ddply(ruhu_hull, .(yday1), function(df) df[chull(df$location.long, df$location.lat), ])
+ggmap(myWesternMap) + geom_polygon(data=chulls, aes(x=location.long, y=location.lat, group=yday1, fill=month), col="black", alpha=0.25) + facet_wrap(~year) +
+  scale_colour_brewer(palette = "Blues") + 
+  scale_fill_brewer(palette = "Blues")
+
+```
+
 
 Plot difference of environment from mean occurrence values
 ```{r}
