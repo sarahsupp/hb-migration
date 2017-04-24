@@ -20,6 +20,8 @@ library(gganimate)
 library(lubridate)
 library(plyr)
 library(plotly)
+library(gridExtra)
+library(viridis)
 dropbox <- "/home/sarah/Dropbox/Hummingbirds/"
 github <- "/home/sarah/Documents/GitHub/hb-migration/"
 
@@ -314,9 +316,7 @@ gg_animate(mp)
 
 Map convex hulls of daily points for a season
 ```{r}
-ruhu_hull = all_spring[all_spring$sp=="ruhu" & all_spring$year==2013,]
 ruhu_hull = all_spring[all_spring$sp=="ruhu",]
-
 
 myLocation = c(-130, 30, -103, 50)
 myWesternMap = get_map(location=myLocation, source="stamen", maptype="toner", crop=FALSE)
@@ -324,7 +324,7 @@ myWesternMap = get_map(location=myLocation, source="stamen", maptype="toner", cr
 chulls <- ddply(ruhu_hull, .(yday1), function(df) df[chull(df$location.long, df$location.lat), ])
 ggmap(myWesternMap) + geom_polygon(data=chulls, aes(x=location.long, y=location.lat, group=yday1, fill=month), col="black", alpha=0.25) + facet_wrap(~year) +
   scale_colour_brewer(palette = "Oranges") + 
-  scale_fill_brewer(palette = "Oranges")
+  scale_fill_brewer(palette = "Oranges") + ggtitle (sp)
 
 ```
 Map convex hulls of daily points for fall across years
@@ -465,5 +465,21 @@ ppls <- plot_ly(ruhu_2013_94_pls, x = ~EVI, y = ~t10m, z = ~SRTM_elev, color=~lo
   layout(scene = list(xaxis = list(title = 'EVI'),
                      yaxis = list(title = 'Temperature'),
                      zaxis = list(title = 'Elevation')))
+
+```
+
+Make a 2D version of the plots above, but with EVI and t10m as main axies, and colored by elevation
+```{r}
+
+ruhu_2013_94$pres <- "occurrence"
+ruhu_2013_94_abs$pres <- "background"
+ruhu_2013_94_min$pres <- "previous occurrence"
+ruhu_2013_94_pls$pres <- "future occurrence"
+exampledat <- rbind(ruhu_2013_94, ruhu_2013_94_abs, ruhu_2013_94_min, ruhu_2013_94_pls)
+
+fig1panels <- ggplot(exampledat, aes(EVI, t10m)) + geom_point(aes(color=SRTM_elev), size=3, alpha=0.5) + 
+  scale_x_continuous(limits=c(0,0.7)) + scale_y_continuous(limits=c(265, 300)) + scale_color_viridis() + 
+  theme_bw() + ylab("Temperature") +
+  facet_wrap(~pres)
 
 ```
