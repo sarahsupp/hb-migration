@@ -296,13 +296,13 @@ all_breed = all[all$season=="breeding",]
 myLocation = c(-130, 30, -60, 50)
 myMap = get_map(location=myLocation, source="stamen", maptype="toner", crop=FALSE)
 
-springmap = ggmap(myMap) + geom_point(data=all_spring, aes(x=location.long, y=location.lat, col=sp), alpha=0.25)
+springmap = ggmap(myMap) + geom_point(data=all_spring, aes(x=location.long, y=location.lat, col=sp), alpha=0.25) + scale_color_viridis(discrete=TRUE, option="B")
 springmap
 
-fallmap = ggmap(myMap) + geom_point(data=all_fall, aes(x=location.long, y=location.lat, col=sp), alpha=0.25)
+fallmap = ggmap(myMap) + geom_point(data=all_fall, aes(x=location.long, y=location.lat, col=sp), alpha=0.25) + scale_color_viridis(discrete=TRUE, option="B")
 fallmap
 
-breedmap = ggmap(myMap) + geom_point(data=all_breed, aes(x=location.long, y=location.lat, col=sp))+ theme(legend.position ="bottom")
+breedmap = ggmap(myMap) + geom_point(data=all_breed, aes(x=location.long, y=location.lat, col=sp)) + theme(legend.position ="bottom") + scale_color_viridis(discrete=TRUE, option="B")
 breedmap
 
 all_14 = all[all$year==2014,]
