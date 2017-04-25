@@ -1,0 +1,276 @@
+---
+title: "hb-data-vis-allspecies.Rmd"
+author: "Sarah Supp"
+date: "April 25, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+## Getting set up:
+Data Note: pmin is backwards (all previous points) and ppls is forwards (all future points)
+```{r, echo=FALSE}
+library(dplyr)
+library(ggplot2)
+library(ggmap)
+library(gganimate)
+library(lubridate)
+library(plyr)
+library(plotly)
+library(gridExtra)
+library(viridis)
+library(ggthemes)
+dropbox <- "/home/sarah/Dropbox/Hummingbirds/"
+github <- "/home/sarah/Documents/GitHub/hb-migration/"
+
+#assign based on the time frame (number of days) used to compute the alpha hulls
+alpha_window = 5
+
+# define pathnames (FAL will need to change pathnames)
+function.dir <- paste0(github, "hb_RS_functions.R")
+agan.dir <- paste0(dropbox, "hb_migration_data/ebird_annotated_raw/combined/")
+abs.dir <- paste0(dropbox, "hb_migration_data/pseudoabsences/t", alpha_window, "/annotated/")
+migtime.dir <- paste0(dropbox, "hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/")
+fig.dir <- paste0(dropbox, "NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/")
+stat.dir <- paste0(dropbox, "NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/stat-tests/")
+
+source(function.dir) 
+
+#list of species codes
+species <- c("bchu", "bthu", "cahu", "ruhu", "rthu")
+```
+
+
+#Figure 1a. 
+Map all hummingbirds in all years
+```{r}
+species <- c("bchu", "bthu", "cahu", "ruhu", "rthu")
+all = NA
+allabs = NA
+allmin = NA
+allpls = NA
+
+for (sp in species){ 
+  spfiles = list.files(path = agan.dir, pattern = glob2rx(paste0(sp,"*.RData")), recursive=FALSE, full.names=TRUE)
+  mfiles = list.files(path = migtime.dir, pattern = glob2rx(paste0(sp,"*migration*")), recursive=FALSE, full.names=TRUE)
+  pls.abs = list.files(path = abs.dir, pattern = glob2rx(paste0(sp,"*goingto.rda")), recursive=FALSE, full.names=TRUE)
+  min.abs = list.files(path = abs.dir, pattern = glob2rx(paste0(sp,"*comingfrom.rda")), recursive=FALSE, full.names=TRUE)
+ 
+  if(sp == "rthu"){ 
+    migdates = read.table(mfiles[1], header=TRUE, sep=",", quote="", 
+                         fill=TRUE, as.is=TRUE, comment.char="")}
+  if(sp %in% c("bchu", "bthu", "cahu", "ruhu")){ 
+     migdates = read.table(mfiles[2], header=TRUE, sep=",", quote="", 
+                         fill=TRUE, as.is=TRUE, comment.char="")}
+  migdates=cleanColNames(migdates)
+   #load all the files into a list and remove rows with incomplete predictors
+  pres = importANDformat(spfiles[2], 1, migdates, alpha_window)
+  pres <- pres[which(complete.cases(subset(pres, select = -yday1))),]
+  abs = importANDformat(spfiles[1], 0, migdates, alpha_window)
+  abs <- abs[which(complete.cases(subset(abs, select = -yday1))),]
+  min.abs = get(load(min.abs))
+  min.abs = min.abs[which(complete.cases(min.abs)),]
+  pls.abs = get(load(pls.abs))
+  pls.abs = pls.abs[which(complete.cases(pls.abs)),]
+  
+  pres$sp = sp
+  abs$sp = sp
+  min.abs$sp = sp
+  pls.abs$sp = sp
+  
+  all = rbind(all, pres)
+  allabs = rbind(allabs, abs)
+  allmin = rbind(allmin, min.abs)
+  allpls = rbind(allpls, pls.abs)
+}
+all = all[-1,]
+allabs = allabs[-1,]
+allmin = allmin[-1,]
+allpls = allpls[-1,]
+
+all_spring = all[all$season=="spring",]
+all_fall = all[all$season=="fall",]
+all_breed = all[all$season=="breeding",]
+
+myLocation = c(-130, 30, -60, 50)
+myMap = get_map(location=myLocation, source="stamen", maptype="toner", crop=FALSE)
+
+springmap = ggmap(myMap) + geom_point(data=all_spring, aes(x=location.long, y=location.lat, col=sp), alpha=0.25) + 
+  scale_color_viridis(discrete=TRUE, option="B") +
+  guides(color = guide_legend(override.aes= list(alpha = 1))) + theme_map() + theme(legend.position="none")
+springmap
+
+fallmap = ggmap(myMap) + geom_point(data=all_fall, aes(x=location.long, y=location.lat, col=sp), alpha=0.25) + 
+  scale_color_viridis(discrete=TRUE, option="B") +
+  guides(color = guide_legend(override.aes= list(alpha = 1))) + theme_map() + theme(legend.position="none")
+fallmap
+
+breedmap = ggmap(myMap) + geom_point(data=all_breed, aes(x=location.long, y=location.lat, col=sp)) +
+  scale_color_viridis(discrete=TRUE, option="B" )+
+  guides(color = guide_legend(override.aes= list(alpha = 1)))  +
+  theme_map() + theme(legend.position ="bottom") 
+breedmap
+```
+
+#Figure 1c. 2D version. 
+Plot environmental values for an example window and its absence comparison
+EVI and t10m as main axies, colored by elevation. Uses color-blind friendly shading schema
+```{r}
+ruhu_2013_94<- all %>%
+  filter(sp=="ruhu", year==2013, yday1==94)
+
+ruhu_2013_94_abs <- allabs %>%
+  filter(sp=="ruhu", year==2013, yday1==94)
+
+ruhu_2013_94_min <- allmin %>%
+  filter(sp=="ruhu", year==2013, yday==94)
+
+ruhu_2013_94_pls <- allpls %>%
+  filter(sp=="ruhu", year==2013, yday1==94)
+
+ruhu_2013_94$pres <- "occurrence"
+ruhu_2013_94_abs$pres <- "background"
+ruhu_2013_94_min$pres <- "previous occurrence"
+ruhu_2013_94_pls$pres <- "future occurrence"
+exampledat <- rbind(ruhu_2013_94, ruhu_2013_94_abs, ruhu_2013_94_min, ruhu_2013_94_pls)
+
+fig1panels <- ggplot(exampledat, aes(EVI, t10m)) + geom_point(aes(color=SRTM_elev), size=3, alpha=0.5) + 
+  scale_x_continuous(limits=c(0,0.7)) + scale_y_continuous(limits=c(265, 300)) + scale_color_viridis() + 
+  theme_bw() + ylab("Temperature") +
+  facet_wrap(~pres)
+
+fig1panels
+```
+
+#Figure 1c. 3D version. 
+Plot environmental values for an example window and its absence comparison
+EVI, t10m, and Elevation as main axies, colored by latitude. Uses color-blind friendly shading schema
+```{r}
+
+p <- plot_ly(ruhu_2013_94, x = ~EVI, y = ~t10m, z = ~SRTM_elev, color=~location.lat) %>%
+  add_markers() %>%
+  layout(scene = list(xaxis = list(title = 'EVI'),
+                     yaxis = list(title = 'Temperature'),
+                     zaxis = list(title = 'Elevation')))
+
+pabs <- plot_ly(ruhu_2013_94_abs, x = ~EVI, y = ~t10m, z = ~SRTM_elev, color=~location.lat) %>%
+  add_markers() %>%
+  layout(scene = list(xaxis = list(title = 'EVI'),
+                     yaxis = list(title = 'Temperature'),
+                     zaxis = list(title = 'Elevation')))
+
+pmin <- plot_ly(ruhu_2013_94_min, x = ~EVI, y = ~t10m, z = ~SRTM_elev, color=~location.lat) %>%
+  add_markers() %>%
+  layout(scene = list(xaxis = list(title = 'EVI'),
+                     yaxis = list(title = 'Temperature'),
+                     zaxis = list(title = 'Elevation')))
+
+ppls <- plot_ly(ruhu_2013_94_pls, x = ~EVI, y = ~t10m, z = ~SRTM_elev, color=~location.lat) %>%
+  add_markers() %>%
+  layout(scene = list(xaxis = list(title = 'EVI'),
+                     yaxis = list(title = 'Temperature'),
+                     zaxis = list(title = 'Elevation')))
+
+#grid.arrange(p, pabs, pmin, ppls, nrow=1)
+```
+
+
+
+#Supplementary Figure: 
+Plot difference of environment from mean occurrence values, for ALL species
+```{r}
+
+all_means <- all %>%
+  filter(season %in% c("spring", "fall")) %>%
+  select(year, yday1, season, EVI, SRTM_elev, t10m, sp) %>%
+  group_by(sp, year, season, yday1) %>% 
+  summarise_all(.funs = mean) 
+
+all_sd <- all %>%
+  filter(season %in% c("spring", "fall")) %>%
+  select(year, yday1, season, EVI, SRTM_elev, t10m, sp) %>%
+  group_by(sp, year, season, yday1) %>% 
+  summarise_all(.funs = sd)
+
+year = unique(all_means$year)
+zdiffs = data.frame()
+
+for (s in species){
+  for (y in year) { 
+    z_abs <- allabs %>%
+      filter(season %in% c("spring", "fall")) %>%
+      filter(sp == s & year == y) %>%
+      select(yday1, EVI, SRTM_elev, t10m) 
+      
+    z_min <- allmin %>%
+      filter(season %in% c("spring", "fall")) %>%
+      filter(sp == s & year == y) %>%
+      select(yday1, EVI, SRTM_elev, t10m) 
+      
+    z_pls <- allpls %>%
+      filter(season %in% c("spring", "fall")) %>%
+      filter(sp == s & year == y) %>%
+      select(yday1, EVI, SRTM_elev, t10m) 
+      
+    zday = data.frame()
+    
+    for (d in unique(z_abs$yday1)) {
+      # find the mean and sd of the occurrence data for the temporal window of species and year
+      mean = all_means[all_means$sp==s & all_means$year==y & all_means$yday1==d, ]
+      sd = all_sd[all_sd$sp==s & all_sd$year==y & all_sd$yday1==d, ]
+      
+      #in case there is a mismatch in yday1 between the pres and abs data
+      if(nrow(mean) <1) {
+        print(paste0("yday1 ", d, " is not in occurrence data for ", s, " ", y))
+        next}
+      
+      #standardize (z-values) the data for that temporal window by the occurrence data
+      za = z_abs %>%
+        filter(yday1 == d) %>%
+        mutate(zEVI = (EVI - mean$EVI)/sd$EVI,
+               zSRTM = (SRTM_elev - mean$SRTM_elev)/sd$SRTM_elev,
+               zt10m = (t10m - mean$t10m)/sd$t10m,
+               type="local")
+      
+      zm = z_min %>%
+        filter(yday1 == d) %>%
+        mutate(zEVI = (EVI - mean$EVI)/sd$EVI,
+               zSRTM = (SRTM_elev - mean$SRTM_elev)/sd$SRTM_elev,
+               zt10m = (t10m - mean$t10m)/sd$t10m, 
+               type="backward")
+      
+      zp = z_pls %>%
+        filter(yday1 == d) %>%
+        mutate(zEVI = (EVI - mean$EVI)/sd$EVI,
+               zSRTM = (SRTM_elev - mean$SRTM_elev)/sd$SRTM_elev,
+               zt10m = (t10m - mean$t10m)/sd$t10m,
+               type="forward")
+      
+      zday = bind_rows(zday, za, zm, zp)
+    }
+  zday$sp = s
+  zday$year = y
+  
+  zdiffs = bind_rows(zdiffs, zday)
+  }
+}
+
+ggplot(zdiffs, aes(yday1, zEVI, group=interaction(year))) + stat_smooth(aes(fill=year, col=year)) + facet_wrap(~sp + type, ncol=3) + scale_y_continuous(limits=c(-2,2)) + geom_hline(yintercept=0) + theme(legend.position="bottom") 
+
+ggplot(zdiffs, aes(yday1, zSRTM, group=interaction(year))) + stat_smooth(aes(fill=year, col=year)) + facet_wrap(~sp + type, ncol=3) + scale_y_continuous(limits=c(-2,2)) + geom_hline(yintercept=0) + theme(legend.position="bottom")
+
+ggplot(zdiffs, aes(yday1, zt10m, group=interaction(year))) + stat_smooth(aes(fill=year, col=year)) + facet_wrap(~sp + type, ncol=3) + scale_y_continuous(limits=c(-2,2)) + geom_hline(yintercept=0) + theme(legend.position="bottom")
+```
+
+
+For fun: Animate all hummingbirds migrating in 2014
+```{r}
+all_14 = all[all$year==2014,]
+myLocation = c(-130, 30, -60, 50)
+myMap = get_map(location=myLocation, source="stamen", maptype="watercolor", crop=FALSE)
+
+mp = ggmap(myMap) + geom_point(data=all_14, aes(x=location.long, y=location.lat, frame=month, col=sp), alpha=0.5)
+gg_animate(mp)
+```
