@@ -40,6 +40,9 @@ library(gridExtra)
 library(viridis)
 library(ggthemes)
 
+github <- params$github
+dropbox <- params$dropbox
+
 #assign based on the time frame (number of days) used to compute the alpha hulls
 alpha_window = 5
 
@@ -100,7 +103,7 @@ sp = params$species
   # load statistical results from gamlss model evaluation (mod.list)
   # where: pmin=backwards comparison (all past points), ppls = forwards comparison (all future points)
   #        and, pa=local comparison (within an alpha hull)
-  load(paste0(stat.dir, "/", sp, ".mod.list.rda"))
+  #load(paste0(stat.dir, "/", sp, ".mod.list.rda"))
 ```
 
 # Data Summary
