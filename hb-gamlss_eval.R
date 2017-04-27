@@ -14,12 +14,12 @@ library(gamlss)
 # dropbox pathname
 #dropbox <- "/home/lorra/Dropbox/"
 #dropbox <- "/home/sarah/Dropbox/Hummingbirds/"
-dropbox <- "C:/Users/LauraGraham/Dropbox/"
+dropbox <- "C:/Users/lg1u16/Dropbox/"
 
 # github pathname
 #github <- "/home/lorra/Documents/hb-migration/"
 #github <- "/home/sarah/Documents/GitHub/hb-migration/"
-github <- "D:/hb-migration/"
+github <- "C:/Users/lg1u16/HUMMINGBIRDS/hb-migration/"
 
 #assign based on the time frame (number of days) used to compute the alpha hulls
 alpha_window = 5
@@ -88,6 +88,7 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
       #     particularly in the west where there is more extreme topography and habitat heterogeneity.
       M.ETV = gamlss(pres ~ pb(EVI) * pb(t10m) * pb(SRTM_elev) + random(year) + random(window), family="BI", data=dat)
       M.E_T_V = gamlss(pres ~ pb(EVI) + pb(t10m) + pb(SRTM_elev) + random(year) + random(window), family="BI", data=dat)
+      M.EV_TV = gamlss(pres ~ pb(EVI) * pb(SRTM_elev) + pb(t10m) * pb(SRTM_elev) + random(year) + random(window), family="BI", data=dat)
       M.E_T = gamlss(pres ~ pb(EVI) + pb(t10m) + random(year) + random(window), family="BI", data=dat)
       M.E = gamlss(pres ~ pb(EVI) + random(year) + random(window), family="BI", data=dat)
       M.T = gamlss(pres ~ pb(t10m) + random(year) + random(window), family="BI", data=dat)
@@ -122,8 +123,8 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
       #     because flower phenology (blooming time) is later at higher altitudes 
       #     (so it is associated with more resources) and cooler temperatures are found at higher elevations.
       M.ETV = gamlss(pres ~ pb(EVI) * pb(t10m) * pb(SRTM_elev) + random(year) + random(window), family="BI", data=dat)
-      M.EV_TV = gamlss(pres ~ pb(t10m) * pb(SRTM_elev) + pb(EVI) * pb(SRTM_elev) + random(year) + random(window), family="BI", data=dat)
       M.E_T_V = gamlss(pres ~ pb(EVI) + pb(t10m) + pb(SRTM_elev) + random(year) + random(window), family="BI", data=dat)
+      M.EV_TV = gamlss(pres ~ pb(t10m) * pb(SRTM_elev) + pb(EVI) * pb(SRTM_elev) + random(year) + random(window), family="BI", data=dat)
       M.E_T = gamlss(pres ~ pb(EVI) + pb(t10m) + random(year) + random(window), family="BI", data=dat)
       M.E = gamlss(pres ~ pb(EVI) + random(year) + random(window), family="BI", data=dat)
       M.T = gamlss(pres ~ pb(t10m) + random(year) + random(window), family="BI", data=dat)
@@ -170,6 +171,7 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
       MNull = gamlss(pres ~ 1 + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat) # null model doesn't seem to work when include random factors
       M.ETV = gamlss(pres ~ pb(mean.EVI) * pb(mean.t10m) * pb(mean.elev) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
       M.E_T_V = gamlss(pres ~ pb(mean.EVI) + pb(mean.t10m) + pb(mean.elev) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M.EV_TV = gamlss(pres ~ pb(EVI) * pb(SRTM_elev) + pb(t10m) * pb(SRTM_elev) + random(year) + random(window), family="BI", data=dat)
       M.E_T = gamlss(pres ~ pb(mean.EVI) + pb(mean.t10m) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
       M.E = gamlss(pres ~ pb(mean.EVI) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
       M.T = gamlss(pres ~ pb(mean.t10m) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
@@ -195,8 +197,8 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
       #models are labeled E=EVI, T=Temp, V=Elev, _ indicates additive
       MNull = gamlss(pres ~ 1 + random(year) + random(window), sigma.fix=TRUE, family="BI", data=dat) #null model doesn't seem to work if include random factors
       M.ETV = gamlss(pres ~ pb(mean.EVI) * pb(mean.t10m) * pb(mean.elev) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
-      M.EV_TV = gamlss(pres ~ pb(mean.t10m) * pb(mean.elev) + pb(mean.EVI) * pb(mean.elev) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
       M.E_T_V = gamlss(pres ~ pb(mean.EVI) + pb(mean.t10m) + pb(mean.elev) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
+      M.EV_TV = gamlss(pres ~ pb(mean.t10m) * pb(mean.elev) + pb(mean.EVI) * pb(mean.elev) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
       M.E_T = gamlss(pres ~ pb(mean.EVI) + pb(mean.t10m) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
       M.E = gamlss(pres ~ pb(mean.EVI) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
       M.T = gamlss(pres ~ pb(mean.t10m) + random(year) + random(window), sigma.formula=pb(N), family="BI", data=dat)
@@ -268,14 +270,14 @@ for (sp in species){
   
   #subset data for models - note that models will be run on +/- 15 day comparisons of MEANS
   #NOTE: The labels seem to be backwards (pmin when matched on window or yday1 represents where hb will be, ppls represents where hb were)
-  pa.spring.mean = RS_means(pa.spring)
-  pa.fall.mean = RS_means(pa.fall)
+  #pa.spring.mean = RS_means(pa.spring)
+  #pa.fall.mean = RS_means(pa.fall)
   
-  pmin.spring.mean = RS_means(pmin.spring)
-  pmin.fall.mean = RS_means(pmin.fall)
+  #pmin.spring.mean = RS_means(pmin.spring)
+  #pmin.fall.mean = RS_means(pmin.fall)
   
-  ppls.spring.mean = RS_means(ppls.spring)
-  ppls.fall.mean = RS_means(ppls.fall)
+  #ppls.spring.mean = RS_means(ppls.spring)
+  #ppls.fall.mean = RS_means(ppls.fall)
   
   ############################################################################
   #-----------------------Run hypothesis models and compare for best fit
@@ -284,18 +286,18 @@ for (sp in species){
   print(sp)
   
   #----- all data points
-  mod.list[["pa.spring"]] = eval_gamlss_models(pa.spring, sp=sp, season="spring", lag=FALSE, means=FALSE, output.dir=stat.dir)
-  mod.list[["pa.fall"]] = eval_gamlss_models(pa.fall, sp=sp, season="fall", lag=FALSE, means=FALSE, output.dir=stat.dir)
+  mod.list[["pa.spring"]] = eval_gamlss_models(pa.spring, sp=sp, season="pa.spring", lag=FALSE, means=FALSE, output.dir=stat.dir)
+  mod.list[["pa.fall"]] = eval_gamlss_models(pa.fall, sp=sp, season="pa.fall", lag=FALSE, means=FALSE, output.dir=stat.dir)
     
-  mod.list[["pmin.spring"]] = eval_gamlss_models(pmin.spring, sp=sp, season="springmin", lag=TRUE, means=FALSE, output.dir=stat.dir)
-  mod.list[["pmin.fall"]] = eval_gamlss_models(pmin.fall, sp=sp, season="fallmin", lag=TRUE, means=FALSE, output.dir=stat.dir)
+  mod.list[["pmin.spring"]] = eval_gamlss_models(pmin.spring, sp=sp, season="pmin.spring", lag=TRUE, means=FALSE, output.dir=stat.dir)
+  mod.list[["pmin.fall"]] = eval_gamlss_models(pmin.fall, sp=sp, season="pmin.fall", lag=TRUE, means=FALSE, output.dir=stat.dir)
   
-  mod.list[["ppls.spring"]] = eval_gamlss_models(ppls.spring, sp=sp, season="springpls", lag=TRUE, means=FALSE, output.dir=stat.dir)
-  mod.list[["ppls.fall"]] = eval_gamlss_models(ppls.fall, sp=sp, lag=TRUE, season="fallpls", means=FALSE, output.dir=stat.dir)
+  mod.list[["ppls.spring"]] = eval_gamlss_models(ppls.spring, sp=sp, season="ppls.spring", lag=TRUE, means=FALSE, output.dir=stat.dir)
+  mod.list[["ppls.fall"]] = eval_gamlss_models(ppls.fall, sp=sp, lag=TRUE, season="ppls.fall", means=FALSE, output.dir=stat.dir)
   
   #----- means - currently commented out because I'm not sure means make sense for the latter 4 models. 
-   mod.list[["pa.mean.spring"]] = eval_gamlss_models(pa.spring.mean, season="spring", sp=sp, lag=FALSE, means=TRUE, output.dir=stat.dir)
-   mod.list[["pa.mean.fall"]] = eval_gamlss_models(pa.fall.mean, sp=sp, season="fall", lag=FALSE, means=TRUE, output.dir=stat.dir)
+  # mod.list[["pa.mean.spring"]] = eval_gamlss_models(pa.spring.mean, season="spring", sp=sp, lag=FALSE, means=TRUE, output.dir=stat.dir)
+  # mod.list[["pa.mean.fall"]] = eval_gamlss_models(pa.fall.mean, sp=sp, season="fall", lag=FALSE, means=TRUE, output.dir=stat.dir)
 #   
 #   mod.list[["pmin.mean.spring"]] = eval_gamlss_models(pmin.spring.mean, season="springmin", sp=sp, lag=TRUE, means=TRUE, output.dir=stat.dir)
 #   mod.list[["pmin.mean.fall"]] = eval_gamlss_models(pmin.fall.mean, sp=sp, season="fallmin", lag=TRUE, means=TRUE, output.dir=stat.dir)

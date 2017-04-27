@@ -42,6 +42,27 @@ source(function.dir)
 species <- c("bchu", "bthu", "cahu", "ruhu", "rthu")
 ```
 
+#Main results Table
+Note: this is for the supplementary materials, but it needs to come before Figure 2. 
+
+Get the results table out for the best fitting models. 
+
+```{r}
+res_files <- list.files(stat.dir, pattern = "mod.list.rda", full.names = TRUE)
+full_res <- ldply(res_files, function(x) {
+  load(x)
+  sp <- substr(gsub(stat.dir, "", x), 1, 4)
+  out <- ldply(mod.list, function(y) {
+    y$mod <- row.names(y)
+    return(y)})
+  out$species <- sp
+  return(out)})
+full_res <- mutate(full_res, data = .id) %>% 
+  select(species, data, mod, AIC, w, Rsq, df, nobs)
+write.csv(full_res, file=paste0(stat.dir, "full_results_table.csv"))
+best_mods <- group_by(full_res, species, data) %>% slice(which.min(AIC))
+```
+
 
 #Figure 1a. 
 Map all hummingbirds in all years
@@ -176,7 +197,45 @@ ppls <- plot_ly(ruhu_2013_94_pls, x = ~EVI, y = ~t10m, z = ~SRTM_elev, color=~lo
 #grid.arrange(p, pabs, pmin, ppls, nrow=1)
 ```
 
+# Figure 2
+Plot the parameter estimates for the gamlss models, for ALL species
+```{r}
+res_files <- list.files(stat.dir, pattern="gamlss.list.rda", full.names = TRUE)
 
+res <- ldply(res_files, function(x) {
+  load(x)
+  f <- gsub(stat.dir, "", x)
+  dat <- substr(f, 6, nchar(f) - 16)
+  sp <- substr(f, 1, 4)
+  # this is needed for those where we saved any significant model (i.e. gamlss.list > 1)
+  best_mod <- filter(best_mods, species == sp, data == dat)
+  mod <- gamlss.list[[best_mod$mod]]
+  out <- broom::tidy(mod)
+  out$species <- sp
+  out$dir.season <- dat
+  return(out)
+})
+
+res <- separate(res, dir.season, into=c("direction", "season"), sep = "\\.")
+res <- filter(res, term!="(Intercept)")
+res$term <- gsub(":", "*", gsub("\\)", "", gsub("pb\\(", "", res$term)))
+# we have EVI*SRTM_elev and SRTM_elev*EVI - these need to be the same. 
+res$term <- ifelse(res$term=="SRTM_elev*EVI", "EVI*SRTM_elev", res$term)
+res$term <- factor(res$term, levels=c("EVI", "t10m", "SRTM_elev", "EVI*t10m", "EVI*SRTM_elev", "t10m*SRTM_elev", "EVI*t10m*SRTM_elev"))
+
+library(cowplot)
+pd <- position_dodge(0.5)
+
+main <- ggplot(res, aes(x = term, y = estimate, colour = direction, group = direction)) + 
+  geom_errorbar(aes(ymin=estimate-std.error, ymax=estimate+std.error), colour="black", width=.1, position=pd) +
+  geom_point(position=pd) + 
+  geom_hline(yintercept = 0) + 
+  facet_grid(species~season) + 
+  theme(axis.text.x = element_text(angle = -90, hjust = 1))
+
+save_plot(paste0(fig.dir, "2_mainresults.pdf"), main, base_aspect_ratio = 1.3, base_width = 20, base_height = 10)
+main
+```
 
 #Supplementary Figure: 
 Plot difference of environment from mean occurrence values, for ALL species
