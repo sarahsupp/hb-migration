@@ -12,17 +12,16 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 ## Getting set up:
 Data Note: pmin is backwards (all previous points) and ppls is forwards (all future points)
 ```{r, echo=FALSE}
-library(dplyr)
-library(ggplot2)
+library(tidyverse)
 library(ggmap)
 library(gganimate)
-library(lubridate)
 library(plyr)
 library(plotly)
 library(gridExtra)
 library(viridis)
 library(ggthemes)
-library(tidyverse)
+library(cowplot)
+
 dropbox <- "/home/sarah/Dropbox/Hummingbirds/"
 github <- "/home/sarah/Documents/GitHub/hb-migration/"
 
@@ -47,7 +46,6 @@ species <- c("bchu", "bthu", "cahu", "ruhu", "rthu")
 Note: this is for the supplementary materials, but it needs to come before Figure 2. 
 
 Get the results table out for the best fitting models. 
-
 ```{r}
 res_files <- list.files(stat.dir, pattern = "mod.list.rda", full.names = TRUE)
 full_res <- ldply(res_files, function(x) {
@@ -246,6 +244,21 @@ main <- ggplot(res2, aes(x = term, y = estimate, colour = species, shape = speci
 
 save_plot(paste0(fig.dir, "2_mainresults.pdf"), main, base_aspect_ratio = 1.3, base_width = 20, base_height = 10)
 main
+
+pd <- position_jitter(width=NULL, height=0.25)
+# reverse axes for better readability?
+main2 <- ggplot(res2, aes(x = estimate, y = term, colour = species, shape = species, group = species)) + 
+  #geom_errorbar(aes(ymin=estimate-(1.96*std.error), ymax=estimate+(1.96*std.error)), colour="black", width=.1, position=pd) +
+  geom_point(position=pd, size=2) + 
+  geom_vline(xintercept = 0, linetype="dashed", col="black") + 
+  geom_hline(yintercept=seq(1.5, length(unique(res2$term))-0.5, 1), #adds horizontal gridlines
+             lwd=0.25, colour="gray") +
+  scale_color_brewer(palette="Set1") +
+#  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  facet_grid(direction~season)
+
+save_plot(paste0(fig.dir, "2_mainresults.pdf"), main2, base_aspect_ratio = 1.3, base_width = 20, base_height = 10)
+main2
 ```
 
 #Supplementary Figure: 
