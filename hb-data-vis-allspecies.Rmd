@@ -13,11 +13,14 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 Data Note: pmin is backwards (all previous points) and ppls is forwards (all future points)
 ```{r, echo=FALSE}
 library(tidyverse)
+library(gamlss)
 library(ggmap)
-library(gganimate)
+library(gganimate) # devtools::install_github("dgrtwo/gganimate")
 library(plyr)
 library(plotly)
 library(gridExtra)
+library(maps)
+library(mapdata)
 library(viridis)
 library(ggthemes)
 library(cowplot)
@@ -63,8 +66,7 @@ best_mods <- group_by(full_res, species, data) %>% slice(which.min(AIC))
 ```
 
 
-#Figure 1a. 
-Map all hummingbirds in all years
+#Figure X. Map all hummingbirds in all years
 ```{r}
 species <- c("bchu", "bthu", "cahu", "ruhu", "rthu")
 all = NA
@@ -117,7 +119,7 @@ all_breed = all[all$season=="breeding",]
 myLocation = c(-130, 30, -60, 50)
 myMap = get_map(location=myLocation, source="stamen", maptype="toner", crop=FALSE)
 
-springmap = ggmap(myMap) + geom_point(data=all_spring, aes(x=location.long, y=location.lat, col=sp), alpha=0.25) + 
+springmap = ggmap(myMap) + geom_point(data=all_spring, aes(x=location.long, y=location.lat, col=sp), alpha=0.25) +
   scale_color_viridis(discrete=TRUE, option="B") +
   guides(color = guide_legend(override.aes= list(alpha = 1))) + theme_map() + theme(legend.position="none")
 springmap
@@ -132,6 +134,170 @@ breedmap = ggmap(myMap) + geom_point(data=all_breed, aes(x=location.long, y=loca
   guides(color = guide_legend(override.aes= list(alpha = 1)))  +
   theme_map() + theme(legend.position ="bottom") 
 breedmap
+```
+
+#Figure 1. Separate species version
+```{r}
+
+map_all <- all[all$season %in% c("spring", "breeding", "fall"),]
+map_all$season <- factor(map_all$season, levels = c("spring", "breeding", "fall", "autumn"))
+map_all[map_all == "fall"] <- "autumn"
+map_all$season <- factor(map_all$season, levels = c("spring", "breeding", "autumn"))
+map_all[map_all == "bchu"] <- "A. alexandri"
+map_all[map_all == "bthu"] <- "S. platycercus"
+map_all[map_all == "cahu"] <- "S. calliope"
+map_all[map_all == "ruhu"] <- "S. rufus"
+map_all[map_all == "rthu"] <- "A. colubris"
+
+  
+# map = ggmap(myMap) + geom_point(data=map_all, aes(x=location.long, y=location.lat, col=season), alpha=0.25, size=0.25) +
+#   scale_colour_manual(values = c("steelblue1", "yellowgreen", "darkorange1")) +
+#   guides(color = guide_legend(override.aes= list(alpha = 1))) + theme_map() + theme(legend.position="none") + facet_grid(sp ~ season)
+
+#with simple map borders
+map = ggplot() + geom_polygon(data=map_data("world"), aes(x=long, y=lat, group=group), fill="gray") + coord_fixed(ratio=1.3, xlim=c(-130,-50), ylim=c(20,60)) + theme_map()
+
+map + geom_point(data=map_all, aes(x=location.long, y=location.lat, col=season), alpha=0.25, size=0.25) +
+  scale_colour_manual(values = c("royalblue3", "green4", "darkorange1")) +
+  guides(color = guide_legend(override.aes= list(alpha = 1))) + theme_map() + theme(legend.position="none") + facet_grid(sp ~ season)
+
+```
+
+
+# Figure 3
+Plot the parameter estimates for the gamlss models, for ALL species
+```{r}
+res_files <- list.files(stat.dir, pattern="gamlss.list.rda", full.names = TRUE)
+
+res <- ldply(res_files, function(x) {
+  load(x)
+  f <- gsub(stat.dir, "", x)
+  dat <- substr(f, 7, nchar(f) - 16)
+  sp <- substr(f, 1, 4)
+  # this is needed for those where we saved any significant model (i.e. gamlss.list > 1)
+  best_mod <- filter(best_mods, species == sp, data == dat)
+  mod <- gamlss.list[[best_mod$mod]]
+  out <- broom::tidy(mod)
+  out$species <- sp
+  out$dir.season <- dat
+  return(out)
+})
+
+res <- separate(res, dir.season, into=c("direction", "season"), sep = "\\.")
+res <- filter(res, term!="(Intercept)")
+res$term <- gsub(":", "*", gsub("\\)", "", gsub("pb\\(", "", res$term)))
+# we have EVI*SRTM_elev and SRTM_elev*EVI - these need to be the same. 
+res$term <- ifelse(res$term=="SRTM_elev*EVI", "EVI*SRTM_elev", res$term)
+res$term <- factor(res$term, levels=c("EVI", "t10m", "SRTM_elev", "EVI*t10m", "EVI*SRTM_elev", "t10m*SRTM_elev", "EVI*t10m*SRTM_elev"))
+
+library(cowplot)
+# pd <- position_dodge(0.5)
+# 
+# res2 <- res %>%
+#   mutate(direction=replace(direction, direction=="pa", "local")) %>%
+#   mutate(direction=replace(direction, direction=="pmin", "backward")) %>%
+#   mutate(direction=replace(direction, direction=="ppls", "forward")) %>%
+#   mutate(season=replace(season, season=="fall", "autumn"))
+# res2$direction <- factor(res2$direction, levels = c("local", "backward", "forward"))
+# res2$season <- factor(res2$season, levels = c("spring", "autumn"))
+# 
+# # main <- ggplot(res2, aes(x = term, y = estimate, colour = species, shape = species, group = species)) + 
+# #   geom_errorbar(aes(ymin=estimate-(1.96*std.error), ymax=estimate+(1.96*std.error)), colour="black", width=.1, position=pd) +
+# #   geom_point(position=pd) + 
+# #   geom_hline(yintercept = 0, linetype="dashed", col="gray") + 
+# #   geom_vline(xintercept=seq(1.5, length(unique(res2$term))-0.5, 1), #adds vertical gridlines
+# #              lwd=0.25, colour="gray")+
+# #   facet_grid(direction~season) + 
+# #   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+# # 
+# # save_plot(paste0(fig.dir, "2_mainresults.pdf"), main, base_aspect_ratio = 1.3, base_width = 20, base_height = 10)
+# # main
+# 
+# pd <- position_jitter(width=NULL, height=0.25)
+# # reverse axes for better readability?
+# main2 <- ggplot(res2, aes(x = estimate, y = term, colour = species, shape = species, group = species)) + 
+#   #geom_errorbar(aes(ymin=estimate-(1.96*std.error), ymax=estimate+(1.96*std.error)), colour="black", width=.1, position=pd) +
+#   geom_point(position=pd, size=2) + 
+#   geom_vline(xintercept = 0, linetype="dashed", col="black") + 
+#   geom_hline(yintercept=seq(1.5, length(unique(res2$term))-0.5, 1), #adds horizontal gridlines
+#              lwd=0.25, colour="gray") +
+#   scale_color_brewer(palette="Set1") +
+# #  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+#   facet_grid(direction~season)
+# 
+# save_plot(paste0(fig.dir, "2_mainresults.pdf"), main2, base_aspect_ratio = 1.3, base_width = 20, base_height = 10)
+# main2
+
+#fix labels to match text
+res_preds <- res2[res2$term %in% c("EVI", "t10m", "SRTM_elev"),]
+res_preds$term <- factor(res_preds$term, levels = c("EVI", "t10m", "SRTM_elev", "Temperature", "Elevation"))
+res_preds[res_preds == "t10m"] <- "Temperature"
+res_preds[res_preds == "SRTM_elev"] <- "Elevation"
+res_preds$term <- factor(res_preds$term, levels = c("Temperature", "EVI", "Elevation"))
+res_preds$term <- ordered(res_preds$term, levels = c("Temperature", "EVI", "Elevation"))
+
+res_preds$direction <- factor(res_preds$direction, levels = c("local", "backward", "forward", "preceding", "immediate", "following"))
+res_preds[res_preds == "local"] <- "immediate"
+res_preds[res_preds == "backward"] <- "preceding"
+res_preds[res_preds == "forward"] <- "following"
+res_preds$direction <- factor(res_preds$direction, levels = c("preceding", "immediate", "following"))
+
+res_preds[res_preds == "/bch"] <- "A. alexandri"
+res_preds[res_preds == "/bth"] <- "S. platycercus"
+res_preds[res_preds == "/cah"] <- "S. calliope"
+res_preds[res_preds == "/ruh"] <- "S. rufus"
+res_preds[res_preds == "/rth"] <- "A. colubris"
+
+#plot
+pd <- position_jitter(width=NULL, height=0.25)
+# reverse axes for better readability?
+main3 <- ggplot(res_preds, aes(x = estimate, y = term, colour = direction, shape = direction, group = direction)) + 
+ # geom_errorbar(aes(ymin=estimate-(1.96*std.error), ymax=estimate+(1.96*std.error)), colour="black", width=.1, position=pd) +
+  geom_point(position=pd, size=3) + 
+  geom_vline(xintercept = 0, linetype="dashed", col="black") + 
+  geom_hline(yintercept=seq(1.5, length(unique(res_preds$term))-0.5, 1), #adds horizontal gridlines
+             lwd=0.25, colour="gray") +
+    scale_color_grey() +
+#  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  facet_grid(species~season)
+
+
+# Supplementary figure with interactions
+#fix labels to match text
+res_interaxn <- res2[res2$term %in% c("EVI*t10m", "t10m*SRTM_elev", "EVI*SRTM_elev", "EVI*t10m*SRTM_elev"),]
+res_interaxn$term <- factor(res_interaxn$term, levels = c("EVI*t10m", "t10m*SRTM_elev", "EVI*SRTM_elev", "EVI*t10m*SRTM_elev", "EVI * Temperature", "Temperature * Elevation", "EVI * Elevation", "EVI * Temperature * Elevation"))
+res_interaxn[res_interaxn == "EVI*t10m"] <- "EVI * Temperature"
+res_interaxn[res_interaxn == "EVI*SRTM_elev"] <- "EVI * Elevation"
+res_interaxn[res_interaxn == "t10m*SRTM_elev"] <- "Temperature * Elevation"
+res_interaxn[res_interaxn == "EVI*t10m*SRTM_elev"] <- "EVI * Temperature * Elevation"
+res_interaxn$term <- factor(res_interaxn$term, levels = c("EVI * Temperature", "Temperature * Elevation", "EVI * Elevation", "EVI * Temperature * Elevation"))
+res_interaxn$term <- ordered(res_interaxn$term, levels = c("EVI * Temperature", "Temperature * Elevation", "EVI * Elevation", "EVI * Temperature * Elevation"))
+
+res_interaxn$direction <- factor(res_interaxn$direction, levels = c("local", "backward", "forward", "preceding", "immediate", "following"))
+res_interaxn[res_interaxn == "local"] <- "immediate"
+res_interaxn[res_interaxn == "backward"] <- "preceding"
+res_interaxn[res_interaxn == "forward"] <- "following"
+res_interaxn$direction <- factor(res_interaxn$direction, levels = c("preceding", "immediate", "following"))
+
+res_interaxn[res_interaxn == "/bch"] <- "A. alexandri"
+res_interaxn[res_interaxn == "/bth"] <- "S. platycercus"
+res_interaxn[res_interaxn == "/cah"] <- "S. calliope"
+res_interaxn[res_interaxn == "/ruh"] <- "S. rufus"
+res_interaxn[res_interaxn == "/rth"] <- "A. colubris"
+
+#plot
+pd <- position_jitter(width=NULL, height=0.25)
+# reverse axes for better readability?
+supmat4 <- ggplot(res_interaxn, aes(x = estimate, y = term, colour = direction, shape = direction, group = direction)) + 
+ # geom_errorbar(aes(ymin=estimate-(1.96*std.error), ymax=estimate+(1.96*std.error)), colour="black", width=.1, position=pd) +
+  geom_point(position=pd, size=3) + 
+  geom_vline(xintercept = 0, linetype="dashed", col="black") + 
+  geom_hline(yintercept=seq(1.5, length(unique(res_interaxn$term))-0.5, 1), #adds horizontal gridlines
+             lwd=0.25, colour="gray") +
+    scale_color_grey() +
+#  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  facet_grid(species~season)
+
 ```
 
 #Figure 1c. 2D version. 
@@ -196,70 +362,6 @@ ppls <- plot_ly(ruhu_2013_94_pls, x = ~EVI, y = ~t10m, z = ~SRTM_elev, color=~lo
 #grid.arrange(p, pabs, pmin, ppls, nrow=1)
 ```
 
-# Figure 2
-Plot the parameter estimates for the gamlss models, for ALL species
-```{r}
-res_files <- list.files(stat.dir, pattern="gamlss.list.rda", full.names = TRUE)
-
-res <- ldply(res_files, function(x) {
-  load(x)
-  f <- gsub(stat.dir, "", x)
-  dat <- substr(f, 7, nchar(f) - 16)
-  sp <- substr(f, 1, 4)
-  # this is needed for those where we saved any significant model (i.e. gamlss.list > 1)
-  best_mod <- filter(best_mods, species == sp, data == dat)
-  mod <- gamlss.list[[best_mod$mod]]
-  out <- broom::tidy(mod)
-  out$species <- sp
-  out$dir.season <- dat
-  return(out)
-})
-
-res <- separate(res, dir.season, into=c("direction", "season"), sep = "\\.")
-res <- filter(res, term!="(Intercept)")
-res$term <- gsub(":", "*", gsub("\\)", "", gsub("pb\\(", "", res$term)))
-# we have EVI*SRTM_elev and SRTM_elev*EVI - these need to be the same. 
-res$term <- ifelse(res$term=="SRTM_elev*EVI", "EVI*SRTM_elev", res$term)
-res$term <- factor(res$term, levels=c("EVI", "t10m", "SRTM_elev", "EVI*t10m", "EVI*SRTM_elev", "t10m*SRTM_elev", "EVI*t10m*SRTM_elev"))
-
-library(cowplot)
-pd <- position_dodge(0.5)
-
-res2 <- res %>%
-  mutate(direction=replace(direction, direction=="pa", "local")) %>%
-  mutate(direction=replace(direction, direction=="pmin", "backward")) %>%
-  mutate(direction=replace(direction, direction=="ppls", "forward")) %>%
-  mutate(season=replace(season, season=="fall", "autumn"))
-res2$direction <- factor(res2$direction, levels = c("local", "backward", "forward"))
-res2$season <- factor(res2$season, levels = c("spring", "autumn"))
-
-main <- ggplot(res2, aes(x = term, y = estimate, colour = species, shape = species, group = species)) + 
-  geom_errorbar(aes(ymin=estimate-(1.96*std.error), ymax=estimate+(1.96*std.error)), colour="black", width=.1, position=pd) +
-  geom_point(position=pd) + 
-  geom_hline(yintercept = 0, linetype="dashed", col="gray") + 
-  geom_vline(xintercept=seq(1.5, length(unique(res2$term))-0.5, 1), #adds vertical gridlines
-             lwd=0.25, colour="gray")+
-  facet_grid(direction~season) + 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
-save_plot(paste0(fig.dir, "2_mainresults.pdf"), main, base_aspect_ratio = 1.3, base_width = 20, base_height = 10)
-main
-
-pd <- position_jitter(width=NULL, height=0.25)
-# reverse axes for better readability?
-main2 <- ggplot(res2, aes(x = estimate, y = term, colour = species, shape = species, group = species)) + 
-  #geom_errorbar(aes(ymin=estimate-(1.96*std.error), ymax=estimate+(1.96*std.error)), colour="black", width=.1, position=pd) +
-  geom_point(position=pd, size=2) + 
-  geom_vline(xintercept = 0, linetype="dashed", col="black") + 
-  geom_hline(yintercept=seq(1.5, length(unique(res2$term))-0.5, 1), #adds horizontal gridlines
-             lwd=0.25, colour="gray") +
-  scale_color_brewer(palette="Set1") +
-#  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  facet_grid(direction~season)
-
-save_plot(paste0(fig.dir, "2_mainresults.pdf"), main2, base_aspect_ratio = 1.3, base_width = 20, base_height = 10)
-main2
-```
 
 #Supplementary Figure: 
 Plot difference of environment from mean occurrence values, for ALL species
