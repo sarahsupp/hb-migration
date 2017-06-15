@@ -157,9 +157,14 @@ map_all[map_all == "rthu"] <- "A. colubris"
 #with simple map borders
 map = ggplot() + geom_polygon(data=map_data("world"), aes(x=long, y=lat, group=group), fill="gray") + coord_fixed(ratio=1.3, xlim=c(-130,-50), ylim=c(20,60)) + theme_map()
 
-map + geom_point(data=map_all, aes(x=location.long, y=location.lat, col=season), alpha=0.25, size=0.25) +
-  scale_colour_manual(values = c("royalblue3", "green4", "darkorange1")) +
-  guides(color = guide_legend(override.aes= list(alpha = 1))) + theme_map() + theme(legend.position="none") + facet_grid(sp ~ season)
+# map + geom_point(data=map_all, aes(x=location.long, y=location.lat, col=season), alpha=0.25, size=0.25) +
+#   scale_colour_manual(values = c("royalblue3", "green4", "darkorange1")) +
+#   guides(color = guide_legend(override.aes= list(alpha = 1))) + theme_map() + theme(legend.position="none") + facet_grid(sp ~ season)
+
+# Map in Black and White
+map + geom_point(data=map_all, aes(x=location.long, y=location.lat), alpha=0.25, size=0.25) +
+  theme_map() + theme(legend.position="none") + facet_grid(sp ~ season) +
+  theme(strip.text = element_text(size = 12))
 
 ```
 
