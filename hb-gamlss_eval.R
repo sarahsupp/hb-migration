@@ -2,13 +2,6 @@
 # (c) 2015 by Sarah R. Supp, Laura Graham, and Frank La Sorte
 
 # import libraries
-library(ggplot2)
-library(nlme)
-library(lme4)
-library(lubridate)
-library(arm)
-library(mgcv)
-library(gamm4)
 library(gamlss)
 
 # dropbox pathname

@@ -348,7 +348,7 @@ importANDformat = function(path, prescode, migdates, alpha_window){
   #prescode is the code to indicate presence (-1:-3 = previous windows, 1 = present, 0 = absent, 2:4 = next windows)
   #migdates is a dataframe with migration dates for assigning season
   #alpha_window is a number indicating the number of days used to assign alpha hulls (we use 5)
-  require(lubridate)
+  library(lubridate)
   
   dat = get(load(path))
   dat$pres = as.factor(prescode)
@@ -390,7 +390,7 @@ summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
   ##   na.rm: a boolean that indicates whether to ignore NA's
   ##   conf.interval: the percent range of the confidence interval (default is 95%)
   
-  require(plyr)
+  library(plyr)
   # New version of length which can handle NA's: if na.rm==T, don't count them
   length2 <- function (x, na.rm=FALSE) {
     if (na.rm) sum(!is.na(x))
