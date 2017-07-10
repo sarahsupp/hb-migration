@@ -1,0 +1,247 @@
+---
+title: "hb-enviro-figures"
+author: "Sarah Supp"
+date: "7/9/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+## Getting set up:
+Data Note: pmin is preceding (previous locations) and ppls is following (future locations)
+```{r, echo=FALSE}
+library(tidyverse)
+library(gamlss)
+library(ggmap)
+library(gganimate) # devtools::install_github("dgrtwo/gganimate")
+library(plyr)
+library(plotly)
+library(gridExtra)
+library(maps)
+library(mapdata)
+library(viridis)
+library(ggthemes)
+library(cowplot)
+```
+
+
+##Get the data
+...Add your pathnames to each downloaded R or data file
+```{r}
+dropbox <- "/home/sarah/Dropbox/Hummingbirds/"
+github <- "/home/sarah/Documents/GitHub/hb-migration/"
+
+#assign based on the time frame (number of days) used to compute the alpha hulls
+alpha_window = 5
+
+# define pathnames (FAL will need to change pathnames)
+function.dir <- paste0(github, "hb_RS_functions.R")
+agan.dir <- paste0(dropbox, "hb_migration_data/ebird_annotated_raw/combined/")
+abs.dir <- paste0(dropbox, "hb_migration_data/pseudoabsences/t", alpha_window, "/annotated/")
+migtime.dir <- paste0(dropbox, "hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/")
+fig.dir <- paste0(dropbox, "NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/")
+stat.dir <- paste0(dropbox, "NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/stat-tests/")
+
+source(function.dir) 
+
+#list of species codes
+species <- c("bchu", "bthu", "cahu", "ruhu", "rthu")
+```
+
+## Import the environmental data for occurrence locations and for each of the three migration scenarios (immediate, preceding, following)
+```{r}
+all = NA
+allabs = NA
+allmin = NA
+allpls = NA
+
+for (sp in species){ 
+  spfiles = list.files(path = agan.dir, pattern = glob2rx(paste0(sp,"*.RData")), recursive=FALSE, full.names=TRUE)
+  mfiles = list.files(path = migtime.dir, pattern = glob2rx(paste0(sp,"*migration*")), recursive=FALSE, full.names=TRUE)
+  pls.abs = list.files(path = abs.dir, pattern = glob2rx(paste0(sp,"*goingto.rda")), recursive=FALSE, full.names=TRUE)
+  min.abs = list.files(path = abs.dir, pattern = glob2rx(paste0(sp,"*comingfrom.rda")), recursive=FALSE, full.names=TRUE)
+ 
+  if(sp == "rthu"){ 
+    migdates = read.table(mfiles[1], header=TRUE, sep=",", quote="", 
+                         fill=TRUE, as.is=TRUE, comment.char="")}
+  if(sp %in% c("bchu", "bthu", "cahu", "ruhu")){ 
+     migdates = read.table(mfiles[2], header=TRUE, sep=",", quote="", 
+                         fill=TRUE, as.is=TRUE, comment.char="")}
+  migdates=cleanColNames(migdates)
+  
+   #load all the files into a list and remove rows with incomplete predictors
+  pres = importANDformat(spfiles[2], 1, migdates, alpha_window)
+  pres <- pres[which(complete.cases(subset(pres, select = -yday1))),]
+  abs = importANDformat(spfiles[1], 0, migdates, alpha_window)
+  abs <- abs[which(complete.cases(subset(abs, select = -yday1))),]
+  min.abs = get(load(min.abs))
+  min.abs = min.abs[which(complete.cases(min.abs)),]
+  pls.abs = get(load(pls.abs))
+  pls.abs = pls.abs[which(complete.cases(pls.abs)),]
+  
+  pres$sp = sp
+  abs$sp = sp
+  min.abs$sp = sp
+  pls.abs$sp = sp
+  
+  all = rbind(all, pres)
+  allabs = rbind(allabs, abs)
+  allmin = rbind(allmin, min.abs)
+  allpls = rbind(allpls, pls.abs)
+}
+all = all[-1,]
+allabs = allabs[-1,]
+allmin = allmin[-1,]
+allpls = allpls[-1,]
+
+all_spring = all[all$season=="spring",]
+all_fall = all[all$season=="fall",]
+all_breed = all[all$season=="breeding",]
+```
+
+# Summarize the results from the gamlss analysis (from hb-gamlss-eval.R)
+Get the results table out for the best fitting gamlss models. 
+```{r}
+res_files <- list.files(stat.dir, pattern = "mod.list.rda", full.names = TRUE)
+full_res <- ldply(res_files, function(x) {
+  load(x)
+  sp <- substr(gsub(stat.dir, "", x), 1, 4)
+  out <- ldply(mod.list, function(y) {
+    y$mod <- row.names(y)
+    return(y)})
+  out$species <- sp
+  return(out)})
+full_res <- mutate(full_res, data = .id) %>% 
+  select(species, data, mod, AIC, w, Rsq, df, nobs)
+write.csv(full_res, file=paste0(stat.dir, "full_results_table.csv"))
+best_mods <- group_by(full_res, species, data) %>% slice(which.min(AIC))
+```
+
+
+#Figure 1. Data Figure
+Map of hummingbird locations for each species in spring, breeding, and autumn seasons. Occurrences are shown for all years combined, although data was analyzed within each year separately.
+```{r}
+# change naming for the figure (e.g. fall should be autumn, scientific names)
+map_all <- all[all$season %in% c("spring", "breeding", "fall"),]
+map_all$season <- factor(map_all$season, levels = c("spring", "breeding", "fall", "autumn"))
+map_all[map_all == "fall"] <- "autumn"
+map_all$season <- factor(map_all$season, levels = c("spring", "breeding", "autumn"))
+map_all[map_all == "bchu"] <- "A. alexandri"
+map_all[map_all == "bthu"] <- "S. platycercus"
+map_all[map_all == "cahu"] <- "S. calliope"
+map_all[map_all == "ruhu"] <- "S. rufus"
+map_all[map_all == "rthu"] <- "A. colubris"
+
+#plot a map with simple borders
+map = ggplot() + geom_polygon(data=map_data("world"), aes(x=long, y=lat, group=group), fill="gray") + coord_fixed(ratio=1.3, xlim=c(-130,-50), ylim=c(20,60)) + theme_map()
+
+# Map occurrence locations in Black and White
+map + geom_point(data=map_all, aes(x=location.long, y=location.lat), alpha=0.25, size=0.25) +
+  theme_map() + theme(legend.position="none") + facet_grid(sp ~ season) +
+  theme(strip.text = element_text(size = 12))
+```
+
+
+#Figure 3. 
+Plot the parameter estimates for the predictor variables in the gamlss models, for ALL species
+```{r}
+res_files <- list.files(stat.dir, pattern="gamlss.list.rda", full.names = TRUE)
+
+res <- ldply(res_files, function(x) {
+  load(x)
+  f <- gsub(stat.dir, "", x)
+  dat <- substr(f, 7, nchar(f) - 16)
+  sp <- substr(f, 1, 4)
+  # this is needed for those where we saved any significant model (i.e. gamlss.list > 1)
+  best_mod <- filter(best_mods, species == sp, data == dat)
+  mod <- gamlss.list[[best_mod$mod]]
+  out <- broom::tidy(mod)
+  out$species <- sp
+  out$dir.season <- dat
+  return(out)
+})
+
+res <- separate(res, dir.season, into=c("direction", "season"), sep = "\\.")
+res <- filter(res, term!="(Intercept)")
+res$term <- gsub(":", "*", gsub("\\)", "", gsub("pb\\(", "", res$term)))
+# we have EVI*SRTM_elev and SRTM_elev*EVI - these need to be the same. 
+res$term <- ifelse(res$term=="SRTM_elev*EVI", "EVI*SRTM_elev", res$term)
+res$term <- factor(res$term, levels=c("EVI", "t10m", "SRTM_elev", "EVI*t10m", "EVI*SRTM_elev", "t10m*SRTM_elev", "EVI*t10m*SRTM_elev"))
+
+#fix labels to match text
+res_preds <- res2[res2$term %in% c("EVI", "t10m", "SRTM_elev"),]
+res_preds$term <- factor(res_preds$term, levels = c("EVI", "t10m", "SRTM_elev", "Temperature", "Elevation"))
+res_preds[res_preds == "t10m"] <- "Temperature"
+res_preds[res_preds == "SRTM_elev"] <- "Elevation"
+res_preds$term <- factor(res_preds$term, levels = c("Temperature", "EVI", "Elevation"))
+res_preds$term <- ordered(res_preds$term, levels = c("Temperature", "EVI", "Elevation"))
+
+res_preds$direction <- factor(res_preds$direction, levels = c("local", "backward", "forward", "preceding", "immediate", "following"))
+res_preds[res_preds == "local"] <- "immediate"
+res_preds[res_preds == "backward"] <- "preceding"
+res_preds[res_preds == "forward"] <- "following"
+res_preds$direction <- factor(res_preds$direction, levels = c("preceding", "immediate", "following"))
+
+res_preds[res_preds == "/bch"] <- "A. alexandri"
+res_preds[res_preds == "/bth"] <- "S. platycercus"
+res_preds[res_preds == "/cah"] <- "S. calliope"
+res_preds[res_preds == "/ruh"] <- "S. rufus"
+res_preds[res_preds == "/rth"] <- "A. colubris"
+
+#plot
+pd <- position_jitter(width=NULL, height=0.25)
+# reverse axes for better readability?
+main3 <- ggplot(res_preds, aes(x = estimate, y = term, colour = direction, shape = direction, group = direction)) + 
+ # geom_errorbar(aes(ymin=estimate-(1.96*std.error), ymax=estimate+(1.96*std.error)), colour="black", width=.1, position=pd) +
+  geom_point(position=pd, size=3) + 
+  geom_vline(xintercept = 0, linetype="dashed", col="black") + 
+  geom_hline(yintercept=seq(1.5, length(unique(res_preds$term))-0.5, 1), #adds horizontal gridlines
+             lwd=0.25, colour="gray") +
+    scale_color_grey() +
+#  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  facet_grid(species~season)
+```
+
+Figure S1. 
+Plot the parameter estimates for the interactions in the gamlss models, for ALL species
+```{r}
+# Supplementary figure with interactions
+#fix labels to match text
+res_interaxn <- res2[res2$term %in% c("EVI*t10m", "t10m*SRTM_elev", "EVI*SRTM_elev", "EVI*t10m*SRTM_elev"),]
+res_interaxn$term <- factor(res_interaxn$term, levels = c("EVI*t10m", "t10m*SRTM_elev", "EVI*SRTM_elev", "EVI*t10m*SRTM_elev", "EVI * Temperature", "Temperature * Elevation", "EVI * Elevation", "EVI * Temperature * Elevation"))
+res_interaxn[res_interaxn == "EVI*t10m"] <- "EVI * Temperature"
+res_interaxn[res_interaxn == "EVI*SRTM_elev"] <- "EVI * Elevation"
+res_interaxn[res_interaxn == "t10m*SRTM_elev"] <- "Temperature * Elevation"
+res_interaxn[res_interaxn == "EVI*t10m*SRTM_elev"] <- "EVI * Temperature * Elevation"
+res_interaxn$term <- factor(res_interaxn$term, levels = c("EVI * Temperature", "Temperature * Elevation", "EVI * Elevation", "EVI * Temperature * Elevation"))
+res_interaxn$term <- ordered(res_interaxn$term, levels = c("EVI * Temperature", "Temperature * Elevation", "EVI * Elevation", "EVI * Temperature * Elevation"))
+
+res_interaxn$direction <- factor(res_interaxn$direction, levels = c("local", "backward", "forward", "preceding", "immediate", "following"))
+res_interaxn[res_interaxn == "local"] <- "immediate"
+res_interaxn[res_interaxn == "backward"] <- "preceding"
+res_interaxn[res_interaxn == "forward"] <- "following"
+res_interaxn$direction <- factor(res_interaxn$direction, levels = c("preceding", "immediate", "following"))
+
+res_interaxn[res_interaxn == "/bch"] <- "A. alexandri"
+res_interaxn[res_interaxn == "/bth"] <- "S. platycercus"
+res_interaxn[res_interaxn == "/cah"] <- "S. calliope"
+res_interaxn[res_interaxn == "/ruh"] <- "S. rufus"
+res_interaxn[res_interaxn == "/rth"] <- "A. colubris"
+
+#plot
+pd <- position_jitter(width=NULL, height=0.25)
+# reverse axes for better readability?
+supmat4 <- ggplot(res_interaxn, aes(x = estimate, y = term, colour = direction, shape = direction, group = direction)) + 
+ # geom_errorbar(aes(ymin=estimate-(1.96*std.error), ymax=estimate+(1.96*std.error)), colour="black", width=.1, position=pd) +
+  geom_point(position=pd, size=3) + 
+  geom_vline(xintercept = 0, linetype="dashed", col="black") + 
+  geom_hline(yintercept=seq(1.5, length(unique(res_interaxn$term))-0.5, 1), #adds horizontal gridlines
+             lwd=0.25, colour="gray") +
+    scale_color_grey() +
+#  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  facet_grid(species~season)
+```
+
+
