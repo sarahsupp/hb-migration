@@ -219,9 +219,9 @@ eval_gamlss_models = function(dat=dat, sp=sp, season="season", lag=FALSE, means=
   #save the modesl to the stats folder
   #print the table to the screen, and save to a txt file to see later.
 
-  # return Cox Snell R2, R-squared = 1-(L(0)/L(fitted))^(2/n);  http://rpackages.ianhowson.com/cran/gamlss/man/Rsq.html
+  # return Nagelkerke R2, R-squared = 1-(L(0)/L(fitted))^(2/n) / 1-L(0)^(2/n);  http://rpackages.ianhowson.com/cran/gamlss/man/Rsq.html
   AIC.df$Rsq = rep(NA,nrow(AIC.df))
-  for(r in 1:length(row.names(AIC.df))) { r2=round(Rsq(get(row.names(AIC.df)[r]), type="Cox Snell"),4); AIC.df$Rsq[r]=r2 }
+  for(r in 1:length(row.names(AIC.df))) { r2=round(Rsq(get(row.names(AIC.df)[r]), type="Cragg Uhler"),4); AIC.df$Rsq[r]=r2 }
   AIC.df$nobs = rep(NA,nrow(AIC.df))
   for(r in 1:length(row.names(AIC.df))) { nobs=get(row.names(AIC.df)[r])$N; AIC.df$nobs[r]=nobs }
   
