@@ -30,16 +30,19 @@ library(cowplot)
 ##Get the data
 ...Add your pathnames to each downloaded R or data file
 ```{r}
+dropbox <- "/home/sarah/Dropbox/Hummingbirds/"
+github <- "/home/sarah/Documents/GitHub/hb-migration/"
+
 #assign based on the time frame (number of days) used to compute the alpha hulls
 alpha_window = 5
 
-# define pathnames
-function.dir <- paste0(pathname, "hb_RS_functions.R")
-agan.dir <- paste0(pathname, "hb_migration_data/ebird_annotated_raw/combined/")
-abs.dir <- paste0(pathname, "hb_migration_data/pseudoabsences/t", alpha_window, "/annotated/")
-migtime.dir <- paste0(pathname, "hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/")
-fig.dir <- paste0(pathname, "NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/")
-stat.dir <- paste0(pathname, "NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/stat-tests/")
+# define pathnames (FAL will need to change pathnames)
+function.dir <- paste0(github, "hb_RS_functions.R")
+agan.dir <- paste0(dropbox, "hb_migration_data/ebird_annotated_raw/combined/")
+abs.dir <- paste0(dropbox, "hb_migration_data/pseudoabsences/t", alpha_window, "/annotated/")
+migtime.dir <- paste0(dropbox, "hb_migration_data/ebird_raw/eBird_checklists_2008-2014/aggregate_by_species/")
+fig.dir <- paste0(dropbox, "NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/figures/")
+stat.dir <- paste0(dropbox, "NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/stat-tests/")
 
 source(function.dir) 
 
