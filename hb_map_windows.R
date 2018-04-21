@@ -24,8 +24,8 @@ for(sp in c("bchu", "bthu", "cahu", "ruhu", "rthu")) {
   pres$sp <- sp
   
   # windows selection
-  p_spring <- subset(pres, season == "spring" & year == 2010)
-  p_fall <- subset(pres, season == "fall" & year == 2010)
+  p_spring <- subset(pres, season == "spring" & year == 2012)
+  p_fall <- subset(pres, season == "fall" & year == 2012)
   
   
   # get 5 evenly spread windows for each sp/ssn combination
@@ -78,8 +78,10 @@ hulls <- ddply(pres, c("sp", "season", "win_id"), find_hull)
 ggplot() + geom_polygon(data=map_data("world"), aes(x=long, y=lat, group=group), fill="gray") + 
   coord_fixed(ratio=1.3, xlim=c(-130,-50), ylim=c(20,60)) + 
   geom_polygon(data = hulls, aes(x = location.long, y = location.lat, fill = win_id), alpha = 0.5) +
+  geom_point(data = pres, aes(x = location.long, y = location.lat, colour = win_id), size = 0.5) + 
   facet_grid(sp ~ season) + 
   scale_fill_viridis_d(name = "Window") + 
+  scale_colour_viridis_d(name = "Window") + 
   theme_classic() + theme(axis.ticks = element_blank(), axis.text = element_blank(), axis.title = element_blank())
 
 ggsave("~/Dropbox/NASA_Hummingbirds/P10_eBird_Migration_multiple topics/2-Mechanisms/manuscript_RSOS/Revisions/hb_window_map.png")
